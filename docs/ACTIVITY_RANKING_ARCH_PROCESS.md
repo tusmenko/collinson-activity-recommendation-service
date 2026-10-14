@@ -11,8 +11,8 @@ Status legend: `open` (not started), `in progress`, `gate pending`, `passed`, `r
 | Step 0  | Stakeholder map                      | passed 2026-10-14           |
 | Step 1  | Requirements + QAS + baseline        | passed 2026-10-14           |
 | Step 2  | Utility tree + ASRs + tactics        | passed 2026-10-14           |
-| Step 3  | Solution options                     | in progress                 |
-| Step 4  | ADR + design                         | open                        |
+| Step 3  | Solution options                     | passed 2026-10-14                |
+| Step 4  | ADR + design                         | in progress                        |
 | Step 5  | Implementation plan                  | open                        |
 
 
@@ -189,7 +189,7 @@ The brief specifies nothing else functionally. Everything below is derived.
 | NFR-8 | LLM-ops | If an LLM-assisted classifier is built (OQ-16), it carries versioned prompts, call observability, provider abstraction and validated structured output. | Goal 6 | Applies only if the option is chosen in Step 3 | A-0 |
 | NFR-9 | Availability: upstream access | Outbound calls to Open-Meteo stay within the fair-use limits regardless of inbound load. | Fair-use constraint; proxy product manager at Gate 1, 2026-10-14: implement from the start. | Outbound limiter at 600 per minute, 5,000 per hour, 10,000 per day, configurable; single-flight per location so concurrent cold reads fetch once | A-27, A-32 |
 | NFR-10 | Deployability | The service builds, tests and packages from CI with no manual steps; the production deploy path uses the stack named in the role. | Goal 5; role description: build, deploy and run systems end to end without manual configuration. | GitHub Actions on every push: lint, type check, tests, Docker image build. Deploy path described, not executed: image to a registry, Helm chart to EKS, Terraform for infrastructure, Datadog for telemetry | A-40 |
-| NFR-11 | Modifiability: provider neutrality | A weather or enrichment provider can be added or replaced behind a provider interface; the stored model is provider-neutral. | Proxy product manager at Gate 1, 2026-10-14: integrations are a natural point of extension. | Store holds normalised daily signals, not Open-Meteo payloads; one adapter per provider; swapping a provider touches the adapter and its fixtures only | A-41 |
+| NFR-11 | Modifiability: provider neutrality | A weather or enrichment provider can be added or replaced behind a provider interface; the stored model is provider-neutral. | Proxy product manager at Gate 1, 2026-10-14: integrations are a natural point of extension. | Store holds normalised daily signals, not Open-Meteo payloads; one adapter per provider; swapping a provider touches the adapter and its fixtures only; upstream payloads validated against a pinned provider schema version at the adapter, raw snapshot stored, drift surfaces as an anomaly event (NFR-13) | A-41 |
 | NFR-12 | Security | Every inbound request is validated and rate-limited at the API boundary before any store or upstream access. | Proxy product manager at Gate 1, 2026-10-14: validation is critical; inbound limits from the start. | Schema types plus explicit validation of length, charset and bounds; per-client token bucket, configurable; typed errors for malformed or over-limit requests; tests for both | A-27, A-28 |
 | NFR-13 | Availability: fault detection; Testability | Every score is traceable to the data and the classifier version that produced it, and classification anomalies are detectable. | Proxy product manager at Gate 2, 2026-10-14. | Each score carries provider, fetched-at, classifier id and version, and rule-set version; one structured event per ranking; invariant checks (score within range, rank is a permutation of the days, not-applicable carries no score, applicability stable across refreshes) logged as anomalies with a counter. Production path: metrics and alerts, drift checks against the golden set. The classifier version is the same concept as a prompt version, so NFR-8 builds on it. | A-42 |
 
@@ -200,14 +200,14 @@ The brief is silent on these. Each row records what the exercise does and what i
 | ID | Concern | In the exercise | Deferred to production |
 | --- | --- | --- | --- |
 | A-24 | Expected load | Designed for interactive use: one reviewer, tens of requests per minute, a handful of locations. | A load target; read-heavy traffic on popular cities absorbed by the store and TTL. |
-| A-25 | Scalability | Process kept stateless; single process, single store. | Horizontal scale as a deployment concern. |
+| A-25 | Scalability | Process kept stateless; single process, single store. Stale-while-revalidate removes the need for a worker. | Horizontal scale as a deployment concern. |
 | A-26 | Authentication, authorisation | None; open on localhost; no user data. | Gateway or JWT at the edge. |
 | A-27 | Rate limiting | Outbound limiter toward Open-Meteo at the fair-use limits (NFR-9). Inbound per-client limiter, configurable, on by default (NFR-12). | Gateway-level inbound limits; distributed limiter if multi-instance. |
 | A-28 | Input validation and security | Every input validated at the API boundary: length, charset, bounds; typed errors; dependencies pinned; introspection on for the reviewer (NFR-12). | Depth and complexity limits; introspection off; dependency scanning. |
 | A-29 | API versioning | Additive schema evolution; deprecations for breaking changes. | Same. |
 | A-30 | Data retention and classifier evaluation | Latest forecast per location only. Classifier outputs (inputs, score, reason) logged as structured events. Each event carries the classifier and rule-set version (NFR-13). | Golden-dataset evaluation outside the running app, fed by the log; matters most for an LLM-assisted classifier. |
 | A-31 | Privacy, PII | Place names only; no identity; no client addresses in logs. | Same. |
-| A-32 | Refresh concurrency | Single-flight per location (NFR-9). | Distributed lock if multi-instance. |
+| A-32 | Refresh concurrency | Single-flight per location: in-memory map in A; BullMQ `jobId` deduplication in B and C (NFR-9). | BullMQ deduplication already holds across instances. |
 | A-33 | Backup, recovery | Store treated as a rebuildable cache of upstream data; loss means refetch. | No backups unless history is kept. |
 | A-34 | Store key and invalidation | Forecast keyed by location and forecast window in local dates; upsert on refresh; stale when the window no longer covers today, regardless of TTL; the key is provider-neutral. | Same. |
 | A-35 | Deployment target | Local Docker Compose. | Container on EKS via Helm; Terraform for infrastructure (NFR-10). |
@@ -240,7 +240,7 @@ Each scenario traces to a concern above. Every measure is a proposal under the a
 | QAS-1 | Performance | NFR-3 | API consumer | Queries rankings for a location already in store and fresh | GraphQL API, store | Normal | Rankings computed from stored data | p95 under 300 ms locally; zero upstream calls |
 | QAS-2 | Performance | NFR-3 | API consumer | Queries a location never seen before | API, ingest, store | Normal, upstream healthy | Geocode, fetch forecast and marine, persist, rank | Under 3 s; at most 3 upstream calls |
 | QAS-3 | Availability | NFR-4 | Open-Meteo | Times out or returns 5xx | Ingest | Store holds data older than TTL | Serve stored data flagged stale with its fetched-at time | Every request with stored data answered; upstream timeout 2 s; error only when store is empty |
-| QAS-4 | Performance | NFR-1 | Clock | Stored data passes the TTL | Refresh | Normal | Data refreshed on next read, or by background refresh for known locations | Served data never older than TTL plus one refresh cycle; TTL default 6 h, configurable |
+| QAS-4 | Performance | NFR-1 | Clock | Stored data passes the TTL | Refresh | Normal | Serve stored data at once with the stale flag; single-flight background refetch; next read fresh | Stale served for at most one request past the TTL; served data never older than TTL plus one refresh cycle; TTL default 6 h, configurable |
 | QAS-5 | Usability | DF-1 | API consumer | Queries "Springfield" | Geocoding adapter, API | Normal | Rank the best match; return its name, region, country; list up to 5 alternatives | Resolved location present in every response; alternatives present when more than one match |
 | QAS-6 | Usability | DF-2 | API consumer | Queries a name with no match | API | Normal | Typed `NOT_FOUND` error naming the input | No forecast or marine call made; under 1 s |
 | QAS-7 | Modifiability | NFR-7 | Developer | Adds a fifth activity, for example cycling, that needs wind and rain signals already stored | Classifier registry, API schema | Development | Write one classifier module, register it; the API exposes it | No change to ingest, store, or existing classifiers; existing tests pass unchanged; under 2 hours |
@@ -335,7 +335,152 @@ Sensitivity preview for Step 3: ASR-1, ASR-2 and ASR-5 share one seam, the signa
 
 ## Step 3 — Solution Options
 
-*Not started.*
+### Common ground
+
+All three options share the seam fixed by ASR-1, ASR-2 and ASR-5: a classifier registry, one adapter per provider, normalised daily signals, two storage classes (forecast cache, location facts). They share the framework too: NestJS on Node.js with TypeScript, chosen because its modules map onto the requirements without custom plumbing.
+
+| NestJS piece | Requirement covered |
+| --- | --- |
+| GraphQL code-first with the Apollo driver | FR-4 schema; the activity enum is generated from the registry (R-8) |
+| Dependency injection and modules | ASR-1 registry, ASR-2 adapters, ASR-5 facts versus cache |
+| Zod schemas via `nestjs-zod` | NFR-12 argument validation; NFR-11 upstream payload validation; config validation; TypeScript types inferred from the same schemas |
+| ThrottlerModule | NFR-12 inbound limiter; in-memory storage in A, Redis storage in B and C |
+| BullMQ module (`@nestjs/bullmq`) | ASR-3 ingest execution in B and C: durable jobs on Redis, `jobId` deduplication as single-flight, queue limiter as the outbound fair-use limiter, retry with backoff, lifecycle events for NFR-5 and NFR-13; a second queue `enrich` is the attachment point for ASR-5 |
+| Terminus (`@nestjs/terminus`, the health-check module: `/health` with Redis and memory indicators in the format Kubernetes probes consume) | NFR-5 health endpoint |
+| ConfigModule | A-36 environment configuration |
+| pino logging and the OpenTelemetry SDK | NFR-5 logs, NFR-13 ranking events and anomaly counter |
+| Vitest | NFR-6 testing pyramid; end-to-end tests use native `fetch` against `app.listen(0)` or Apollo's `executeOperation`; Jest is the swap if the reviewers prefer it |
+| ioredis behind repository interfaces | ASR-2 and ASR-5 storage: forecast cache under TTL keys, location facts under no-TTL keys, versioned key prefixes; throttler storage; daily fair-use counter |
+
+Three decisions are common to all options. Refresh is stale-while-revalidate: a read whose stored data is stale or whose window no longer covers today is served at once from the store with the stale flag set, a single-flight background refetch runs, and the next read is fresh; a location never seen before is the only blocking fetch. Scheduled refresh of known locations was rejected at Gate 3 because it refetches locations nobody asks for and burns fair use; incremental delivery (`@defer`, cached part first and fresh part streamed in the same response) is a later option. Scores are computed on read from stored signals, not precomputed at refresh: the store stays pure signals (ASR-2), classifiers change without re-scoring stored data (ASR-1), and the cost is four classifiers times seven days per read. Upstream payloads are validated at the adapter against a pinned provider schema version, the raw snapshot is stored next to the normalised signals, and a validation failure is an anomaly event (NFR-13) that takes the ASR-4 degradation path rather than crashing (R-9).
+
+Traceability mechanism (NFR-13). Every classifier module exports `id` and `version`; the thresholds file exports `ruleSetVersion`. Each ranking request emits one structured log event: request id, location id, provider, fetched-at, window start, and per activity the classifier id and version, score, applicability, reason and inputs. Invariants run in-request: score within 0 to 100, ranks form a permutation of the seven days, not-applicable carries no score; the coastal flag is a stored fact, so a change on refresh emits its own event. A violation logs at warn level and increments `ranking_anomalies_total{type}`. In the exercise the events go to stdout as JSON; on the production path a Datadog log pipeline and a monitor on the counter consume them, and the golden-set evaluation reads the same events offline. An LLM-assisted classifier would set `version` to its prompt version.
+
+Ingest pipeline (ASR-3, ASR-4). Ingest is an extract-transform-load run per location, triggered by a request today. It is modelled as an `IngestPipeline` built from source steps: geocode, forecast, marine, and later enrichment. Each step validates its payload with zod, has a timeout and a bounded retry, and carries a policy flag, mandatory or optional. Independent steps run in parallel; writes are idempotent upserts under single-flight; the outcome is succeeded, partial or failed; every run emits an event with per-step durations, and the last failure is kept under `ingest:last-error:{locationId}` for the operator. In option A the pipeline runs as an in-request promise under an in-memory single-flight map. In options B and C every ingest is a BullMQ job on the `ingest` queue: the job id is the location and window, so a duplicate add while a job is active is a no-op (single-flight); the queue limiter caps jobs per minute under the fair-use limit, with a daily counter in Redis as the second guard; attempts and backoff replace per-step retry code; a job survives a process restart. A cold read enqueues and awaits the job under the 4.5 s bound; a stale read enqueues and returns at once. Enrichment is a second queue, `enrich`, with its own limiter and retry policy, enqueued by the ingest job when facts are missing and writing to the facts namespace; an LLM enrichment job carries its prompt version. In the exercise the `enrich` queue is registered without a processor so the attachment point is visible. Processors run in the API process now and move to a worker deployment unchanged. A Lambda behind SQS is the serverless form of the same shape on the target state, listed and not chosen.
+
+Store engine was debated at Gate 3. The data today is a TTL cache plus a few small facts (the geocoding result, a coastal flag), so SQL buys nothing yet. Redis with AOF persistence holds both storage classes as namespaces with different TTL policy: `forecast:v1:{locationId}:{windowStart}` under TTL, `location:v1:{id}` without. Schema drift is handled by bumping the key version prefix and refetching; old keys expire. PostgreSQL moves to the target state for facts, when enrichment makes them relational (PostGIS, history). MongoDB was considered because the role lists it and rejected because Redis already covers the need. Classifier thresholds are hardcoded JSON per classifier for now (A-46), read through a `RuleSetProvider` interface whose static implementation exports `ruleSetVersion`; a configuration-service or database implementation drops in later without touching classifiers.
+
+### Options
+
+| | A — Incremental | B — Target state | C — Pragmatic |
+| --- | --- | --- | --- |
+| Runtime | One NestJS process | API deployment on EKS with horizontal pod autoscaling; a worker deployment runs the queue processors | One NestJS image; queue processors run in the same process behind a role flag |
+| Platform | Docker Compose: api, redis | EKS via a Helm chart; Terraform for VPC, EKS, ElastiCache, ECR, and Aurora once facts need it | Docker Compose: api, redis; Helm chart skeleton committed but not deployed; Terraform described in the README |
+| Store | Redis with AOF, two namespaces (facts, forecast cache), behind repository interfaces | ElastiCache for cache and facts; Aurora PostgreSQL for facts when enrichment lands | Redis with AOF, same as A |
+| Redis | Store only; limiter, single-flight and throttler storage in-process | ElastiCache: store, BullMQ queues, throttler storage, daily fair-use counter | Redis container: store, BullMQ queues, throttler storage, daily fair-use counter |
+| Refresh (ASR-3) | Stale-while-revalidate; in-request pipeline with in-memory single-flight | Stale-while-revalidate; BullMQ `ingest` jobs with `jobId` deduplication and queue limiter; `enrich` queue with a processor | Stale-while-revalidate; BullMQ `ingest` jobs with `jobId` deduplication and queue limiter; `enrich` queue registered, no processor |
+| Degradation (ASR-4) | Store-first, 2 s timeout, one retry, partial response | Same, plus a circuit breaker per upstream | Same as A |
+| Observability (NFR-5) | pino JSON logs, Terminus health | OpenTelemetry to Datadog, dashboards, alerts on the anomaly counter | pino, OpenTelemetry SDK with console or OTLP exporter, anomaly counter metric |
+| Traceability (NFR-13) | Ranking event with versions; invariant checks | Same, plus a drift job against the golden set | Same as A, plus the counter as a metric |
+| CI/CD (NFR-10) | GitHub Actions: lint, type check, Vitest with a redis service, image build | Adds push to ECR and `helm upgrade` | Vitest with a redis service, image build, `helm lint` |
+| Stack shown | TypeScript, NestJS, GraphQL, Redis, Vitest, GitHub Actions, Docker | Adds Kubernetes, Helm, Terraform, ElastiCache, Aurora, Datadog, Lambda and SQS as the serverless variant | Adds BullMQ, a Helm chart and OpenTelemetry |
+| Effort | About 2.5 hours | Two to three days | About 4.5 hours, phased so each phase leaves a working service |
+| Ceiling | Single instance | Horizontal scale | Single instance now; every Redis-backed piece is already safe for multiple instances |
+
+### Coverage matrix
+
+Mechanism common to all options, then the option that differs.
+
+| Requirement | Mechanism | Differs |
+| --- | --- | --- |
+| FR-1 resolve place | Geocoding adapter writes a location fact | — |
+| FR-2 seven days | Forecast adapter requests the window; store keyed by location and window | — |
+| FR-3 four activities | Four classifiers registered | — |
+| FR-4 rank per activity | Ranking service sorts the seven days per classifier, rank 1 is best | — |
+| DF-1 ambiguity | Geocode with count 5; first match used, alternatives returned | — |
+| DF-2 unknown | No results maps to a `NOT_FOUND` GraphQL error via an exception filter | — |
+| DF-3 not applicable | Applicability flag and reason in the classifier output | — |
+| DF-4 inputs and reason | Classifier output carries the signal values it used | — |
+| DF-5 data age | fetched-at and stale flag on every response | — |
+| DF-6 per-source failure | Partial flag; marine failure degrades surfing to unavailable | — |
+| NFR-1 timeliness | TTL from configuration plus window check; stale-while-revalidate | A: in-process single-flight; B, C: BullMQ `jobId` deduplication |
+| NFR-2, NFR-3 performance | Store-first read; one key lookup per location and window | — |
+| NFR-4 availability | Adapter timeouts, one retry, exception filter, partial response | B adds a circuit breaker |
+| NFR-5 fault detection | pino, Terminus, OpenTelemetry | Exporter target differs |
+| NFR-6 testability | Vitest unit; integration against a redis service; schema snapshot; end-to-end over `fetch` with stubbed adapters; autocannon smoke test | — |
+| NFR-7 extensibility | Classifier module plus one registry entry; enum from registry | — |
+| NFR-8 LLM-ops | Not built; classifier contract is async-capable | — |
+| NFR-9 upstream access | Outbound limiter and single-flight | A: in-memory token bucket and map; B, C: BullMQ queue limiter plus a daily Redis counter, `jobId` deduplication |
+| NFR-10 deployability | Dockerfile, Compose, GitHub Actions | C Helm skeleton; B full Helm and Terraform |
+| NFR-11 provider neutrality | Adapter interface; zod-validated payload pinned to a schema version; raw snapshot stored; versioned key prefix, drift means refetch | — |
+| NFR-12 security | Zod schemas on arguments via `nestjs-zod`; ThrottlerModule | Throttler storage in-memory in A |
+| NFR-13 traceability | Ranking event with provider, fetched-at, classifier and rule-set versions; invariant checks; anomaly counter | B adds alerts and a drift job |
+
+### ASR coverage
+
+| Requirement | A | B | C |
+| --- | --- | --- | --- |
+| ASR-1 Classifier contract and registry | satisfies | satisfies | satisfies |
+| ASR-2 Provider-neutral signal model | satisfies | satisfies | satisfies |
+| ASR-3 Refresh under fair use | satisfies: stale-while-revalidate, in-process single-flight | satisfies | satisfies |
+| ASR-4 Degradation on upstream failure | satisfies | satisfies | satisfies |
+| ASR-5 Location facts and enrichment seam | satisfies | satisfies | satisfies |
+| Goal 5 company stack shown | partial | satisfies | satisfies in code, Kubernetes and Terraform as described path |
+| Goal 3 focus and the one-evening box | satisfies | does not satisfy | satisfies only if phased with cut lines |
+
+### Sensitivity points
+
+- Refresh strategy: stale-while-revalidate fixes warm latency and bounds freshness to one request past the TTL; single-flight placement decides whether that holds under more than one instance.
+- Ingest execution: the queue decides durability of revalidation, correctness of single-flight and limiting under more than one instance, and where enrichment attaches.
+- Compute-on-read: raises modifiability; small per-read cost.
+- Pinned provider schema: raises availability and traceability under upstream change; adds a fixture-maintenance cost.
+
+### Tradeoff points
+
+One row per choice. "Serves" names the requirements the choice addresses. Preferences here are tactic-level; the option selection is Step 4.
+
+| Axis | Choice | Pros | Cons | Serves | Preferred |
+| --- | --- | --- | --- | --- | --- |
+| Refresh | Blocking refetch when stale | Simple; always fresh | Caller waits upstream latency on every expiry | NFR-1 | |
+| Refresh | Stale-while-revalidate | Warm latency always; one request stale and flagged; fair-use friendly; no infrastructure | Needs single-flight; one stale response per expiry | NFR-1, NFR-2, NFR-3, NFR-9; ASR-3, ASR-4; DF-5 | yes |
+| Refresh | Scheduled refresh of known locations | Never stale | Refetches locations nobody asks for; queue and worker; burns fair use | NFR-1 | no, rejected at Gate 3 |
+| Refresh | Incremental delivery (`@defer`) | Cached then fresh in one response | Client must support incremental delivery; complexity | NFR-1, NFR-2 | later option |
+| Scoring | Compute on read | Store is pure signals; a classifier change needs no re-score | 28 classifier calls per read, negligible | ASR-1, ASR-2; NFR-7 | yes |
+| Scoring | Precompute at refresh | Cheapest read | Re-score on every classifier change; store couples to classifier version | NFR-2 | |
+| Scoring | Cache results in Redis | Cheap read, no coupling | Invalidation on refresh and on classifier version | NFR-2 | later, if measured |
+| Ingest execution and limiting | In-request promise, in-memory single-flight and token bucket | No dependency | Lost on restart; wrong under more than one instance; limiter and lock are hand-written | NFR-9, NFR-12 | A only |
+| Ingest execution and limiting | BullMQ jobs on Redis | Durable, deduplicated by job id, queue limiter, retry with backoff, lifecycle events; enrichment is a second queue; processors move to a worker unchanged | One more Nest module; queue lifecycle in tests; per-minute limiter only, daily cap needs a counter | ASR-3, ASR-4, ASR-5; NFR-5, NFR-9, NFR-13 | yes, B and C |
+| Ingest execution and limiting | Lambda behind SQS | Serverless scale; isolation per job | Different runtime from the API; cold starts; local run needs emulation | ASR-3; NFR-10 | target-state variant, not chosen |
+| Inbound limiting | ThrottlerModule with Redis storage; gateway in production | Correct under scale; gateway offloads later | None material | NFR-12 | yes |
+| Store | Redis only, AOF persistence | One container; native TTL; hosts the BullMQ queues; no migrations; drift is a key version bump and a refetch | Facts durability rests on AOF; no relational queries when facts grow; may read as "just a cache" | ASR-3, ASR-4; NFR-9, NFR-12; goal 3 | yes, A and C |
+| Store | Redis plus PostgreSQL | Durable relational facts; PostGIS and history for enrichment; Aurora path | Migrations, a second container, more code for data that does not exist yet | ASR-5 future; goal 5 | B, when enrichment lands |
+| Store | MongoDB | Flexible documents | Nothing Redis does not already give here | ASR-2 | no |
+| Runtime | One image, roles by flag | One deployable; stale-while-revalidate needs no worker | Future enrichment jobs would share the process | NFR-10; A-25 | yes |
+| Runtime | API plus worker | Isolates background load | Second deployable for work that does not exist yet | NFR-10 | B, for enrichment only |
+| Schema | Code-first | Enum from registry; types shared | SDL is generated, less readable | ASR-1; R-8 | yes |
+| Schema | SDL-first | Readable contract file | Enum hand-maintained; drifts from the registry | FR-4 | |
+| Validation | Zod via `nestjs-zod` | One schema per boundary; types inferred end to end | Smaller Nest ecosystem than class-validator | NFR-11, NFR-12; R-9 | yes |
+| Validation | class-validator | Nest default | Decorators duplicate types; no payload validation | NFR-12 | |
+| Tests | Vitest | ESM-native, fast, Jest-compatible API | Not the name in the role | NFR-6 | yes |
+| Tests | Jest | Named in the role | Slower; ESM friction | NFR-6 | swap if asked |
+| Deployment | Compose to run plus a Helm skeleton | Reviewer runs in one command; stack shown | Helm chart unexercised | NFR-10; goal 5 | yes, option C |
+| Deployment | Helm on EKS with Terraform | Full target | Days, not an evening | NFR-10; goal 5 | option B |
+| Payload storage | Raw snapshot plus signals | Replay, drift detection | Storage volume | NFR-11, NFR-13; R-9 | yes |
+| Payload storage | Signals only | Lean | No replay | NFR-11 | |
+
+### Hypotheses each option depends on
+
+- A and C: H-1, H-3, H-6, H-5. If H-3 is refuted, surfing applicability needs a second signal; the classifier contract absorbs it. If H-1 is refuted, ASR-5 is the landing zone for enrichment.
+- B: all six, plus operational assumptions not on the list (ElastiCache availability, queue semantics, cluster access).
+- Tier-2 incremental delivery depends on H-7.
+
+### Risk Register (v1)
+
+| ID | Risk | Probability × Impact | Mitigation | Status |
+| --- | --- | --- | --- | --- |
+| R-1 | NestJS, Redis, BullMQ, a Helm chart and the testing pyramid do not fit one evening. | H × M | Step 5 phases each leave a working service; BullMQ replaces hand-written lock and limiter code, so it is net neutral; Helm and the performance smoke test are late phases cut with a README line. | open |
+| R-2 | Outdoor and indoor sightseeing scores computed from weather alone, with no location facts, are judged naive. | M × M | A-23 stated; ASR-5 seam; H-1 golden set; README. | open |
+| R-3 | The marine-null coastal heuristic is wrong for lakes and estuaries. | M × L | H-3 spike; the reason text says "no marine data", not "inland". | open |
+| R-4 | Fair-use limit hit during review. | L × M | Outbound limiter, single-flight, store-first reads. | open |
+| R-5 | In-process limiter and single-flight fail under multiple instances. | L × M | Interfaces; BullMQ job deduplication and queue limiter already hold across instances in B and C. | open |
+| R-6 | Queue processors in the API process complicate test lifecycle. | M × L | Unit tests stub the queue; integration tests run processors against the redis service and await job completion; processors disabled by configuration where not needed. | open |
+| R-7 | Scoring thresholds look arbitrary to the reviewer. | H × L | One rule file per activity with a rationale per threshold; H-1. | open |
+| R-8 | The GraphQL schema hard-codes the four activities and the extensibility claim fails. | L × H | Activity enum generated from the registry; a QAS-7 test registers a fake activity. | open |
+| R-9 | Open-Meteo changes its response shape and scores silently drift. | L × H | Payloads validated against a pinned schema version at the adapter; raw snapshot stored; versioned key prefix so drift means a refetch, not a migration; failure is an anomaly event and takes the ASR-4 path; optional live contract job in CI. | open |
+| R-10 | NestJS boilerplate eats the time box. | M × M | Five modules only (location, weather, ranking, api, infra); CLI generators; no custom decorators. | open |
+| R-11 | Reviewers read Redis as "just a cache" against the brief's rule to persist the data. | M × M | README explains the store model, the two namespaces and AOF persistence; repository interfaces show where PostgreSQL lands. | open |
+
+> **Review Gate 3** — passed 2026-10-14. Options accepted as characterised: NestJS throughout; Redis with AOF as the only store; stale-while-revalidate; BullMQ ingest and enrich queues in B and C; Zod, Vitest; `@defer` as tier 2 behind H-7.
 
 ## Step 4 — Recommendation + ADR
 
@@ -387,7 +532,7 @@ Sensitivity preview for Step 3: ASR-1, ASR-2 and ASR-5 share one seam, the signa
 | A-29 | Additive schema evolution; deprecations for breaking changes. | Cross-cutting concern; production path recorded in 1a. | open |
 | A-30 | Latest forecast per location only. Classifier outputs (inputs, score, reason) logged as structured events. Each event carries the classifier and rule-set version (NFR-13). | Cross-cutting concern; production path recorded in 1a. | open |
 | A-31 | Place names only; no identity; no client addresses in logs. | Cross-cutting concern; production path recorded in 1a. | open |
-| A-32 | Single-flight per location (NFR-9). | Direction confirmed by the proxy product manager at Gate 1; measure proposed. | confirmed 2026-10-14 |
+| A-32 | Single-flight per location: in-memory map in A; BullMQ `jobId` deduplication in B and C (NFR-9). | Direction confirmed by the proxy product manager at Gate 1; measure proposed. | confirmed 2026-10-14 |
 | A-33 | Store treated as a rebuildable cache of upstream data; loss means refetch. | Cross-cutting concern; production path recorded in 1a. | open |
 | A-34 | Forecast keyed by location and forecast window in local dates; upsert on refresh; stale when the window no longer covers today, regardless of TTL; the key is provider-neutral. | Direction confirmed by the proxy product manager at Gate 1; measure proposed. | open |
 | A-35 | Local Docker Compose. | Cross-cutting concern; production path recorded in 1a. | open |
@@ -396,9 +541,13 @@ Sensitivity preview for Step 3: ASR-1, ASR-2 and ASR-5 share one seam, the signa
 | A-38 | None; best effort. | Cross-cutting concern; production path recorded in 1a. | open |
 | A-39 | Lockfile committed; CI installs with a frozen lockfile. | Cross-cutting concern; production path recorded in 1a. | open |
 | A-40 | GitHub Actions on every push: lint, type check, tests, image build (NFR-10). | Direction confirmed by the proxy product manager at Gate 1; measure proposed. | confirmed 2026-10-14 |
-| A-41 | Provider interface; one adapter per provider; normalised daily signals in the store (NFR-11). | Direction confirmed by the proxy product manager at Gate 1; measure proposed. | confirmed 2026-10-14 |
+| A-41 | Provider interface; one adapter per provider; normalised daily signals in the store (NFR-11). Payloads are validated against a pinned provider schema version; drift is an anomaly. | Direction confirmed by the proxy product manager at Gate 1; measure proposed. | confirmed 2026-10-14 |
 | A-42 | Every score carries provider, fetched-at, classifier id and version, and rule-set version; one structured event per ranking; invariant checks log anomalies with a counter. | Direction confirmed by the proxy product manager at Gate 2; measure proposed. | confirmed 2026-10-14 |
-| A-43 | The data model has two storage classes from day one: a forecast cache (TTL, window-keyed) and long-lived versioned location facts, of which the geocoding result is the first. | Direction confirmed by the proxy product manager at Gate 2; keeps the enrichment path open without a migration. | confirmed 2026-10-14 |
+| A-43 | The data model has two storage classes from day one, a forecast cache (TTL, window-keyed) and long-lived location facts of which the geocoding result is the first; they are namespaces with different TTL policy, not necessarily different engines. | Direction confirmed by the proxy product manager at Gate 2; keeps the enrichment path open without a migration. | confirmed 2026-10-14 |
+| A-44 | Evaluating indoor and outdoor attractions (points of interest, museums, walkability) is out of scope; suitability uses weather and geo data only. Adding attractions needs a new data-collection pipeline on the ASR-5 seam. | Confirmed by the proxy product manager at Gate 3; linked to R-2 and H-1. | confirmed 2026-10-14 |
+| A-45 | One stale response per TTL expiry, flagged, while revalidation runs in the background, is acceptable. | Stale-while-revalidate chosen at Gate 3; the stale flag (DF-5) keeps it honest. | confirmed 2026-10-14 |
+| A-46 | Hardcoded JSON thresholds per classifier are acceptable; they are read through a `RuleSetProvider` interface so a configuration-service or database source can replace the file without touching classifiers. | Confirmed by the proxy product manager at Gate 3. | confirmed 2026-10-14 |
+| A-47 | Redis with AOF persistence is the only store for the exercise, holding both storage classes behind repository interfaces; PostgreSQL is the target-state store for facts once enrichment makes them relational. | Decided at Gate 3; the data is a cache plus small facts, so SQL buys nothing yet. See R-11. | confirmed 2026-10-14 |
 
 ### Open Questions Log
 
@@ -414,9 +563,9 @@ Questions a product manager would answer. Each carries the assumption chosen so 
 | OQ-6 | How fresh must data be? | TTL 6 h, configurable (A-11). | Product manager, Operator | open, assumption in force |
 | OQ-7 | Does "next 7 days" include today? Traces to FR-2. | Yes, in local time (A-5). | Product manager | open, assumption in force |
 | OQ-8 | Units? | Metric (A-12). | Product manager | open, assumption in force |
-| OQ-9 | Refresh on read, or background job for known locations? | Decided in Step 3. | Operator | open |
+| OQ-9 | Refresh on read, or background job for known locations? | Stale-while-revalidate on read; no scheduled refresh (decided by the proxy product manager at Gate 3). | Operator | resolved 2026-10-14 |
 | OQ-10 | Non-English place names? | English geocoding only (A-12). | Product manager | open, assumption in force |
-| OQ-11 | Which store? | Decided in Step 3. | Candidate | open |
+| OQ-11 | Which store? | Redis with AOF persistence (A-47); PostgreSQL on the target state for facts. | Candidate | resolved 2026-10-14 |
 | OQ-12 | Is indoor sightseeing ever "bad"? | Never bad; better when outdoors is worse (A-13). | Product manager | open, assumption in force |
 | OQ-13 | What should an unknown place name return? | Typed not-found error (A-14). | Product manager | open, assumption in force |
 | OQ-14 | Should the API expose why a day scored as it did? | Yes, inputs and a reason per score (A-15). | Product manager | open, assumption in force |
@@ -445,7 +594,8 @@ Assumptions that can be tested cheaply are not decided ad hoc; they are listed h
 | H-4 | A 6 h TTL loses nothing against model update cadence. | A-11 | Fetch one city hourly for 6 h; compare daily values; churn stays below one score band. | Post-exercise | to verify |
 | H-5 | Warm read p95 under 300 ms is achievable with the chosen store. | A-18 | Performance smoke test from NFR-6. | Implementation | to verify |
 | H-6 | The first geocoding result is the expected place for common names. | A-10 | Spot-check ten ambiguous names against expectation. | Step 5 spike, cheap | to verify |
+| H-7 | `@defer` incremental delivery works under the NestJS Apollo driver with the graphql-js version available. | Step 5 tier 2 | Spike: one deferred field on a throwaway schema; check the multipart response. | Step 5 spike, before tier 2 | to verify |
 
 ### Risk Register
 
-_Started at Step 3._
+Recorded under Step 3; updated at Step 4.
