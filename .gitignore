@@ -30,3 +30,6 @@ pnpm-debug.log*
 
 # private job-search material (never ship)
 private/
+
+# agent worklogs (untracked)
+.claude/worklogs/

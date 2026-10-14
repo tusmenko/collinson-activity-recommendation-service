@@ -40,6 +40,9 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | --- | --- | --- |
 | `PORT` | `3000` | HTTP port |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
+| `UPSTREAM_GEOCODING_URL` | `https://geocoding-api.open-meteo.com` | Geocoding base URL; the stub upstream replaces it in tests and the `demo` profile |
+| `UPSTREAM_FORECAST_URL` | `https://api.open-meteo.com` | Forecast base URL; same |
+| `UPSTREAM_MARINE_URL` | `https://marine-api.open-meteo.com` | Marine base URL; same |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
 | `FETCH_DAYS` | `8` | Days fetched per ingest; `WINDOW_DAYS + 1` covers local midnight |
 | `FRESHNESS_TTL` | `6h` | Data older than this is refetched before it is served; served flagged stale only if the refetch fails |
