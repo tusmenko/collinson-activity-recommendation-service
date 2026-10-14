@@ -12,7 +12,7 @@ Design-level artifact. Implements [NFR-6](arch/02-requirements.md#nfr-6) and the
 
 | Level | Tool | Runs against | Gate |
 | --- | --- | --- | --- |
-| Static | eslint, prettier, `tsc --noEmit` | source | pre-commit, CI |
+| Static | eslint with the limits from the [coding standards](CODING_STANDARDS.md), prettier, `tsc --noEmit`, dependency-cruiser, knip | source | pre-commit, CI |
 | Unit | Vitest | pure modules, fixture `DaySignals` | pre-push, CI |
 | Integration | Vitest | Redis service container, BullMQ processors in-process, stubbed adapters | pre-push, CI |
 | Schema and contract | Vitest snapshot; query fixtures | generated `schema.gql`; default and details queries | CI |

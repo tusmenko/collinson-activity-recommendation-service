@@ -15,6 +15,8 @@ Status legend: `open`, `in progress`, `gate pending`, `passed`, `revised`. Assum
 | Step 5 | Implementation plan | [arch/06-plan.md](arch/06-plan.md) | complete 2026-10-15 |
 | Registers | Assumptions, open questions, hypotheses, risk pointer | [arch/registers.md](arch/registers.md) | living |
 | ADR log | One record per decision; grows during and after implementation | [adr/README.md](adr/README.md) | ADR-0001 accepted |
+| Handoff | Reading order, decisions in force, non-negotiables, environment, what to update | [IMPLEMENTATION_HANDOFF.md](IMPLEMENTATION_HANDOFF.md) | current |
+| Standards | Principles, limits, layering, tools and gates | [CODING_STANDARDS.md](CODING_STANDARDS.md) | current |
 | Test plan | Traceability matrix, coverage gates, fixtures, non-functional verification | [ACTIVITY_RANKING_TEST_PLAN.md](ACTIVITY_RANKING_TEST_PLAN.md) | current |
 | Design | Detailed design implementing [ADR-0001](adr/0001-pragmatic-option-nestjs-redis-bullmq.md) ([D-1](ACTIVITY_RANKING_DESIGN.md#d-1) to [D-11](ACTIVITY_RANKING_DESIGN.md#d-11)) | [ACTIVITY_RANKING_DESIGN.md](ACTIVITY_RANKING_DESIGN.md) | current |
 
