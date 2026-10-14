@@ -65,7 +65,12 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', NO_EXPORT_ALL, ...TYPE_PLACEMENT] },
   },
   {
-    files: ['src/infra/config/**/*.ts', 'test/setup/**/*.ts'],
+    // The layout table gives these postfixes plural contents: a module's error classes, a port's DI tokens.
+    files: ['src/**/*.errors.ts', 'src/**/*.port.ts'],
+    rules: { 'max-classes-per-file': 'off' },
+  },
+  {
+    files: ['src/infra/config/**/*.ts', 'test/setup/**/*.ts', 'test/stub-upstream/**/*.ts'],
     rules: { 'n/no-process-env': 'off' },
   },
   {

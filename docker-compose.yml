@@ -37,6 +37,8 @@ services:
     build:
       context: .
       dockerfile: test/stub-upstream/Dockerfile
+    environment:
+      STUB_SHIFT_DATES: '1'
 
   api-demo:
     <<: *api
