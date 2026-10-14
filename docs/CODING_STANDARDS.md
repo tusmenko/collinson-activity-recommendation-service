@@ -6,7 +6,7 @@ Good defaults for a NestJS service, enforced by tools in phase 0 rather than by 
 
 | Principle | What it means here | Enforced by |
 | --- | --- | --- |
-| Single responsibility | One provider does one thing. Resolvers only translate GraphQL to one service call; services hold use-case logic and never touch HTTP or Redis; repositories are the only code that imports `ioredis`; adapters are the only code that knows a provider's payload shape; classifiers only score | dependency-cruiser layer rules; `max-classes-per-file: 1`; review |
+| Single responsibility | One provider does one thing and one file holds one concern. Transport only translates and delegates; application services hold use-case logic and never touch a protocol or a store; repositories and adapters are the only code that imports a client library or knows a provider's payload shape; domain logic is pure | dependency-cruiser layer rules; `max-classes-per-file: 1`; file-layout lint; review |
 | Keep it simple | No abstraction before the third concrete use; no generic helpers or utility barrels; no configuration for things that do not vary | review; knip reports unused exports |
 | Don't repeat yourself, within a module | Duplication inside a module is removed; duplication across modules is allowed until the third copy, then lifted into the module that owns the concept | review |
 | Explicit over clever | Explicit return types on exported functions; no `any`; no non-null assertions; no implicit index access | typescript-eslint strict-type-checked; `tsc --strict` |
@@ -29,17 +29,39 @@ Limits are errors in CI. A justified exception uses an inline `eslint-disable-ne
 
 ## Layering
 
-Modules and the direction they may import, enforced by dependency-cruiser with `no-circular` on:
+Generic rule; the concrete modules of this service and their allowed imports are listed once, in the design document ([D-1](ACTIVITY_RANKING_DESIGN.md#d-1)), and the dependency-cruiser configuration is generated from that list so the standards never drift from the design.
 
-```text
-api        → ranking, location, weather (services and types only), infra
-ranking    → location (types), weather (types), infra
-weather    → infra
-location   → infra
-infra      → nothing in the application
-```
+| Layer | Role | May import |
+| --- | --- | --- |
+| Transport | Resolvers, controllers, pipes, filters | application services and their public types |
+| Application | Use-case services, orchestration | domain, ports (abstract classes or interfaces), infrastructure utilities |
+| Domain | Pure logic: classifiers, rules, invariants, value types | nothing outside its own module except shared types |
+| Ports and adapters | Adapters to external providers, repositories to stores | the port it implements, infrastructure utilities, the client library it wraps |
+| Infrastructure | Config, logging, telemetry, health, clients | nothing from the application |
 
-Adapters live in `weather/adapters` and `location/adapters` and are imported only by their module's services. Repositories live in `*/repositories` and are the only importers of `ioredis`. Test code may import anything.
+Rules enforced by dependency-cruiser: no cycles; imports only in the direction above; a client library (HTTP client, `ioredis`, queue client) is imported only by the adapters or repositories that wrap it; cross-module imports go through the module's public barrel only.
+
+## File layout
+
+One concern per file, named by postfix. Lint enforces the names (`eslint-plugin-check-file`) and the placement of exported type declarations (`no-restricted-syntax` per glob); the rest is review.
+
+| Postfix | Holds | Notes |
+| --- | --- | --- |
+| `*.module.ts` | the Nest module | one per folder |
+| `*.service.ts` | one application or domain service | one class |
+| `*.resolver.ts`, `*.controller.ts` | transport | no logic beyond validation and one service call |
+| `*.adapter.ts`, `*.repository.ts` | ports and adapters implementations | the only importers of their client library |
+| `*.port.ts` | abstract classes or interfaces that adapters and repositories implement; the DI tokens | tokens as abstract classes, no string tokens |
+| `*.types.ts` | exported interfaces, type aliases, enums | exported type declarations are not allowed in other files |
+| `*.const.ts` | exported constants and lookup tables | no logic |
+| `*.schema.ts` | Zod schemas and the types inferred from them | the inferred type is exported from here, not duplicated in `*.types.ts` |
+| `*.errors.ts` | typed error classes of the module | |
+| `*.classifier.ts`, `*.rules.json` | one classifier and its thresholds | project-specific postfix, declared in the design |
+| `*.spec.ts` | unit tests, colocated | name starts with the test id |
+| `*.fixture.ts`, `test/fixtures/**` | test data | data only |
+| `index.ts` | the module's public barrel | one per module folder, exports only what other modules may use; no nested barrels; no `export *` |
+
+Examples in this document use names from this service for illustration; the authoritative names are in the design document.
 
 ## TypeScript and language
 
@@ -52,8 +74,8 @@ Adapters live in `weather/adapters` and `location/adapters` and are imported onl
 
 ## NestJS shape
 
-- One module per folder: `location`, `weather`, `ranking`, `api`, `infra`; file suffixes `.module.ts`, `.service.ts`, `.resolver.ts`, `.adapter.ts`, `.repository.ts`, `.classifier.ts`, `.schema.ts`, `.spec.ts`.
-- Injection by abstract-class tokens for anything with more than one implementation (repositories, adapters, rule-set provider); concrete classes elsewhere.
+- One module per folder, named in the design document; files follow the layout table above.
+- Injection by abstract-class tokens declared in `*.port.ts` for anything with more than one implementation; concrete classes elsewhere.
 - Providers are stateless except explicit caches; request-scoped providers are not used.
 - GraphQL code-first; the schema file is generated and committed; resolvers contain no logic beyond argument validation and one service call.
 - No custom decorators in the exercise.
@@ -71,7 +93,7 @@ Adapters live in `weather/adapters` and `location/adapters` and are imported onl
 
 ## Commits and pull requests
 
-- Conventional commits, scope is the module (`feat(weather): ...`); the body names the test ids or scenarios covered and any cut with its reason.
+- Conventional commits, scope is the module (`feat(<module>): ...`); the body names the test ids or scenarios covered and any cut with its reason.
 - One pull request per phase, squash-merged on green CI; the attribution lines from the session are kept.
 
 ## Enforcement summary
@@ -79,7 +101,7 @@ Adapters live in `weather/adapters` and `location/adapters` and are imported onl
 | Tool | Runs | Gate |
 | --- | --- | --- |
 | prettier | pre-commit (lint-staged), CI | formatting |
-| eslint: typescript-eslint strict-type-checked and stylistic, core `max-*` and `complexity`, sonarjs cognitive complexity, `no-process-env`, `no-console` | pre-commit (staged), CI (all) | errors fail |
+| eslint: typescript-eslint strict-type-checked and stylistic, core `max-*` and `complexity`, sonarjs cognitive complexity, `check-file` naming, `no-restricted-syntax` for type placement, `no-process-env`, `no-console` | pre-commit (staged), CI (all) | errors fail |
 | `tsc --noEmit` strict | pre-commit, CI | errors fail |
 | dependency-cruiser | CI | layer or cycle violation fails |
 | knip | CI | unused exports and dependencies fail |

@@ -7,6 +7,18 @@ Implements [ADR-0001](adr/0001-pragmatic-option-nestjs-redis-bullmq.md). Each se
 
 NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`, `.js` import suffixes). Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
 
+Allowed imports, the single source for the dependency-cruiser configuration (generic layer rules are in the [coding standards](CODING_STANDARDS.md#layering)):
+
+```text
+api        → ranking, location, weather (public barrels only), infra
+ranking    → location (types), weather (types), infra
+weather    → infra
+location   → infra
+infra      → nothing in the application
+```
+
+File postfixes follow the standards' layout table; this service adds `*.classifier.ts` with a sibling `*.rules.json` per activity.
+
 | Piece | Role |
 | --- | --- |
 | `@nestjs/graphql` with the Apollo driver, code-first (`@apollo/server` 5, `@as-integrations/express5`, graphql 16) | Schema from decorators written to `schema.gql`; `Activity` enum built from the registry at startup; `includeStacktraceInErrorResponses: false` outside development |
