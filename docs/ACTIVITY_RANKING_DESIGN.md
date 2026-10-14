@@ -3,7 +3,7 @@
 Implements [ADR-0001](adr/0001-pragmatic-option-nestjs-redis-bullmq.md). Each section carries a D-n id so the ADR, the options analysis and the implementation plan can point at it. Requirement, scenario and assumption IDs are defined in [arch/02-requirements.md](arch/02-requirements.md) and [arch/registers.md](arch/registers.md).
 
 <a id="d-1"></a>
-## [D-1](#d-1) Framework and modules
+## D-1 Framework and modules
 
 NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`, `.js` import suffixes). Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
 
@@ -20,7 +20,7 @@ NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `ty
 | Vitest 4, autocannon | Test runner (decorator metadata handled by the Vite transform; `unplugin-swc` optional); performance smoke test |
 
 <a id="d-2"></a>
-## [D-2](#d-2) Configuration
+## D-2 Configuration
 
 Every knob is an environment variable, listed in `.env.example` with its default. No secrets exist in the exercise. One Zod `EnvSchema` parses `process.env` at bootstrap and the app refuses to start on a missing or malformed value, naming the key; refinements enforce `RETENTION_TTL > FRESHNESS_TTL` and `FETCH_DAYS > WINDOW_DAYS`; the inferred `Env` type is what the config service injects, and nothing else reads `process.env`.
 
@@ -45,7 +45,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | `OTEL_EXPORTER` | `console` | `console` or `otlp` |
 
 <a id="d-3"></a>
-## [D-3](#d-3) GraphQL schema
+## D-3 GraphQL schema
 
 ```graphql
 type Query {
@@ -154,7 +154,7 @@ Rules:
 - Errors: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`.
 
 <a id="d-4"></a>
-## [D-4](#d-4) Redis data model
+## D-4 Redis data model
 
 | Key | Value | TTL | Namespace |
 | --- | --- | --- | --- |
@@ -171,14 +171,14 @@ Read, per required source: compute the window's dates in the location's timezone
 Facts live under keys without TTL and are the first storage class; they are the landing zone for enrichment ([ASR-5](arch/03-asrs.md#asr-5)). Redis runs with `appendonly yes` on a volume.
 
 <a id="d-5"></a>
-## [D-5](#d-5) Ingest pipeline and queues
+## D-5 Ingest pipeline and queues
 
 Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}__{source}` (BullMQ 6 rejects custom ids containing a single `:`; spike S-3): a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff, `removeOnComplete: true` so a later re-add runs again, `setMaxListeners` raised on `QueueEvents` because a cold read awaits several jobs; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
 
 Which sources a request needs is the union of `requires` over the requested classifiers ([DF-7](arch/02-requirements.md#df-7)). The `enrich` queue is registered with no processor in the exercise; an enrichment job would write facts and carry its own version (prompt version for an LLM job). Processors run in the API process behind `QUEUE_PROCESSORS_ENABLED` and move to a worker deployment unchanged.
 
 <a id="d-6"></a>
-## [D-6](#d-6) Classifier contract and registry
+## D-6 Classifier contract and registry
 
 ```ts
 interface Classifier {
@@ -221,12 +221,12 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 Golden-set fixtures are real days from the Open-Meteo archive endpoint (same daily shape, back to 1940, about five days behind real time; `past_days` on the forecast endpoint covers the gap), recorded once so tests stay offline: Chamonix 10 January 2026 (12.5 cm snowfall, tmax −2 °C) exercises the skiing branch, and the live pair Hintertux at 3250 m (39 cm snow depth) against Chamonix town (0) exercises the applicability gate. Town coordinates sit on valley floors (Chamonix grid elevation 1041 m, Hintertux default cell 2802 m against a 3250 m summit), which is why [A-8](arch/registers.md#a-8) keeps skiing on the town's own forecast; Open-Meteo's `elevation` parameter shifts the forecast by lapse rate, so resort elevation is a candidate location fact on the [ASR-5](arch/03-asrs.md#asr-5) seam.
 
 <a id="d-7"></a>
-## [D-7](#d-7) Traceability and anomaly detection
+## D-7 Traceability and anomaly detection
 
 Each ranking request emits one structured event: request id, location id, provider, fetched-at per source, and per activity the classifier id and version, rule-set version, status, scores and factors. Invariants run in-request: score within 0 to 100; exactly `WINDOW_DAYS` dated scores per applicable activity; non-applicable activities carry no score; `marineDataAvailable` is a stored fact, so a change on refresh emits its own event. A violation logs at warn and increments `ranking_anomalies_total{type}`. Exercise: events to stdout as JSON. Production path: Datadog log pipeline and a monitor on the counter; the golden-set evaluation reads the same events offline.
 
 <a id="d-8"></a>
-## [D-8](#d-8) Degradation rules
+## D-8 Degradation rules
 
 | Situation | Behaviour |
 | --- | --- |
@@ -240,7 +240,7 @@ Each ranking request emits one structured event: request id, location id, provid
 | No geocoding match | `NOT_FOUND` naming the input; no forecast call |
 
 <a id="d-9"></a>
-## [D-9](#d-9) Sequences
+## D-9 Sequences
 
 ### Warm read ([QAS-1](arch/02-requirements.md#qas-1))
 
@@ -358,7 +358,9 @@ sequenceDiagram
 Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime sequence: one classifier module exporting `id`, `version`, `requires`, `score`, one registry entry; the `Activity` enum regenerates at startup; a test registers a fake activity and asserts it appears.
 
 <a id="d-10"></a>
-## [D-10](#d-10) Test layout
+## D-10 Test layout
+
+The full plan, with the traceability matrix from every requirement and scenario to named test cases, coverage gates per module, fixtures and non-functional verification, is the [test plan](ACTIVITY_RANKING_TEST_PLAN.md). This section is the summary.
 
 | Level | Scope | Runs against |
 | --- | --- | --- |
@@ -371,6 +373,6 @@ Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime seq
 A fixture-backed stub upstream container serves recorded Open-Meteo payloads for end-to-end tests, the load job and the `demo` Compose profile. Hooks: lefthook with lint-staged (eslint, prettier) and `tsc --noEmit` on pre-commit, commitlint on commit-msg, unit and integration on pre-push. CI gates: lint, type check, unit, integration, schema, end-to-end, coverage threshold 80 percent on `ranking` and `weather`, compose health check; under 5 minutes; zero live calls to Open-Meteo. Load job with asserted thresholds on `main` and nightly. Every behaviour is written test-first; each phase is a pull request merged green.
 
 <a id="d-11"></a>
-## [D-11](#d-11) Delivery
+## D-11 Delivery
 
 Multi-stage Dockerfile (build, runtime on Node LTS alpine, non-root). `docker-compose.yml`: `api` and `redis` (`appendonly yes`, volume). GitHub Actions on every push: install with a frozen lockfile, lint, type check, tests with a redis service container, image build, `helm lint`. `deploy/helm/activity-ranking`: a chart skeleton with a Deployment, Service, HPA, ConfigMap from `.env.example`, probes on `/health`; values for image and Redis URL; not deployed. Production path, described in the README: image to ECR, `helm upgrade` to EKS, Terraform for VPC, EKS, ElastiCache and ECR, Aurora for facts once enrichment lands, OTLP to Datadog.

@@ -23,7 +23,7 @@ Every behaviour starts with a failing test written against its acceptance row, t
 
 ### Quality attribute scenario validation
 
-Every scenario from Step 1 maps to a test, an asserted measure and a gate. The matrix is kept here and ticked as phases merge.
+Every scenario from Step 1 maps to a test, an asserted measure and a gate. The matrix is kept here and ticked as phases merge. The [test plan](../ACTIVITY_RANKING_TEST_PLAN.md) extends it to every requirement with named test cases, coverage gates and fixtures.
 
 | Scenario | Phase | Test level | Asserts | Gate |
 | --- | --- | --- | --- | --- |
