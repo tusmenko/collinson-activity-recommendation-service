@@ -368,7 +368,7 @@ Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime seq
 | End-to-end | One query through `app.listen(0)` over `fetch` with stubbed adapters: warm, cold, stale, unknown name, marine failure | Redis container |
 | Performance | autocannon against the running service: p95 of warm reads, wall time of one cold read; `INBOUND_PER_MINUTE` raised for the run | Optional CI job |
 
-CI gates: lint, type check, unit, integration, schema, end-to-end; under 5 minutes; zero live calls to Open-Meteo.
+A fixture-backed stub upstream container serves recorded Open-Meteo payloads for end-to-end tests, the load job and the `demo` Compose profile. Hooks: lefthook with lint-staged (eslint, prettier) and `tsc --noEmit` on pre-commit, commitlint on commit-msg, unit and integration on pre-push. CI gates: lint, type check, unit, integration, schema, end-to-end, coverage threshold 80 percent on `ranking` and `weather`, compose health check; under 5 minutes; zero live calls to Open-Meteo. Load job with asserted thresholds on `main` and nightly. Every behaviour is written test-first; each phase is a pull request merged green.
 
 <a id="d-11"></a>
 ## [D-11](#d-11) Delivery
