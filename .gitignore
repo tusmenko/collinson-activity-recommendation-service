@@ -33,3 +33,4 @@ private/
 
 # agent worklogs (untracked)
 .claude/worklogs/
+.claude/briefs/
