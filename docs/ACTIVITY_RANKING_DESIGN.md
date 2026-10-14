@@ -30,7 +30,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
 | `FETCH_DAYS` | `8` | Days fetched per ingest; `WINDOW_DAYS + 1` covers local midnight |
-| `FRESHNESS_TTL` | `6h` | Data older than this is served flagged stale and revalidated |
+| `FRESHNESS_TTL` | `6h` | Data older than this is refetched before it is served; served flagged stale only if the refetch fails |
 | `RETENTION_TTL` | `24h` | Redis key TTL; must exceed `FRESHNESS_TTL`; sets how long an outage can be ridden out on stale data |
 | `UPSTREAM_TIMEOUT_MS` | `2000` | Per upstream call |
 | `UPSTREAM_RETRIES` | `1` | Retries per job, with backoff |
@@ -149,7 +149,7 @@ Rules:
 
 - The default answer is the brief's answer: a location, and per activity a status and `WINDOW_DAYS` `{date, score}` pairs in date order. `score` is 0 to 100, null when the activity is not applicable or unavailable. No rank field; ordering is the consumer's.
 - `DayScore.details` and `Meta.reasons` are resolved only when selected. Selection is the "details" flag; nothing is computed or serialised otherwise.
-- `Meta.stale`: older than `FRESHNESS_TTL`, refetch running, re-query in a few seconds if it matters. `Meta.partial`: a source failed; `sources` says which.
+- `Meta.stale`: the refetch failed and the stored data served is older than `FRESHNESS_TTL`; on the normal path it is always false. `Meta.partial`: a source failed; `sources` says which.
 - `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it.
 - Errors: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`.
 
@@ -166,7 +166,7 @@ Rules:
 | `fairuse:day:{date}` | counter | 2 days | operations |
 | `bull:ingest:*`, `bull:enrich:*` | BullMQ internals | managed | queues |
 
-Read, per required source: compute the window's dates in the location's timezone, one `MGET` over the date keys plus pipelined `PTTL`. Any key missing: enqueue that source's job and await under `COLD_READ_BOUND_MS`. All present but any `PTTL < RETENTION_TTL − FRESHNESS_TTL`: serve flagged stale and enqueue. Write: pipeline `SET … EX RETENTION_TTL` per day plus the raw payload. A window change is a set of missing keys; local midnight is one new date key, present because of the extra fetched day; expiry is native; a provider schema bump is a key-prefix change. A request-shaped key was rejected: it couples the cache to query shape and duplicates data across overlapping requests.
+Read, per required source: compute the window's dates in the location's timezone, one `MGET` over the date keys plus pipelined `PTTL`. Any key missing, or any `PTTL < RETENTION_TTL − FRESHNESS_TTL` (older than the freshness limit): enqueue that source's job and await it under `COLD_READ_BOUND_MS`, then serve fresh; cold and stale reads are one path. If the job fails or the bound expires and stored data exists, serve it flagged stale (degradation, [D-8](#d-8)); single-flight means every caller in the window waits on the same job, so the cost is one upstream round trip per expiry per location and source. Stale-while-revalidate was withdrawn at the Gate 4 review ([A-51](arch/registers.md#a-51)). Write: pipeline `SET … EX RETENTION_TTL` per day plus the raw payload. A window change is a set of missing keys; local midnight is one new date key, present because of the extra fetched day; expiry is native; a provider schema bump is a key-prefix change. A request-shaped key was rejected: it couples the cache to query shape and duplicates data across overlapping requests.
 
 Facts live under keys without TTL and are the first storage class; they are the landing zone for enrichment ([ASR-5](arch/03-asrs.md#asr-5)). Redis runs with `appendonly yes` on a volume.
 
@@ -230,7 +230,8 @@ Each ranking request emits one structured event: request id, location id, provid
 
 | Situation | Behaviour |
 | --- | --- |
-| Store has the window, data stale | Serve at once, `stale: true`, enqueue |
+| Store has the window, data stale, upstream healthy | Await the refetch job up to `COLD_READ_BOUND_MS`, serve fresh, `stale: false` |
+| Store has the window, data stale, upstream failing or bound expired | Serve the stored data, `stale: true`, `sources` shows the failure |
 | Store missing a source, upstream healthy | Await the job up to `COLD_READ_BOUND_MS`, serve fresh |
 | Store missing the forecast source, upstream failing | `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds` and the resolved location |
 | Store missing marine only, upstream failing | Serve; surfing `UNAVAILABLE`; `partial: true`; `sources` shows `MARINE: FAILED` |
@@ -296,7 +297,7 @@ sequenceDiagram
     R-->>C: RankingsResult (stale=false)
 ```
 
-### Stale read, stale-while-revalidate ([QAS-4](arch/02-requirements.md#qas-4))
+### Stale read, refresh on read ([QAS-4](arch/02-requirements.md#qas-4))
 
 ```mermaid
 sequenceDiagram
@@ -309,10 +310,15 @@ sequenceDiagram
     R->>F: MGET window date keys, PTTL
     F-->>R: all present, PTTL below threshold (older than FRESHNESS_TTL)
     R->>Q: add job per stale source (no-op if already active)
-    R->>R: score, emit event
-    R-->>C: RankingsResult (stale=true, fetchedAt)
-    Q->>P: process in background
+    R->>Q: wait for the jobs (COLD_READ_BOUND_MS)
+    Q->>P: process
     P->>F: SET one key per day EX RETENTION_TTL
+    P-->>Q: completed
+    Q-->>R: done
+    R->>F: MGET window date keys
+    R->>R: score, emit event
+    R-->>C: RankingsResult (stale=false)
+    note over R: if the job fails or the bound expires, serve the stored data with stale=true
 ```
 
 ### Upstream failure ([QAS-3](arch/02-requirements.md#qas-3), [QAS-11](arch/02-requirements.md#qas-11))
@@ -329,12 +335,14 @@ sequenceDiagram
     R->>F: MGET window date keys, PTTL
     alt stored data exists
         F-->>R: stale keys
-        R->>Q: add job per stale source
-        R-->>C: RankingsResult (stale=true)
+        R->>Q: add job per stale source, wait (COLD_READ_BOUND_MS)
         Q->>P: process
         P->>OM: forecast
         OM-->>P: timeout or 5xx
         P->>P: retry once, fail; write ingest:last-error; emit event
+        P-->>Q: failed
+        Q-->>R: failed
+        R-->>C: RankingsResult from stored data (stale=true)
     else store empty
         R->>Q: add and wait (COLD_READ_BOUND_MS)
         Q->>P: process
@@ -355,7 +363,7 @@ Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime seq
 | Level | Scope | Runs against |
 | --- | --- | --- |
 | Unit | Classifiers against fixture `DaySignals`, including the golden set recorded from the archive endpoint (winter and summer days per golden city); rule-set provider; throttler and complexity config; invariant checks | Nothing external |
-| Integration | Adapters against recorded Open-Meteo payloads; repositories and the ingest processor against a Redis service; stale-while-revalidate and degradation paths | Redis container in CI |
+| Integration | Adapters against recorded Open-Meteo payloads; repositories and the ingest processor against a Redis service; refresh-on-read and degradation paths | Redis container in CI |
 | Schema and contract | Generated SDL snapshot; the default query and a details query as contract fixtures; Pact consumer contract described as the production path | Nothing external |
 | End-to-end | One query through `app.listen(0)` over `fetch` with stubbed adapters: warm, cold, stale, unknown name, marine failure | Redis container |
 | Performance | autocannon against the running service: p95 of warm reads, wall time of one cold read; `INBOUND_PER_MINUTE` raised for the run | Optional CI job |

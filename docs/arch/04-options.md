@@ -23,7 +23,7 @@ Decisions common to all options. One line each; the mechanism is in the design d
 
 | Decision | Summary | Design |
 | --- | --- | --- |
-| Stale-while-revalidate | A stale read is served at once and flagged; a single-flight background refetch runs; only a never-seen location blocks. Scheduled refresh rejected at Gate 3: it refetches what nobody asks for. `@defer` was a tier-2 option and was dropped after S-5 ([H-7](registers.md#h-7) refuted). | [D-4](../ACTIVITY_RANKING_DESIGN.md#d-4), [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
+| Refresh on read, single-flight | A stale or missing read waits for one refetch under the cold-read bound and gets fresh data; every caller in that window waits on the same job. If the refetch fails, stored data is served flagged stale. Scheduled refresh rejected at Gate 3: it refetches what nobody asks for. Stale-while-revalidate was chosen at Gate 3 and withdrawn at the Gate 4 review once `@defer` (S-5, [H-7](registers.md#h-7)) proved unusable: a stale answer plus a client re-query is poor consumer experience. | [D-4](../ACTIVITY_RANKING_DESIGN.md#d-4), [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
 | Compute on read | The store holds signals only; classifiers change without re-scoring; 28 classifier calls per read. | [D-6](../ACTIVITY_RANKING_DESIGN.md#d-6) |
 | Pinned upstream schema | Payloads validated at the adapter against a versioned schema; raw snapshot kept; a failure is an anomaly event and takes the degradation path ([R-9](#r-9)). | [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5), [D-7](../ACTIVITY_RANKING_DESIGN.md#d-7) |
 | Ingest as a pipeline | One job per location and source (job id `{locationId}__{source}`, S-3); forecast mandatory, marine optional; enrichment is a second queue. | [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
@@ -38,7 +38,7 @@ Decisions common to all options. One line each; the mechanism is in the design d
 | Platform | Docker Compose: api, redis | EKS via a Helm chart; Terraform for VPC, EKS, ElastiCache, ECR, and Aurora once facts need it | Docker Compose: api, redis; Helm chart skeleton committed, not deployed; Terraform described in the README |
 | Store | Redis with AOF, two namespaces, behind repository interfaces | ElastiCache for cache and facts; Aurora PostgreSQL for facts when enrichment lands | Redis with AOF, same as A |
 | Redis uses | Store only; limiter, single-flight and throttler storage in-process | Store, BullMQ queues, throttler storage, daily fair-use counter | Same as B |
-| Refresh ([ASR-3](03-asrs.md#asr-3)) | Stale-while-revalidate; in-request pipeline with in-memory single-flight | Stale-while-revalidate; BullMQ `ingest` jobs; `enrich` queue with a processor | Stale-while-revalidate; BullMQ `ingest` jobs; `enrich` queue registered, no processor |
+| Refresh ([ASR-3](03-asrs.md#asr-3)) | Refresh on read; in-request pipeline with in-memory single-flight | Refresh on read; BullMQ `ingest` jobs awaited under the bound; `enrich` queue with a processor | Refresh on read; BullMQ `ingest` jobs awaited under the bound; `enrich` queue registered, no processor |
 | Degradation ([ASR-4](03-asrs.md#asr-4)) | Store-first, 2 s timeout, one retry, partial response | Same, plus a circuit breaker per upstream | Same as A |
 | Observability ([NFR-5](02-requirements.md#nfr-5)) | pino JSON logs, Terminus health | OpenTelemetry to Datadog, dashboards, alerts on the anomaly counter | pino, OpenTelemetry SDK with console or OTLP exporter, anomaly counter metric |
 | Traceability ([NFR-13](02-requirements.md#nfr-13)) | Ranking event with versions; invariant checks | Same, plus a drift job against the golden set | Same as A, plus the counter as a metric |
@@ -64,7 +64,7 @@ Mechanism common to all options, then the option that differs.
 | [DF-5](02-requirements.md#df-5) data age | fetched-at and stale flag on every response | — |
 | [DF-6](02-requirements.md#df-6) per-source failure | Partial flag; marine failure degrades surfing to unavailable | — |
 | [DF-7](02-requirements.md#df-7) partial requests | Classifiers declare required sources; ingest runs the union; store is per source | — |
-| [NFR-1](02-requirements.md#nfr-1) timeliness | `RETENTION_TTL` as key TTL, `FRESHNESS_TTL` as `PTTL` threshold; missing key is a miss; stale-while-revalidate | A: in-process single-flight; B, C: BullMQ job-id deduplication |
+| [NFR-1](02-requirements.md#nfr-1) timeliness | `RETENTION_TTL` as key TTL, `FRESHNESS_TTL` as `PTTL` threshold; a missing or stale key means wait for one refetch | A: in-process single-flight; B, C: BullMQ job-id deduplication |
 | [NFR-2](02-requirements.md#nfr-2), [NFR-3](02-requirements.md#nfr-3) performance | Store-first read; one `MGET` per required source | — |
 | [NFR-4](02-requirements.md#nfr-4) availability | Adapter timeouts, one retry, exception filter, partial response | B adds a circuit breaker |
 | [NFR-5](02-requirements.md#nfr-5) fault detection | pino, Terminus, OpenTelemetry | Exporter target differs |
@@ -109,8 +109,8 @@ One row per choice. "Serves" names the requirements the choice addresses. Prefer
 
 | Axis | Choice | Pros | Cons | Serves | Preferred |
 | --- | --- | --- | --- | --- | --- |
-| Refresh | Blocking refetch when stale | Simple; always fresh | Caller waits upstream latency on every expiry | [NFR-1](02-requirements.md#nfr-1) | |
-| Refresh | Stale-while-revalidate | Warm latency always; one request stale and flagged; fair-use friendly; no infrastructure | Needs single-flight; one stale response per expiry | [NFR-1](02-requirements.md#nfr-1), [NFR-2](02-requirements.md#nfr-2), [NFR-3](02-requirements.md#nfr-3), [NFR-9](02-requirements.md#nfr-9); [ASR-3](03-asrs.md#asr-3), [ASR-4](03-asrs.md#asr-4); [DF-5](02-requirements.md#df-5) | yes |
+| Refresh | Blocking single-flight refetch when stale | Simple; always fresh on the normal path; one code path for cold and stale; the stale flag means only "upstream failed" | Callers wait one upstream round trip once per expiry per location and source | [NFR-1](02-requirements.md#nfr-1), [NFR-4](02-requirements.md#nfr-4); [ASR-3](03-asrs.md#asr-3), [ASR-4](03-asrs.md#asr-4) | yes, Gate 4 review |
+| Refresh | Stale-while-revalidate | Warm latency always; fair-use friendly | One stale response per expiry that the client must re-query to replace, with no incremental delivery available (S-5) | [NFR-2](02-requirements.md#nfr-2), [NFR-3](02-requirements.md#nfr-3) | no, withdrawn at Gate 4 review |
 | Refresh | Scheduled refresh of known locations | Never stale | Refetches locations nobody asks for; queue and worker; burns fair use | [NFR-1](02-requirements.md#nfr-1) | no, rejected at Gate 3 |
 | Refresh | Incremental delivery (`@defer`) | Cached then fresh in one response | Works only with graphql pinned to `17.0.0-alpha.9`, outside Apollo 5's peer range, plus a schema workaround and a new Accept header (S-5) | [NFR-1](02-requirements.md#nfr-1), [NFR-2](02-requirements.md#nfr-2) | dropped |
 | Scoring | Compute on read | Store is pure signals; a classifier change needs no re-score | 28 classifier calls per read, negligible | [ASR-1](03-asrs.md#asr-1), [ASR-2](03-asrs.md#asr-2); [NFR-7](02-requirements.md#nfr-7) | yes |
@@ -123,7 +123,7 @@ One row per choice. "Serves" names the requirements the choice addresses. Prefer
 | Store | Redis only, AOF persistence | One container; native TTL; hosts the queues; no migrations; drift is a key-version bump and a refetch | Facts durability rests on AOF; no relational queries when facts grow; may read as "just a cache" | [ASR-3](03-asrs.md#asr-3), [ASR-4](03-asrs.md#asr-4); [NFR-9](02-requirements.md#nfr-9), [NFR-12](02-requirements.md#nfr-12); goal 3 | yes, A and C |
 | Store | Redis plus PostgreSQL | Durable relational facts; PostGIS and history for enrichment; Aurora path | Migrations, a second container, more code for data that does not exist yet | [ASR-5](03-asrs.md#asr-5) future; goal 5 | B, when enrichment lands |
 | Store | MongoDB | Flexible documents | Nothing Redis does not already give here | [ASR-2](03-asrs.md#asr-2) | no |
-| Runtime | One image, roles by flag | One deployable; stale-while-revalidate needs no worker | Future enrichment jobs would share the process | [NFR-10](02-requirements.md#nfr-10); [A-25](registers.md#a-25) | yes |
+| Runtime | One image, roles by flag | One deployable; refresh on read needs no worker | Future enrichment jobs would share the process | [NFR-10](02-requirements.md#nfr-10); [A-25](registers.md#a-25) | yes |
 | Runtime | API plus worker | Isolates background load | Second deployable for work that does not exist yet | [NFR-10](02-requirements.md#nfr-10) | B, for enrichment only |
 | Schema | Code-first | Enum from registry; types shared | SDL is generated, less readable | [ASR-1](03-asrs.md#asr-1); [R-8](#r-8) | yes |
 | Schema | SDL-first | Readable contract file | Enum hand-maintained; drifts from the registry | [FR-4](02-requirements.md#fr-4) | |
