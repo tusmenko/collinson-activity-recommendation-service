@@ -14,14 +14,34 @@ const TIMEOUT_HOLD_MS = 5_000;
 // Well under the default upstream timeout, for load mixes that must still succeed.
 const SLOW_DELAY_MS = 300;
 const DEFAULT_CLI_PORT = 8080;
+// A request farther than this from every recorded place has no fixture, as a typo'd coordinate would.
+const MAX_FIXTURE_DISTANCE_DEGREES = 0.5;
+// `/stub/<behaviour>/v1/...` lets a client whose base URL is configurable select a behaviour.
+const BEHAVIOUR_PREFIX = /^\/stub\/([^/]+)(\/.*)$/;
+const MALFORMED_DAILY_FIELD: Readonly<Partial<Record<string, string>>> = {
+  '/v1/forecast': 'temperature_2m_max',
+  '/v1/marine': 'wave_height_max',
+};
 
 type Behaviour = (typeof BEHAVIOURS)[number];
 type Json = Record<string, unknown>;
 type Route = (url: URL) => Promise<Json | undefined>;
 
+export interface StubOptions {
+  // Moves the recorded dates so the first day is today in UTC; for the demo profile, never tests.
+  readonly shiftDates?: boolean;
+}
+
 export interface StubUpstream {
   readonly url: string;
+  // Path and query of every request received, in order.
+  readonly requests: readonly string[];
   close(): Promise<void>;
+}
+
+interface Selected {
+  readonly behaviour: Behaviour | undefined;
+  readonly pathname: string;
 }
 
 function isRecord(value: unknown): value is Json {
@@ -77,12 +97,14 @@ function nearestFixture(kind: 'forecast' | 'marine'): Route {
     const longitude = Number(url.searchParams.get('longitude'));
     const dir = join(FIXTURES_DIR, kind);
     let best: Json | undefined;
-    let bestDistance = Number.POSITIVE_INFINITY;
+    let bestDistance = MAX_FIXTURE_DISTANCE_DEGREES;
     for (const file of await listFixtures(dir)) {
       const body = await readJson(join(dir, file));
-      const distance =
-        (Number(body?.latitude) - latitude) ** 2 + (Number(body?.longitude) - longitude) ** 2;
-      if (body !== undefined && distance < bestDistance) {
+      const distance = Math.hypot(
+        Number(body?.latitude) - latitude,
+        Number(body?.longitude) - longitude,
+      );
+      if (body !== undefined && distance <= bestDistance) {
         best = body;
         bestDistance = distance;
       }
@@ -97,17 +119,17 @@ const ROUTES: Readonly<Partial<Record<string, Route>>> = {
   '/v1/marine': nearestFixture('marine'),
 };
 
-function dropRequiredField(body: Json): Json {
-  const copy = structuredClone(body);
-  delete copy.daily;
-  const results = copy.results;
-  if (Array.isArray(results)) {
-    copy.results = results.map((result: unknown) => {
-      const { latitude: _dropped, ...rest } = isRecord(result) ? result : {};
-      return rest;
-    });
+// One required field gone, so the client's pinned schema rejects the payload.
+function malformed(pathname: string, body: Json): Json {
+  const field = MALFORMED_DAILY_FIELD[pathname];
+  if (field === undefined) {
+    return { results: [{ name: 1 }] };
   }
-  return copy;
+  const daily = isRecord(body.daily) ? body.daily : {};
+  return {
+    ...body,
+    daily: Object.fromEntries(Object.entries(daily).filter(([key]) => key !== field)),
+  };
 }
 
 function nullSeries(block: unknown): void {
@@ -129,10 +151,38 @@ function nullMarine(body: Json): Json {
   return copy;
 }
 
+// `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`; only the date part moves.
+function shiftStamp(stamp: string, offsetMs: number): string {
+  const date = new Date(Date.parse(stamp.slice(0, 10)) + offsetMs).toISOString().slice(0, 10);
+  return `${date}${stamp.slice(10)}`;
+}
+
+function shiftSeries(block: unknown, offsetMs: number): void {
+  if (isRecord(block) && Array.isArray(block.time)) {
+    block.time = block.time.map((stamp: unknown) =>
+      typeof stamp === 'string' ? shiftStamp(stamp, offsetMs) : stamp,
+    );
+  }
+}
+
+function shiftDates(body: Json): Json {
+  const first: unknown =
+    isRecord(body.daily) && Array.isArray(body.daily.time) ? body.daily.time[0] : undefined;
+  if (typeof first !== 'string') {
+    return body;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const offsetMs = Date.parse(today) - Date.parse(first);
+  const copy = structuredClone(body);
+  shiftSeries(copy.daily, offsetMs);
+  shiftSeries(copy.hourly, offsetMs);
+  return copy;
+}
+
 function applyBehaviour(behaviour: Behaviour, pathname: string, body: Json): Json {
   switch (behaviour) {
     case 'malformed':
-      return dropRequiredField(body);
+      return malformed(pathname, body);
     case 'nulls':
       return pathname === '/v1/marine' ? nullMarine(body) : body;
     case 'ok':
@@ -143,10 +193,16 @@ function applyBehaviour(behaviour: Behaviour, pathname: string, body: Json): Jso
   }
 }
 
-function behaviourOf(request: IncomingMessage, url: URL): Behaviour | undefined {
+// Precedence: header, then path prefix, then the `stub` query parameter.
+function select(request: IncomingMessage, url: URL): Selected {
   const header = request.headers['x-stub-behaviour'];
-  const requested = (typeof header === 'string' ? header : url.searchParams.get('stub')) ?? 'ok';
-  return BEHAVIOURS.find((behaviour) => behaviour === requested);
+  const [, prefixed, rest] = BEHAVIOUR_PREFIX.exec(url.pathname) ?? [];
+  const requested =
+    (typeof header === 'string' ? header : (prefixed ?? url.searchParams.get('stub'))) ?? 'ok';
+  return {
+    behaviour: BEHAVIOURS.find((behaviour) => behaviour === requested),
+    pathname: rest ?? url.pathname,
+  };
 }
 
 function send(response: ServerResponse, status: number, body: Json): void {
@@ -158,9 +214,10 @@ async function respond(
   request: IncomingMessage,
   response: ServerResponse,
   signal: AbortSignal,
+  options: StubOptions,
 ): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://stub.local');
-  const behaviour = behaviourOf(request, url);
+  const { behaviour, pathname } = select(request, url);
   if (behaviour === undefined) {
     send(response, 400, { error: true, reason: 'unknown stub behaviour' });
     return;
@@ -172,33 +229,45 @@ async function respond(
   if (behaviour === 'timeout' || behaviour === 'slow') {
     await delay(behaviour === 'timeout' ? TIMEOUT_HOLD_MS : SLOW_DELAY_MS, undefined, { signal });
   }
-  const body = await ROUTES[url.pathname]?.(url);
+  const body = await ROUTES[pathname]?.(url);
   if (body === undefined) {
-    send(response, 404, { error: true, reason: `no fixture for ${url.pathname}${url.search}` });
+    send(response, 404, { error: true, reason: `no fixture for ${pathname}${url.search}` });
     return;
   }
-  send(response, 200, applyBehaviour(behaviour, url.pathname, body));
+  const dated = options.shiftDates === true ? shiftDates(body) : body;
+  send(response, 200, applyBehaviour(behaviour, pathname, dated));
 }
 
-function handle(request: IncomingMessage, response: ServerResponse): void {
-  // Aborts a held `timeout` response when the client gives up or the server closes.
-  const controller = new AbortController();
-  response.on('close', () => {
-    controller.abort();
-  });
-  respond(request, response, controller.signal).catch((error: unknown) => {
-    if (!controller.signal.aborted) {
-      send(response, 500, { error: true, reason: error instanceof Error ? error.message : 'stub' });
-    }
-  });
+function handler(options: StubOptions, requests: string[]) {
+  return (request: IncomingMessage, response: ServerResponse): void => {
+    requests.push(request.url ?? '/');
+    // Aborts a held `timeout` response when the client gives up or the server closes.
+    const controller = new AbortController();
+    response.on('close', () => {
+      controller.abort();
+    });
+    respond(request, response, controller.signal, options).catch((error: unknown) => {
+      if (!controller.signal.aborted) {
+        send(response, 500, {
+          error: true,
+          reason: error instanceof Error ? error.message : 'stub',
+        });
+      }
+    });
+  };
 }
 
-export async function startStubUpstream(port = 0): Promise<StubUpstream> {
-  const server = createServer(handle);
+export async function startStubUpstream(
+  port = 0,
+  options: StubOptions = {},
+): Promise<StubUpstream> {
+  const requests: string[] = [];
+  const server = createServer(handler(options, requests));
   await new Promise<void>((resolve) => server.listen(port, resolve));
   const { port: boundPort } = server.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${String(boundPort)}`,
+    requests,
     close: () =>
       new Promise<void>((resolve, reject) => {
         server.close((error) => {
@@ -215,7 +284,9 @@ export async function startStubUpstream(port = 0): Promise<StubUpstream> {
 
 const entry = process.argv[1];
 if (entry !== undefined && import.meta.url === pathToFileURL(entry).href) {
-  const stub = await startStubUpstream(Number(process.argv[2] ?? DEFAULT_CLI_PORT));
+  const stub = await startStubUpstream(Number(process.argv[2] ?? DEFAULT_CLI_PORT), {
+    shiftDates: process.env.STUB_SHIFT_DATES === '1',
+  });
   process.stdout.write(`stub upstream listening on ${stub.url}\n`);
   process.once('SIGTERM', () => void stub.close());
 }

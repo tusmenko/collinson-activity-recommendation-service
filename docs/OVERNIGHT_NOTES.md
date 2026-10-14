@@ -6,6 +6,8 @@ Written during the unattended implementation run on the night of 2026-10-15 to 2
 
 | ID | Question | What was done meanwhile |
 | --- | --- | --- |
+| <a id="oq-n1"></a>OQ-N1 | Branch protection on `main` (required checks: static, unit, integration, schema, e2e, coverage, image, compose-health, helm-lint; admins exempt) was not set: the session's tooling declined the GitHub settings change. Set it from the repository settings page in the morning, or leave `main` open. | Every phase still merges only after a green run of every CI job, enforced by the session rather than by GitHub. |
+| <a id="oq-n2"></a>OQ-N2 | The HTTPS remote rejects pushes that add workflow files because the stored GitHub token lacks the `workflow` scope. Refresh the token with that scope, or switch the remote to SSH. | The session pushes over SSH with the explicit SSH URL; the remote URL was left unchanged. |
 
 ## Assumptions taken overnight
 
@@ -21,3 +23,5 @@ Written during the unattended implementation run on the night of 2026-10-15 to 2
 
 | Time | Phase | Event |
 | --- | --- | --- |
+| 2026-10-15 01:34 | 0 | PR #1 merged on green CI (nine jobs, 14 to 38 s each); compose health green in 31 s locally and 38 s in CI. |
+| 2026-10-15 01:55 | 1 | Location and adapters built: 79 tests (22 unit, 56 integration, 1 e2e); location 98.9 % lines, weather 100 % lines. Deviations recorded in the commit body. |

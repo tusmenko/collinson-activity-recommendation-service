@@ -4,3 +4,5 @@ node_modules/
 pnpm-lock.yaml
 # Prose is written by hand; prettier would realign every table on each edit.
 *.md
+# Recorded upstream bodies stay byte-exact as Open-Meteo returned them.
+test/fixtures/**/*.json

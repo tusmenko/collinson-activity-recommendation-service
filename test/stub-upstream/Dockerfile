@@ -4,6 +4,8 @@ WORKDIR /stub
 COPY package.json ./
 COPY test/stub-upstream/server.ts test/stub-upstream/server.ts
 COPY test/fixtures test/fixtures
+# The image serves the demo profile, so recorded dates move to today; tests start the stub without it.
+ENV STUB_SHIFT_DATES=1
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=5s --timeout=2s --retries=5 CMD wget -qO- "http://127.0.0.1:8080/v1/search?name=health" >/dev/null || exit 1
