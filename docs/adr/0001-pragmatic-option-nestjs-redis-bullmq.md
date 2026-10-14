@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | proposed, awaiting Gate 4 sign-off |
+| Status | accepted |
 | Date | 2026-10-14 |
 | Deciders | Yevhenii (decision authority); Shane Patrick as proxy product manager at review |
 | Supersedes | — |
@@ -46,3 +46,4 @@
 | 2026-10-14 | Spikes S-1, S-2, S-5: `nestjs-zod` replaced by plain Zod with a custom pipe; `@defer` tier 2 dropped; Nest 12 with Vitest and ESM confirmed. |
 | 2026-10-14 | Spikes S-3, S-4: BullMQ pattern verified on bullmq 6 with job ids `{locationId}__{source}`; Redis read path p95 under 3 ms on loopback. |
 | 2026-10-15 | Refresh changed from stale-while-revalidate to blocking single-flight refresh on read; the stale flag now means only that a refetch failed. |
+| 2026-10-15 | Accepted at Gate 4 by the decision authority. |

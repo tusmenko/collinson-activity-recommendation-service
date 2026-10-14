@@ -90,4 +90,4 @@ The decision authority runs these before choosing a path. Each spike is throwawa
 
 Registers are closed in [registers.md](registers.md): every open assumption is deferred to the README assumptions list with Shane Patrick as the reviewer who can overturn it; every open question has the same owner and the review as its deadline; risks carry their accepted status for Option C in [04-options.md](04-options.md#risk-register); hypotheses carry a scheduled phase, a probe result, or a post-exercise deferral.
 
-> **Review Gate 4 — Architecture Sign-off** — spikes S-1 to S-6 complete; pending sign-off. Requires explicit sign-off from the candidate as decision authority and the hiring manager as proxy product manager.
+> **Review Gate 4 — Architecture Sign-off** — signed off 2026-10-15 by the candidate as decision authority after spikes S-1 to S-6 and the refresh-flow revision. ADR-0001 accepted.
