@@ -30,3 +30,11 @@ pnpm-debug.log*
 
 # private job-search material (never ship)
 private/
+
+# agent worklogs (untracked)
+.claude/worklogs/
+.claude/briefs/
+
+# tooling
+.lefthook-local.yml
+*.tsbuildinfo

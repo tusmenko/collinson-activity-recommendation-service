@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/main.ts", "scripts/*.mjs"],
+  "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs"],
+  "ignoreDependencies": [
+    "@nestjs/graphql",
+    "@nestjs/apollo",
+    "@apollo/server",
+    "@as-integrations/express5",
+    "graphql",
+    "@nestjs/bullmq",
+    "bullmq",
+    "@nestjs/throttler",
+    "autocannon",
+    "@types/express"
+  ]
+}
