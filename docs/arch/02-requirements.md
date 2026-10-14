@@ -115,6 +115,7 @@ Greenfield. There is no current system, so there is no as-is architecture to ann
 | Forecast | `api.open-meteo.com/v1/forecast` with `daily=` supports weather_code, temperature_2m_max/min, precipitation_sum, rain_sum, snowfall_sum (cm), precipitation_probability_max, wind_speed_10m_max, wind_gusts_10m_max, sunshine_duration, daylight_duration, uv_index_max, cloud_cover_mean, visibility_mean. `timezone=auto`; `forecast_days` default 7, maximum 16. Hourly `snow_depth` available. Response carries the grid-cell elevation. |
 | Marine | `marine-api.open-meteo.com/v1/marine` with `daily=` supports wave_height_max, wave_period_max, wave_direction_dominant, swell_wave_height_max, swell_wave_period_max. Inland points (Chamonix, Springfield, London) return HTTP 200 with every value `null`. Coastal points (Biarritz, Lisbon) return values. |
 | Model updates | Forecast models refresh between every hour and every 6 hours depending on the model. |
+| History | `archive-api.open-meteo.com/v1/archive` returns the same daily shape for any past range back to 1940, about five days behind real time; `past_days` on the forecast endpoint covers the gap. Verified 2026-10-14 for Chamonix, January 2026. |
 | Limits and licence | Non-commercial fair use: fewer than 10,000 calls per day, 5,000 per hour, 600 per minute. No API key. Data under CC-BY 4.0; attribution required. |
 
 ## Observed upstream behaviours

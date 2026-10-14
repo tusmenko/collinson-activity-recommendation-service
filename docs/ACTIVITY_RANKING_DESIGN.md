@@ -122,6 +122,7 @@ type DaySignals {
   precipitation: Float
   precipitationProbability: Float
   snowfall: Float
+  snowDepth: Float
   windMax: Float
   windGusts: Float
   cloudCover: Float
@@ -172,7 +173,7 @@ Facts live under keys without TTL and are the first storage class; they are the 
 <a id="d-5"></a>
 ## [D-5](#d-5) Ingest pipeline and queues
 
-Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}:{source}`: a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS`, validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
+Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}:{source}`: a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
 
 Which sources a request needs is the union of `requires` over the requested classifiers ([DF-7](arch/02-requirements.md#df-7)). The `enrich` queue is registered with no processor in the exercise; an enrichment job would write facts and carry its own version (prompt version for an LLM job). Processors run in the API process behind `QUEUE_PROCESSORS_ENABLED` and move to a worker deployment unchanged.
 
@@ -190,6 +191,34 @@ interface Classifier {
 ```
 
 The registry is a map from `Activity` to `Classifier`, filled by module registration; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
+
+### D-6.1 Provisional thresholds
+
+Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London, Dubai and Springfield on 2026-10-14) plus general knowledge. Every number is a proposal, kept in the per-activity JSON with the note shown here, and revisited against the golden set ([H-1](arch/registers.md#h-1)). Weak or model-capped signals (visibility, sunshine, cloud cover, UV) carry low weight.
+
+| Activity | Signal | Good | Poor | Not applicable | Note |
+| --- | --- | --- | --- | --- | --- |
+| Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | < 5 every day | Snowpack is the applicability signal. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
+| Skiing | snowfall, cm per day | ≥ 5 | 0 | — | Fresh snow is a bonus on top of the base, not the gate |
+| Skiing | tmax, °C | −10 to 3 | > 8 | — | Above about 8 the snow rots |
+| Skiing | wind gusts, km/h | < 40 | > 60 | — | Lifts close around 60 to 80 |
+| Skiing | visibility, m | > 5000 | < 1000 | — | Whiteout risk; weak signal |
+| Surfing | marine data | — | — | absent (nulls) or source failed (unavailable) | Inland locations |
+| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | < 0.5 every day | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4) |
+| Surfing | wave period, s | ≥ 9 | < 6 | < 5 every day | Swell versus chop; the cleanest separator |
+| Surfing | wind, km/h | < 20 | > 30 | — | Speed as proxy for blown-out surf; no direction signal |
+| Outdoor sightseeing | precipitation, mm | < 1 | > 5 | — | Drizzle tolerable; 83 mm is not |
+| Outdoor sightseeing | precipitation probability, % | < 30 | > 60 | — | |
+| Outdoor sightseeing | temperature comfort, °C | tmax 15 to 27 and tmin ≥ 5 | tmax < 8 or > 32 | — | Dubai at 34 to 38 is poor from heat |
+| Outdoor sightseeing | wind gusts, km/h | < 40 | > 55 | — | |
+| Outdoor sightseeing | cloud cover, % | < 60 | > 90 | — | Soft signal, low weight |
+| Outdoor sightseeing | UV index | ≤ 7 | ≥ 9 | — | Tie-breaker only |
+| Indoor sightseeing | rain | > 5 mm or > 60 % | < 1 mm and < 30 % | never | Rain pushes people indoors |
+| Indoor sightseeing | heat or cold, °C | tmax > 32 or < 8 | tmax 15 to 27 | never | |
+| Indoor sightseeing | wind gusts, km/h | > 55 | < 40 | never | |
+| Indoor sightseeing | baseline | floor score about 40 | — | never | Always available; fair on nice days, never poor |
+
+Golden-set fixtures are real days from the Open-Meteo archive endpoint (same daily shape, back to 1940, about five days behind real time; `past_days` on the forecast endpoint covers the gap), recorded once so tests stay offline: Chamonix 10 January 2026 (12.5 cm snowfall, tmax −2 °C) exercises the skiing branch, and the live pair Hintertux at 3250 m (39 cm snow depth) against Chamonix town (0) exercises the applicability gate. Town coordinates sit on valley floors (Chamonix grid elevation 1041 m, Hintertux default cell 2802 m against a 3250 m summit), which is why [A-8](arch/registers.md#a-8) keeps skiing on the town's own forecast; Open-Meteo's `elevation` parameter shifts the forecast by lapse rate, so resort elevation is a candidate location fact on the [ASR-5](arch/03-asrs.md#asr-5) seam.
 
 <a id="d-7"></a>
 ## [D-7](#d-7) Traceability and anomaly detection
@@ -325,7 +354,7 @@ Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime seq
 
 | Level | Scope | Runs against |
 | --- | --- | --- |
-| Unit | Classifiers against fixture `DaySignals`; rule-set provider; throttler and complexity config; invariant checks | Nothing external |
+| Unit | Classifiers against fixture `DaySignals`, including the golden set recorded from the archive endpoint (winter and summer days per golden city); rule-set provider; throttler and complexity config; invariant checks | Nothing external |
 | Integration | Adapters against recorded Open-Meteo payloads; repositories and the ingest processor against a Redis service; stale-while-revalidate and degradation paths | Redis container in CI |
 | Schema and contract | Generated SDL snapshot; the default query and a details query as contract fixtures; Pact consumer contract described as the production path | Nothing external |
 | End-to-end | One query through `app.listen(0)` over `fetch` with stubbed adapters: warm, cold, stale, unknown name, marine failure | Redis container |

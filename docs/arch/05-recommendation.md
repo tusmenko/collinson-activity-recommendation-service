@@ -75,14 +75,14 @@ Detailed design lives in the [design document](../ACTIVITY_RANKING_DESIGN.md), l
 
 The decision authority runs these before choosing a path. Each spike is throwaway code with an acceptance check, a time box and a named fallback, so a failure swaps one component rather than the whole option.
 
-| Spike | Verifies | Build | Passes when | Box | If it fails |
-| --- | --- | --- | --- | --- | --- |
-| S-1 | [H-8](registers.md#h-8) toolchain | `nest new`, Vitest, `unplugin-swc` with decorator metadata; one test on a decorated provider | Test green under Vitest; DI resolves | 15 min | Jest |
-| S-2 | [H-8](registers.md#h-8) validation | One code-first resolver; `@Args` through a Zod pipe from `nestjs-zod` | Bad input returns `BAD_USER_INPUT`; good input resolves; schema generates | 15 min | class-validator |
-| S-3 | [H-8](registers.md#h-8) queue pattern | Redis in Docker; BullMQ queue and in-process worker; `add` with a job id, `removeOnComplete: true`, `waitUntilFinished` with a timeout; limiter 5 per second | Concurrent adds run once; a re-add after completion runs again; the wait times out cleanly; the limiter throttles | 20 min | In-request promise with in-memory single-flight, the option A shape |
-| S-4 | [H-5](registers.md#h-5) read latency | Stub resolver doing `MGET` of seven keys plus `PTTL` on local Redis; autocannon for 30 s | p95 under 300 ms | 10 min | Result cache later; store unchanged |
-| S-5 | [H-7](registers.md#h-7) `@defer` | Apollo driver; one deferred field; check the graphql-js version | Multipart response arrives, or it is confirmed to need graphql-js 17 | 15 min | Tier 2 dropped and noted |
-| S-6 | [H-1](registers.md#h-1), [R-7](04-options.md#r-7) thresholds | Curl Open-Meteo daily for the five golden cities today; tabulate ranges of snowfall, temperature, wind, precipitation and wave height | Threshold values per activity chosen from real ranges, one note each | 15 min | Thresholds stay provisional, flagged in the README |
+| Spike | Verifies | Build | Passes when | Box | If it fails | Result |
+| --- | --- | --- | --- | --- | --- | --- |
+| S-1 | [H-8](registers.md#h-8) toolchain | `nest new`, Vitest, `unplugin-swc` with decorator metadata; one test on a decorated provider | Test green under Vitest; DI resolves | 15 min | Jest | pending |
+| S-2 | [H-8](registers.md#h-8) validation | One code-first resolver; `@Args` through a Zod pipe from `nestjs-zod` | Bad input returns `BAD_USER_INPUT`; good input resolves; schema generates | 15 min | class-validator | pending |
+| S-3 | [H-8](registers.md#h-8) queue pattern | Redis in Docker; BullMQ queue and in-process worker; `add` with a job id, `removeOnComplete: true`, `waitUntilFinished` with a timeout; limiter 5 per second | Concurrent adds run once; a re-add after completion runs again; the wait times out cleanly; the limiter throttles | 20 min | In-request promise with in-memory single-flight, the option A shape | pending |
+| S-4 | [H-5](registers.md#h-5) read latency | Stub resolver doing `MGET` of seven keys plus `PTTL` on local Redis; autocannon for 30 s | p95 under 300 ms | 10 min | Result cache later; store unchanged | pending |
+| S-5 | [H-7](registers.md#h-7) `@defer` | Apollo driver; one deferred field; check the graphql-js version | Multipart response arrives, or it is confirmed to need graphql-js 17 | 15 min | Tier 2 dropped and noted | pending |
+| S-6 | [H-1](registers.md#h-1), [R-7](04-options.md#r-7) thresholds | Curl Open-Meteo daily for the five golden cities today; tabulate ranges of snowfall, temperature, wind, precipitation and wave height | Threshold values per activity chosen from real ranges, one note each | 15 min | Thresholds stay provisional, flagged in the README | passed 2026-10-14: [D-6.1](../ACTIVITY_RANKING_DESIGN.md#d-61-provisional-thresholds) |
 
 [H-4](registers.md#h-4) stays post-exercise; nothing in the decision depends on it.
 
