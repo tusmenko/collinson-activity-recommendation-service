@@ -25,18 +25,18 @@ The testing harness is phase 0, built before any behaviour, so that a failing te
 
 Every scenario from Step 1 maps to a test, an asserted measure and a gate. The matrix is kept here and ticked as phases merge. The [test plan](../ACTIVITY_RANKING_TEST_PLAN.md) extends it to every requirement with named test cases, coverage gates and fixtures.
 
-| Scenario | Phase | Test level | Asserts | Gate |
-| --- | --- | --- | --- | --- |
-| [QAS-1](02-requirements.md#qas-1) warm read | 4 | end-to-end, stubbed adapters | zero adapter calls; under 300 ms in-process | CI |
-| [QAS-2](02-requirements.md#qas-2) cold read | 2, 4 | end-to-end | at most three adapter calls; completes under `COLD_READ_BOUND_MS` | CI |
-| [QAS-3](02-requirements.md#qas-3), [QAS-11](02-requirements.md#qas-11) upstream failure | 2 | integration | stored data served with `stale: true`; empty store gives `UPSTREAM_UNAVAILABLE` under 4.5 s; marine-only failure gives `partial: true` | CI |
-| [QAS-4](02-requirements.md#qas-4) stale read | 2 | integration | one refetch, fresh served, `stale: false` | CI |
-| [QAS-5](02-requirements.md#qas-5), [QAS-6](02-requirements.md#qas-6) names | 1, 4 | unit and end-to-end | Missouri first with four alternatives; `NOT_FOUND` with no forecast call | CI |
-| [QAS-7](02-requirements.md#qas-7) extensibility | 3, 4 | unit and schema snapshot | a fake activity registers, the enum regenerates, no other file changes | CI |
-| [QAS-8](02-requirements.md#qas-8) operability | 0 | CI job | `docker compose up` on the built image answers `/health` within 120 s | CI |
-| [QAS-9](02-requirements.md#qas-9) testability | 0 | CI itself | every level runs; the job asserts its own duration under 5 min; zero live upstream calls | CI |
-| [QAS-10](02-requirements.md#qas-10) explainability | 4 | end-to-end | details absent by default, present when selected; every ranking event complete | CI |
-| Load ([NFR-3](02-requirements.md#nfr-3), [NFR-6](02-requirements.md#nfr-6)) | 5 | autocannon against the composed service and the stub upstream | warm p95 under 300 ms, zero 5xx, thresholds fail the job | CI on `main` and nightly; k6 with the same thresholds on the production path |
+| Scenario | Phase | Test level | Asserts | Gate | Status |
+| --- | --- | --- | --- | --- | --- |
+| [QAS-1](02-requirements.md#qas-1) warm read | 4 | end-to-end, stubbed adapters | zero adapter calls; under 300 ms in-process | CI | open |
+| [QAS-2](02-requirements.md#qas-2) cold read | 2, 4 | end-to-end | at most three adapter calls; completes under `COLD_READ_BOUND_MS` | CI | open |
+| [QAS-3](02-requirements.md#qas-3), [QAS-11](02-requirements.md#qas-11) upstream failure | 2 | integration | stored data served with `stale: true`; empty store gives `UPSTREAM_UNAVAILABLE` under 4.5 s; marine-only failure gives `partial: true` | CI | open |
+| [QAS-4](02-requirements.md#qas-4) stale read | 2 | integration | one refetch, fresh served, `stale: false` | CI | open |
+| [QAS-5](02-requirements.md#qas-5), [QAS-6](02-requirements.md#qas-6) names | 1, 4 | unit and end-to-end | Missouri first with four alternatives; `NOT_FOUND` with no forecast call | CI | open |
+| [QAS-7](02-requirements.md#qas-7) extensibility | 3, 4 | unit and schema snapshot | a fake activity registers, the enum regenerates, no other file changes | CI | open |
+| [QAS-8](02-requirements.md#qas-8) operability | 0 | CI job | `docker compose up` on the built image answers `/health` within 120 s | CI | done, phase 0 |
+| [QAS-9](02-requirements.md#qas-9) testability | 0 | CI itself | every level runs; the job asserts its own duration under 5 min; zero live upstream calls | CI | done, phase 0 |
+| [QAS-10](02-requirements.md#qas-10) explainability | 4 | end-to-end | details absent by default, present when selected; every ranking event complete | CI | open |
+| Load ([NFR-3](02-requirements.md#nfr-3), [NFR-6](02-requirements.md#nfr-6)) | 5 | autocannon against the composed service and the stub upstream | warm p95 under 300 ms, zero 5xx, thresholds fail the job | CI on `main` and nightly; k6 with the same thresholds on the production path | open |
 
 ### Hooks and gates
 

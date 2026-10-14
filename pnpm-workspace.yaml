@@ -1,0 +1,8 @@
+allowBuilds:
+  # Prebuilt binaries arrive as optional dependencies; the install scripts only verify them.
+  '@swc/core': false
+  '@apollo/protobufjs': false
+  # Native msgpack is optional; bullmq falls back to the JavaScript implementation.
+  msgpackr-extract: false
+  # Hooks are installed explicitly with `pnpm exec lefthook install`, never as an install side effect.
+  lefthook: false

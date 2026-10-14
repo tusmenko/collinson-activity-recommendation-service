@@ -34,3 +34,7 @@ private/
 # agent worklogs (untracked)
 .claude/worklogs/
 .claude/briefs/
+
+# tooling
+.lefthook-local.yml
+*.tsbuildinfo

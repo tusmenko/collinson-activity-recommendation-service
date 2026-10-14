@@ -1,0 +1,6 @@
+dist/
+coverage/
+node_modules/
+pnpm-lock.yaml
+# Prose is written by hand; prettier would realign every table on each edit.
+*.md
