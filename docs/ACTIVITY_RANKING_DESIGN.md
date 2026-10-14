@@ -5,19 +5,19 @@ Implements [ADR-0001](adr/0001-pragmatic-option-nestjs-redis-bullmq.md). Each se
 <a id="d-1"></a>
 ## [D-1](#d-1) Framework and modules
 
-NestJS on Node.js LTS, TypeScript, ESM. Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
+NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`, `.js` import suffixes). Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
 
 | Piece | Role |
 | --- | --- |
-| `@nestjs/graphql` with the Apollo driver, code-first | Schema from decorators; `Activity` enum built from the registry at startup |
-| `nestjs-zod` | Zod schemas for arguments, configuration and upstream payloads; types inferred from them |
+| `@nestjs/graphql` with the Apollo driver, code-first (`@apollo/server` 5, `@as-integrations/express5`, graphql 16) | Schema from decorators written to `schema.gql`; `Activity` enum built from the registry at startup; `includeStacktraceInErrorResponses: false` outside development |
+| Zod with a ten-line `PipeTransform` | Zod schemas for arguments (the pipe throws `GraphQLError` with `BAD_USER_INPUT` and the issues), configuration and upstream payloads; types inferred from them. `nestjs-zod` rejected in spike S-2: peer range stops at Nest 11 and failures map to `BAD_REQUEST` |
 | `@nestjs/throttler` with Redis storage | Inbound per-client limiter |
-| `@nestjs/bullmq` | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED` |
+| `@nestjs/bullmq` (bullmq 6, ioredis 6 as its peer) | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3) |
 | `@nestjs/terminus` | `/health` with Redis and memory indicators |
 | `@nestjs/config` | Environment configuration validated by Zod |
 | `pino`, `@opentelemetry/sdk-node` | JSON logs; ranking events; `ranking_anomalies_total{type}` counter; console or OTLP exporter |
 | `ioredis` | Behind `FactsRepository` and `ForecastRepository` interfaces |
-| Vitest, autocannon | Test runner; performance smoke test |
+| Vitest 4, autocannon | Test runner (decorator metadata handled by the Vite transform; `unplugin-swc` optional); performance smoke test |
 
 <a id="d-2"></a>
 ## [D-2](#d-2) Configuration
@@ -173,7 +173,7 @@ Facts live under keys without TTL and are the first storage class; they are the 
 <a id="d-5"></a>
 ## [D-5](#d-5) Ingest pipeline and queues
 
-Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}:{source}`: a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
+Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}__{source}` (BullMQ 6 rejects custom ids containing a single `:`; spike S-3): a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff, `removeOnComplete: true` so a later re-add runs again, `setMaxListeners` raised on `QueueEvents` because a cold read awaits several jobs; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
 
 Which sources a request needs is the union of `requires` over the requested classifiers ([DF-7](arch/02-requirements.md#df-7)). The `enrich` queue is registered with no processor in the exercise; an enrichment job would write facts and carry its own version (prompt version for an LLM job). Processors run in the API process behind `QUEUE_PROCESSORS_ENABLED` and move to a worker deployment unchanged.
 
@@ -279,7 +279,7 @@ sequenceDiagram
     G-->>L: matches
     L->>L: write location facts and geocode key
     L-->>R: location, alternatives
-    R->>Q: add one job per required source (jobId=locationId:source)
+    R->>Q: add one job per required source (jobId=locationId__source)
     R->>Q: wait for the required jobs (COLD_READ_BOUND_MS)
     Q->>P: process
     par per source

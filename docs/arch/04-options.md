@@ -10,23 +10,23 @@ All three options share the seam fixed by [ASR-1](03-asrs.md#asr-1), [ASR-2](03-
 | --- | --- |
 | GraphQL code-first, Apollo driver | [FR-4](02-requirements.md#fr-4) schema; `Activity` enum generated from the registry ([R-8](#r-8)) |
 | Dependency injection, modules | [ASR-1](03-asrs.md#asr-1) registry, [ASR-2](03-asrs.md#asr-2) adapters, [ASR-5](03-asrs.md#asr-5) facts versus cache |
-| Zod via `nestjs-zod` | [NFR-12](02-requirements.md#nfr-12) argument validation; [NFR-11](02-requirements.md#nfr-11) payload validation; config validation; types inferred from the schemas |
+| Zod with a ten-line `PipeTransform` | [NFR-12](02-requirements.md#nfr-12) argument validation with `BAD_USER_INPUT`; [NFR-11](02-requirements.md#nfr-11) payload validation; config validation; types inferred from the schemas. `nestjs-zod` dropped after S-2: peer conflict with Nest 12 and maps failures to `BAD_REQUEST` |
 | ThrottlerModule | [NFR-12](02-requirements.md#nfr-12) inbound limiter; in-memory storage in A, Redis storage in B and C |
 | BullMQ (`@nestjs/bullmq`) | [ASR-3](03-asrs.md#asr-3) ingest execution in B and C: durable jobs, job-id deduplication, queue limiter, retries, lifecycle events; `enrich` queue as the [ASR-5](03-asrs.md#asr-5) attachment point |
 | Terminus | [NFR-5](02-requirements.md#nfr-5) health endpoint (`/health` with Redis and memory indicators, Kubernetes probe format) |
 | ConfigModule | [A-36](registers.md#a-36) environment configuration |
 | pino, OpenTelemetry SDK | [NFR-5](02-requirements.md#nfr-5) logs; [NFR-13](02-requirements.md#nfr-13) ranking events and anomaly counter |
-| Vitest | [NFR-6](02-requirements.md#nfr-6) testing pyramid; end-to-end over native `fetch`; Jest is the swap if asked |
+| Vitest | [NFR-6](02-requirements.md#nfr-6) testing pyramid; end-to-end over native `fetch`. Nest CLI 12 scaffolds Vitest and ESM by default (S-1); Jest is the swap if asked |
 | ioredis behind repository interfaces | [ASR-2](03-asrs.md#asr-2), [ASR-5](03-asrs.md#asr-5) storage; throttler storage; daily fair-use counter |
 
 Decisions common to all options. One line each; the mechanism is in the design document.
 
 | Decision | Summary | Design |
 | --- | --- | --- |
-| Stale-while-revalidate | A stale read is served at once and flagged; a single-flight background refetch runs; only a never-seen location blocks. Scheduled refresh rejected at Gate 3: it refetches what nobody asks for. `@defer` is a tier-2 option ([H-7](registers.md#h-7)). | [D-4](../ACTIVITY_RANKING_DESIGN.md#d-4), [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
+| Stale-while-revalidate | A stale read is served at once and flagged; a single-flight background refetch runs; only a never-seen location blocks. Scheduled refresh rejected at Gate 3: it refetches what nobody asks for. `@defer` was a tier-2 option and was dropped after S-5 ([H-7](registers.md#h-7) refuted). | [D-4](../ACTIVITY_RANKING_DESIGN.md#d-4), [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
 | Compute on read | The store holds signals only; classifiers change without re-scoring; 28 classifier calls per read. | [D-6](../ACTIVITY_RANKING_DESIGN.md#d-6) |
 | Pinned upstream schema | Payloads validated at the adapter against a versioned schema; raw snapshot kept; a failure is an anomaly event and takes the degradation path ([R-9](#r-9)). | [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5), [D-7](../ACTIVITY_RANKING_DESIGN.md#d-7) |
-| Ingest as a pipeline | One job per location and source; forecast mandatory, marine optional; enrichment is a second queue. | [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
+| Ingest as a pipeline | One job per location and source (job id `{locationId}__{source}`, S-3); forecast mandatory, marine optional; enrichment is a second queue. | [D-5](../ACTIVITY_RANKING_DESIGN.md#d-5) |
 | Redis only | A TTL cache plus small facts needs no SQL yet; PostgreSQL is the target for facts once enrichment makes them relational; MongoDB rejected. | [D-4](../ACTIVITY_RANKING_DESIGN.md#d-4) |
 | Thresholds in JSON | Behind a `RuleSetProvider` that exports `ruleSetVersion`. | [D-6](../ACTIVITY_RANKING_DESIGN.md#d-6) |
 
@@ -112,7 +112,7 @@ One row per choice. "Serves" names the requirements the choice addresses. Prefer
 | Refresh | Blocking refetch when stale | Simple; always fresh | Caller waits upstream latency on every expiry | [NFR-1](02-requirements.md#nfr-1) | |
 | Refresh | Stale-while-revalidate | Warm latency always; one request stale and flagged; fair-use friendly; no infrastructure | Needs single-flight; one stale response per expiry | [NFR-1](02-requirements.md#nfr-1), [NFR-2](02-requirements.md#nfr-2), [NFR-3](02-requirements.md#nfr-3), [NFR-9](02-requirements.md#nfr-9); [ASR-3](03-asrs.md#asr-3), [ASR-4](03-asrs.md#asr-4); [DF-5](02-requirements.md#df-5) | yes |
 | Refresh | Scheduled refresh of known locations | Never stale | Refetches locations nobody asks for; queue and worker; burns fair use | [NFR-1](02-requirements.md#nfr-1) | no, rejected at Gate 3 |
-| Refresh | Incremental delivery (`@defer`) | Cached then fresh in one response | Client must support incremental delivery; graphql-js 17 ([H-7](registers.md#h-7)) | [NFR-1](02-requirements.md#nfr-1), [NFR-2](02-requirements.md#nfr-2) | tier 2 |
+| Refresh | Incremental delivery (`@defer`) | Cached then fresh in one response | Works only with graphql pinned to `17.0.0-alpha.9`, outside Apollo 5's peer range, plus a schema workaround and a new Accept header (S-5) | [NFR-1](02-requirements.md#nfr-1), [NFR-2](02-requirements.md#nfr-2) | dropped |
 | Scoring | Compute on read | Store is pure signals; a classifier change needs no re-score | 28 classifier calls per read, negligible | [ASR-1](03-asrs.md#asr-1), [ASR-2](03-asrs.md#asr-2); [NFR-7](02-requirements.md#nfr-7) | yes |
 | Scoring | Precompute at refresh | Cheapest read | Re-score on every classifier change; store couples to classifier version | [NFR-2](02-requirements.md#nfr-2) | |
 | Scoring | Cache results in Redis | Cheap read, no coupling | Invalidation on refresh and on classifier version | [NFR-2](02-requirements.md#nfr-2) | later, if measured |
@@ -127,7 +127,8 @@ One row per choice. "Serves" names the requirements the choice addresses. Prefer
 | Runtime | API plus worker | Isolates background load | Second deployable for work that does not exist yet | [NFR-10](02-requirements.md#nfr-10) | B, for enrichment only |
 | Schema | Code-first | Enum from registry; types shared | SDL is generated, less readable | [ASR-1](03-asrs.md#asr-1); [R-8](#r-8) | yes |
 | Schema | SDL-first | Readable contract file | Enum hand-maintained; drifts from the registry | [FR-4](02-requirements.md#fr-4) | |
-| Validation | Zod via `nestjs-zod` | One schema per boundary; types inferred end to end | Smaller Nest ecosystem than class-validator | [NFR-11](02-requirements.md#nfr-11), [NFR-12](02-requirements.md#nfr-12); [R-9](#r-9) | yes |
+| Validation | Zod with a custom pipe | One schema per boundary; types inferred end to end; one dependency fewer | Ten lines of pipe to own | [NFR-11](02-requirements.md#nfr-11), [NFR-12](02-requirements.md#nfr-12); [R-9](#r-9) | yes |
+| Validation | Zod via `nestjs-zod` | Ready-made pipe | Peer range stops at Nest 11; failures surface as `BAD_REQUEST`, not `BAD_USER_INPUT` (S-2) | [NFR-12](02-requirements.md#nfr-12) | no |
 | Validation | class-validator | Nest default | Decorators duplicate types; no payload validation | [NFR-12](02-requirements.md#nfr-12) | |
 | Tests | Vitest | ESM-native, fast, Jest-compatible API | Not the name in the role | [NFR-6](02-requirements.md#nfr-6) | yes |
 | Tests | Jest | Named in the role | Slower; ESM friction | [NFR-6](02-requirements.md#nfr-6) | swap if asked |
@@ -140,7 +141,7 @@ One row per choice. "Serves" names the requirements the choice addresses. Prefer
 
 - A and C: [H-1](registers.md#h-1), [H-3](registers.md#h-3), [H-6](registers.md#h-6), [H-5](registers.md#h-5). [H-3](registers.md#h-3) was refuted in part on 2026-10-14; the classifier thresholds absorb it ([A-9](registers.md#a-9)). If [H-1](registers.md#h-1) is refuted, [ASR-5](03-asrs.md#asr-5) is the landing zone for enrichment.
 - B: all six, plus operational assumptions not on the list (ElastiCache availability, queue semantics, cluster access).
-- Tier-2 incremental delivery depends on [H-7](registers.md#h-7).
+- Tier-2 incremental delivery depended on [H-7](registers.md#h-7), refuted by S-5; dropped.
 - C depends on [H-8](registers.md#h-8), the toolchain fitting the time box; each failing piece has a named fallback in Step 4.
 
 ## Risk Register

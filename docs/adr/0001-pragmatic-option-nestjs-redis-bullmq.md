@@ -43,3 +43,5 @@
 | Date | Change |
 | --- | --- |
 | 2026-10-14 | Drafted after Gate 3; revised at the Gate 4 review: per-day forecast keys, minimal default response, Zod configuration, one job per location and source. |
+| 2026-10-14 | Spikes S-1, S-2, S-5: `nestjs-zod` replaced by plain Zod with a custom pipe; `@defer` tier 2 dropped; Nest 12 with Vitest and ESM confirmed. |
+| 2026-10-14 | Spikes S-3, S-4: BullMQ pattern verified on bullmq 6 with job ids `{locationId}__{source}`; Redis read path p95 under 3 ms on loopback. |
