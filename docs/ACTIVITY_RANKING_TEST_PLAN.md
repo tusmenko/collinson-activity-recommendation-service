@@ -97,7 +97,7 @@ Stub upstream behaviours, selected per request by a header or query flag: `ok`, 
 
 ## Phase entry and exit
 
-A phase may start when the previous phase's rows are ticked. A phase exits when every row assigned to it has a passing test, coverage gates hold, and the pull request is green. The matrix is updated in the same pull request as the code it covers.
+The harness (configs, Redis service, end-to-end bootstrap, stub upstream, fixture loader, network guard, coverage gates, hooks, CI jobs) is built in phase 0 before any behaviour, so every later phase begins with its red tests. A phase may start when the previous phase's rows are ticked. A phase exits when every row assigned to it has a passing test, coverage gates hold, and the pull request is green. The matrix is updated in the same pull request as the code it covers.
 
 ## Out of scope for the exercise
 
