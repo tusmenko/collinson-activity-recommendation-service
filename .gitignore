@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+build/
+coverage/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# local data (sqlite etc.)
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# private job-search material (never ship)
+private/
