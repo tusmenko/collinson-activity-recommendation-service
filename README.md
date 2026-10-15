@@ -58,6 +58,7 @@ Where a product manager would normally decide, the assumption taken is listed he
 - Data older than six hours is refreshed before it is served, matching the slowest Open-Meteo model refresh. On upstream failure, stored data is served flagged stale; with nothing stored, a typed error with a retry hint. A marine-only failure degrades surfing only.
 - A failure while ranking one alternative nulls only that alternative's `rankings` and is reported in `errors`; the primary answer survives.
 - Metric units, English place names, no authentication, one process with one Redis for the exercise; horizontal scale is the production path.
+- Per-client rate limiting keys on the client IP and assumes the service is exposed directly; behind a proxy or ingress, set `TRUST_PROXY` (the Helm chart sets it to `1`).
 
 Open product questions, each with the assumption in force: what makes a day good for each activity (the thresholds; the main one to revisit), and whether indoor sightseeing should ever score low on a perfect outdoor day.
 

@@ -28,11 +28,24 @@ const optionalHttpUrl = z.preprocess(
   httpUrl.optional(),
 );
 
+// Express's `trust proxy`: a hop count, true or false, or a named range such as loopback.
+const trustProxy = z
+  .string()
+  .trim()
+  .transform((value): boolean | number | string => {
+    if (/^\d+$/.test(value)) {
+      return Number(value);
+    }
+    return value === 'true' || value === 'false' ? value === 'true' : value;
+  });
+
 const EnvSchema = z
   .object({
     // development writes schema.gql and returns stack traces; anything else behaves as production.
     NODE_ENV: z.enum(['development', 'test', 'production']).prefault('production'),
     PORT: z.coerce.number().int().min(0).max(65_535).prefault('4510'),
+    // Behind a proxy or ingress, so the throttle keys on the client address; unset or empty means off.
+    TRUST_PROXY: z.preprocess((value) => (value === '' ? undefined : value), trustProxy.optional()),
     REDIS_URL: z.url({ protocol: /^rediss?$/ }).prefault('redis://redis:6379'),
     // One override for the whole provider (the stub upstream); unset means Open-Meteo's real hosts.
     UPSTREAM_BASE_URL: optionalHttpUrl,

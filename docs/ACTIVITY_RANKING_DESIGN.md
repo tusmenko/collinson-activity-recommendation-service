@@ -40,6 +40,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([D-12](#on-9)) |
+| `TRUST_PROXY` | unset | Express `trust proxy` behind a proxy or ingress: a hop count (`1`), `true`, `false` or a named range (`loopback`); unset is off, and the per-client throttle keys on the socket address. The Helm chart sets `1` |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
 | `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `infra/open-meteo/open-meteo.const.ts` ([D-12](#a-53)) |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |

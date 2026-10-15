@@ -14,7 +14,10 @@ replicaCount: 2
 redisUrl: redis://redis:6379
 
 # Overrides for any key of .env.example, for example LOG_LEVEL: debug or OTEL_EXPORTER: otlp.
-env: {}
+env:
+  # The chart ships a ClusterIP Service behind an ingress: trust one proxy hop so the per-client
+  # throttle keys on the client address, not the ingress controller's.
+  TRUST_PROXY: '1'
 
 service:
   port: 80
