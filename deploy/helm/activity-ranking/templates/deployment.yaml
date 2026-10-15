@@ -35,7 +35,7 @@ spec:
                 name: {{ include "activity-ranking.fullname" . }}
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 4510
           readinessProbe:
             httpGet:
               path: /health

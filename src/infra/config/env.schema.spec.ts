@@ -10,7 +10,7 @@ describe('U-INFRA-2 environment schema', () => {
 
     expect(env).toMatchObject({
       NODE_ENV: 'production',
-      PORT: 3000,
+      PORT: 4510,
       REDIS_URL: 'redis://redis:6379',
       WINDOW_DAYS: 7,
       FETCH_DAYS: 8,

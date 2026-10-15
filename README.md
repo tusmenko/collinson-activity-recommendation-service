@@ -8,7 +8,7 @@ A GraphQL service that takes a city or town and scores the next seven days for s
 
 - Docker Desktop with Compose v2. Nothing else to run the service: no accounts, no API keys.
 - For local development: Node.js 24 and pnpm 11 (`corepack enable` picks the version from `package.json`).
-- Ports: 3000 for the service, 3001 for the `demo` profile; Redis listens on 6379 inside Compose only. Images and the Redis volume take under 1 GB.
+- Ports: 4510 for the service, 4511 for the `demo` profile (deliberately not 3000, which editors and dev servers often hold; a busy port gives an empty reply while the container is healthy); move them with `API_PORT=4600 docker compose up --build` or `API_DEMO_PORT`. Redis listens on 6379 inside Compose only. Images and the Redis volume take under 1 GB.
 
 ## Run
 
@@ -19,14 +19,14 @@ docker compose up --build
 In a second terminal, check health and ask for Biarritz with the default query (the selection of [test/schema/queries/default.graphql](test/schema/queries/default.graphql)):
 
 ```sh
-curl localhost:3000/health
-curl -s localhost:3000/graphql -H 'content-type: application/json' \
+curl localhost:4510/health
+curl -s localhost:4510/graphql -H 'content-type: application/json' \
   -d '{"query":"query($city:String!){activityRankings(city:$city){location{id name region country latitude longitude timezone} rankings{activity status days{date score}} meta{fetchedAt stale partial sources{source status fetchedAt} alternatives{id name region country}}}}","variables":{"city":"Biarritz"}}'
 ```
 
-The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL runs at <http://localhost:3000/graphql> in a browser, with introspection on.
+The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL runs at <http://localhost:4510/graphql> in a browser, with introspection on.
 
-To run without calling Open-Meteo, start the `demo` profile. It adds `api-demo` on port 3001, wired to a stub upstream that serves recorded fixtures (recorded 2026-10-15, dates shifted so the first day is today) for Biarritz, Chamonix, Dubai, Hintertux, London and Springfield:
+To run without calling Open-Meteo, start the `demo` profile. It adds `api-demo` on port 4511, wired to a stub upstream that serves recorded fixtures (recorded 2026-10-15, dates shifted so the first day is today) for Biarritz, Chamonix, Dubai, Hintertux, London and Springfield:
 
 ```sh
 docker compose --profile demo up --build
@@ -35,7 +35,7 @@ docker compose --profile demo up --build
 Add `details` and `meta.reasons` to the selection to see why. This asks London for surfing and outdoor sightseeing only; each day now carries its factors (signal, value, unit, effect and the threshold's note), and `reasons` names the cause of any non-applicable status:
 
 ```sh
-curl -s localhost:3001/graphql -H 'content-type: application/json' \
+curl -s localhost:4511/graphql -H 'content-type: application/json' \
   -d '{"query":"{activityRankings(city:\"London\",activities:[SURFING,OUTDOOR_SIGHTSEEING]){rankings{activity status days{date score details{factors{signal value unit effect note}}}} meta{reasons{activity reason}}}}"}'
 ```
 

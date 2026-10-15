@@ -1,15 +1,15 @@
-# docker compose up --build                 api against Open-Meteo, on localhost:3000
-# docker compose --profile demo up --build  adds api-demo against the stub upstream, on localhost:3001
+# docker compose up --build                 api against Open-Meteo, on localhost:4510
+# docker compose --profile demo up --build  adds api-demo against the stub upstream, on localhost:4511
 x-api: &api
   build: .
   environment: &api-env
-    PORT: '3000'
+    PORT: '4510'
     REDIS_URL: redis://redis:6379
   depends_on:
     redis:
       condition: service_healthy
   healthcheck:
-    test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/health >/dev/null || exit 1']
+    test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:4510/health >/dev/null || exit 1']
     interval: 10s
     timeout: 3s
     start_period: 20s
@@ -19,7 +19,7 @@ services:
   api:
     <<: *api
     ports:
-      - '3000:3000'
+      - '${API_PORT:-4510}:4510'
 
   redis:
     image: redis:7-alpine
@@ -57,7 +57,7 @@ services:
       stub-upstream:
         condition: service_healthy
     ports:
-      - '3001:3000'
+      - '${API_DEMO_PORT:-4511}:4510'
 
 volumes:
   redis-data:
