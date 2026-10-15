@@ -1,0 +1,38 @@
+# An ambiguous name narrowed by country; each alternative is ranked in the same request through Location.rankings.
+query AlternativeRankings($city: String!, $country: String) {
+  activityRankings(city: $city, country: $country) {
+    location {
+      id
+      name
+      region
+      country
+    }
+    rankings {
+      activity
+      status
+      days {
+        date
+        score
+      }
+    }
+    meta {
+      fetchedAt
+      alternatives {
+        id
+        name
+        region
+        country
+        rankings(activities: [OUTDOOR_SIGHTSEEING]) {
+          rankings {
+            activity
+            status
+            days {
+              date
+              score
+            }
+          }
+        }
+      }
+    }
+  }
+}

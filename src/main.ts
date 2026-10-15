@@ -4,8 +4,8 @@ import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { pinoHttp } from 'pino-http';
 
-import { AppModule } from './app.module.js';
-import { AppLogger, ConfigService, loadProcessEnv, TelemetryService } from './infra/index.js';
+import { AppModule } from './app.module';
+import { AppLogger, ConfigService, loadProcessEnv, TelemetryService } from './infra/index';
 
 // Nest's own shutdown hooks exit before the last metric export; close the app, flush telemetry, then exit by the signal.
 function closeOnSignal(app: INestApplication, telemetry: TelemetryService): void {

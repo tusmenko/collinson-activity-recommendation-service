@@ -3,9 +3,9 @@ import { Test } from '@nestjs/testing';
 import { isEnumType, lexicographicSortSchema, printSchema } from 'graphql';
 import type { GraphQLSchema } from 'graphql';
 
-import { API_RESOLVERS } from '../../src/api/resolvers.const.js';
-import { registerActivities } from '../../src/api/models/enums.model.js';
-import type { ClassifierRegistry } from '../../src/ranking/index.js';
+import { registerActivities } from '../../src/api/models/enums.model';
+import { API_RESOLVERS } from '../../src/api/rankings/resolvers.const';
+import type { ClassifierRegistry } from '../../src/ranking/index';
 
 export interface BuiltSchema {
   readonly schema: GraphQLSchema;
@@ -14,8 +14,11 @@ export interface BuiltSchema {
 }
 
 // The code-first schema built in-process from the api resolvers, as the app builds it at startup; no Redis, no HTTP.
-export async function buildSchema(registry: ClassifierRegistry): Promise<BuiltSchema> {
-  registerActivities(registry.ids());
+// Without a registry the Activity enum is left as the app's own wiring filled it.
+export async function buildSchema(registry?: ClassifierRegistry): Promise<BuiltSchema> {
+  if (registry !== undefined) {
+    registerActivities(registry.ids());
+  }
   const moduleRef = await Test.createTestingModule({
     imports: [GraphQLSchemaBuilderModule],
   }).compile();

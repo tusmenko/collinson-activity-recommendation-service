@@ -2,10 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-import { ConfigService } from '../config/config.service.js';
-import { AppLogger } from '../logging/app-logger.service.js';
-import { QueueConnection } from './queue-connection.service.js';
-import { RedisThrottlerStorage } from './redis-throttler-storage.adapter.js';
+import { ConfigService } from '../config/config.service';
+import { AppLogger } from '../logging/app-logger.service';
+import { QueueConnection } from './queue-connection.service';
 
 @Global()
 @Module({
@@ -28,9 +27,8 @@ import { RedisThrottlerStorage } from './redis-throttler-storage.adapter.js';
         new QueueConnection(config.get('REDIS_URL')),
       inject: [ConfigService],
     },
-    RedisThrottlerStorage,
   ],
-  exports: [Redis, QueueConnection, RedisThrottlerStorage],
+  exports: [Redis, QueueConnection],
 })
 export class RedisModule implements OnApplicationShutdown {
   constructor(private readonly redis: Redis) {}

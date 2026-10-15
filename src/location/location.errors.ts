@@ -1,4 +1,4 @@
-import type { UpstreamFailureReason } from './location.types.js';
+import type { UpstreamFailureReason } from './location.types';
 
 // Mapped to the GraphQL NOT_FOUND code by the api error filter (design D-3, D-8).
 export class LocationNotFoundError extends Error {

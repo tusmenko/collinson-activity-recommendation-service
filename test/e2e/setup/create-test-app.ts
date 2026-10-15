@@ -3,17 +3,12 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Redis } from 'ioredis';
 
-import { AppModule } from '../../../src/app.module.js';
-import { loadEnv } from '../../../src/infra/config/env.schema.js';
-import { AppLogger, ClockPort, ConfigService, QueueConnection } from '../../../src/infra/index.js';
-import {
-  createTestRedis,
-  flushQueueKeys,
-  flushTestKeys,
-  TEST_REDIS_URL,
-} from '../../setup/redis.js';
-import { testEnv } from '../../setup/test-env.js';
-import type { EnvOverrides } from '../../setup/test-env.js';
+import { AppModule } from '../../../src/app.module';
+import { loadEnv } from '../../../src/infra/config/env.schema';
+import { AppLogger, ClockPort, ConfigService, QueueConnection } from '../../../src/infra/index';
+import { createTestRedis, flushQueueKeys, flushTestKeys, TEST_REDIS_URL } from '../../setup/redis';
+import { testEnv } from '../../setup/test-env';
+import type { EnvOverrides } from '../../setup/test-env';
 
 export interface TestApp {
   readonly url: string;

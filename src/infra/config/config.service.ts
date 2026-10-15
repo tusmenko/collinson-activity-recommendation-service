@@ -1,4 +1,4 @@
-import type { Env } from './env.schema.js';
+import type { Env } from './env.schema';
 
 // Built by a factory from the validated environment, so the rest of the app never reads process.env.
 export class ConfigService {

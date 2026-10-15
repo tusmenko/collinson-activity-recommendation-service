@@ -9,8 +9,7 @@ import {
   ConfigService,
   InfraModule,
   QueueConnection,
-} from '../../src/infra/index.js';
-import { IngestQueue } from '../../src/weather/ingest.queue.js';
+} from '../../src/infra/index';
 import {
   ForecastRepositoryPort,
   ForecastSourcePort,
@@ -18,14 +17,15 @@ import {
   MarineSourcePort,
   WeatherModule,
   WindowService,
-} from '../../src/weather/index.js';
-import type { Source } from '../../src/weather/index.js';
-import { testConfig } from './adapter-deps.js';
-import { captureLogger } from './capture-logger.js';
-import { FakeWeatherSource, templateDay } from './fakes/fake-weather-source.js';
-import { ManualClock } from './fakes/manual-clock.js';
-import { createTestRedis, flushQueueKeys, flushTestKeys, TEST_REDIS_URL } from './redis.js';
-import type { EnvOverrides } from './test-env.js';
+} from '../../src/weather/index';
+import type { Source } from '../../src/weather/index';
+import { IngestQueue } from '../../src/weather/queue/ingest.queue';
+import { testConfig } from './adapter-deps';
+import { captureLogger } from './capture-logger';
+import { FakeWeatherSource, templateDay } from './fakes/fake-weather-source';
+import { ManualClock } from './fakes/manual-clock';
+import { createTestRedis, flushQueueKeys, flushTestKeys, TEST_REDIS_URL } from './redis';
+import type { EnvOverrides } from './test-env';
 
 export interface TestLocation {
   readonly id: string;

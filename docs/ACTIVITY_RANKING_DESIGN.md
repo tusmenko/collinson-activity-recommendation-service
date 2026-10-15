@@ -5,7 +5,7 @@ Implements [ADR-0001](adr/0001-pragmatic-option-nestjs-redis-bullmq.md). Each se
 <a id="d-1"></a>
 ## D-1 Framework and modules
 
-NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`, `.js` import suffixes). Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
+NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`), built by the Nest CLI's SWC builder with type checking; relative imports are written without an extension and SWC adds `.js` on emit. Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, Open-Meteo client, logging, telemetry, health).
 
 Allowed imports, the single source for the dependency-cruiser configuration (generic layer rules are in the [coding standards](CODING_STANDARDS.md#layering)):
 
@@ -17,7 +17,7 @@ location   → infra
 infra      → nothing in the application
 ```
 
-File postfixes follow the standards' layout table; this service adds `*.classifier.ts` with a sibling `*.rules.json` per activity.
+File postfixes follow the standards' layout table; this service adds `*.classifier.ts` with a sibling `*.rules.json` per activity. Each module is a folder of sub-module folders (for example `weather/sources`, `weather/store`, `weather/queue`, `weather/ingest`), shaped as the [coding standards](CODING_STANDARDS.md#nestjs-shape) describe.
 
 | Piece | Role |
 | --- | --- |
@@ -25,10 +25,11 @@ File postfixes follow the standards' layout table; this service adds `*.classifi
 | Zod with a ten-line `PipeTransform` | Zod schemas for arguments (the pipe throws `GraphQLError` with `BAD_USER_INPUT` and the issues), configuration and upstream payloads; types inferred from them. `nestjs-zod` rejected in spike S-2: peer range stops at Nest 11 and failures map to `BAD_REQUEST` |
 | `@nestjs/throttler` with Redis storage | Inbound per-client limiter |
 | `@nestjs/bullmq` (bullmq 6, ioredis 6 as its peer) | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3) |
-| `@nestjs/terminus` | `/health` with Redis and memory indicators |
+| `@nestjs/terminus` | `/health/live` (the process answers; no dependency, so a Redis outage never restarts it) and `/health/ready` (Redis and memory indicators, 503 when one is down; `/health` is its alias) |
 | `@nestjs/config` | Environment configuration validated by Zod |
 | `pino`, `@opentelemetry/sdk-node` | JSON logs; ranking events; `ranking_anomalies_total{type}` counter; console or OTLP exporter |
 | `ioredis` | Behind `FactsRepository` and `ForecastRepository` interfaces |
+| `OpenMeteoClient` in `infra` | Typed endpoints `searchLocations`, `forecast`, `marine`; owns hosts, parameters, pinned payload schemas and timeouts; adapters translate payloads to domain types |
 | Vitest 4, autocannon | Test runner (decorator metadata handled by the Vite transform; `unplugin-swc` optional); performance smoke test |
 
 <a id="d-2"></a>
@@ -38,11 +39,9 @@ Every knob is an environment variable, listed in `.env.example` with its default
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `PORT` | `3000` | HTTP port |
+| `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([ON-9](OVERNIGHT_NOTES.md#on-9)) |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
-| `UPSTREAM_GEOCODING_URL` | `https://geocoding-api.open-meteo.com` | Geocoding base URL; the stub upstream replaces it in tests and the `demo` profile |
-| `UPSTREAM_FORECAST_URL` | `https://api.open-meteo.com` | Forecast base URL; same |
-| `UPSTREAM_MARINE_URL` | `https://marine-api.open-meteo.com` | Marine base URL; same |
+| `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `weather.const.ts` or `location.const.ts` ([A-53](arch/registers.md#a-53)) |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
 | `FETCH_DAYS` | `8` | Days fetched per ingest; `WINDOW_DAYS + 1` covers local midnight |
 | `FRESHNESS_TTL` | `6h` | Data older than this is refetched before it is served; served flagged stale only if the refetch fails |
@@ -128,7 +127,7 @@ type Location {
   longitude: Float!
   timezone: String!
   elevation: Float
-  rankings(activities: [Activity!]): RankingsResult!
+  rankings(activities: [Activity!]): RankingsResult
 }
 
 type DaySignals {
@@ -166,7 +165,7 @@ Rules:
 - The default answer is the brief's answer: a location, and per activity a status and `WINDOW_DAYS` `{date, score}` pairs in date order. `score` is 0 to 100, null when the activity is not applicable or unavailable. No rank field; ordering is the consumer's.
 - `DayScore.details` and `Meta.reasons` are resolved only when selected. Selection is the "details" flag; nothing is computed or serialised otherwise.
 - `Meta.stale`: the refetch failed and the stored data served is older than `FRESHNESS_TTL`; on the normal path it is always false. `Meta.partial`: a source failed; `sources` says which.
-- `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it.
+- `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it. It is nullable: a failure ranking one place (for example its forecast fetch) is an error on that field's path, while `Query.activityRankings` and the other alternatives stand.
 - Errors: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`.
 
 <a id="d-4"></a>
@@ -189,7 +188,7 @@ Facts live under keys without TTL and are the first storage class; they are the 
 <a id="d-5"></a>
 ## D-5 Ingest pipeline and queues
 
-Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}__{source}` (BullMQ 6 rejects custom ids containing a single `:`; spike S-3): a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff, `removeOnComplete: true` so a later re-add runs again, `setMaxListeners` raised on `QueueEvents` because a cold read awaits several jobs; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
+Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}__{source}` (BullMQ 6 rejects custom ids containing a single `:`; spike S-3): a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff, `removeOnComplete: true` so a later re-add runs again, `setMaxListeners` raised on `QueueEvents` because a cold read awaits several jobs; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). The fetch, timeout and schema validation are `OpenMeteoClient`'s (`forecast`, `marine`); the source adapter only translates the validated payload to `DaySignals`. Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
 
 Which sources a request needs is the union of `requires` over the requested classifiers ([DF-7](arch/02-requirements.md#df-7)). The `enrich` queue is registered with no processor in the exercise; an enrichment job would write facts and carry its own version (prompt version for an LLM job). Processors run in the API process behind `QUEUE_PROCESSORS_ENABLED` and move to a worker deployment unchanged.
 
@@ -206,7 +205,7 @@ interface Classifier {
 }
 ```
 
-The registry is a map from `Activity` to `Classifier`, filled by module registration; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
+The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below) and otherwise when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
 
 ### D-6.1 Provisional thresholds
 
@@ -214,6 +213,7 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 
 | Activity | Signal | Good | Poor | Not applicable | Note |
 | --- | --- | --- | --- | --- | --- |
+| Skiing | place elevation, m (geocoding) | — | — | < 800, or unknown | Checked before the snow gate. Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not ([A-8](arch/registers.md#a-8)) |
 | Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | < 5 every day | Snowpack is the applicability signal. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
 | Skiing | snowfall, cm per day | ≥ 5 | 0 | — | Fresh snow is a bonus on top of the base, not the gate |
 | Skiing | tmax, °C | −10 to 3 | > 8 | — | Above about 8 the snow rots |
@@ -373,7 +373,7 @@ sequenceDiagram
     note over P: marine-only failure: forecast keys written, surfing UNAVAILABLE, partial=true
 ```
 
-Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime sequence: one classifier module exporting `id`, `version`, `requires`, `score`, one registry entry; the `Activity` enum regenerates at startup; a test registers a fake activity and asserts it appears.
+Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime sequence: one classifier exporting `id`, `version`, `requires`, `ruleFile`, `score`, one entry in the `RankingModule` classifier list; the `Activity` enum regenerates at startup; a test registers a fake activity and asserts it appears.
 
 <a id="d-10"></a>
 ## D-10 Test layout
@@ -393,4 +393,4 @@ A fixture-backed stub upstream container serves recorded Open-Meteo payloads for
 <a id="d-11"></a>
 ## D-11 Delivery
 
-Multi-stage Dockerfile (build, runtime on Node LTS alpine, non-root). `docker-compose.yml`: `api` and `redis` (`appendonly yes`, volume). GitHub Actions on every push: install with a frozen lockfile, lint, type check, tests with a redis service container, image build, `helm lint`. `deploy/helm/activity-ranking`: a chart skeleton with a Deployment, Service, HPA, ConfigMap from `.env.example`, probes on `/health`; values for image and Redis URL; not deployed. Production path, described in the README: image to ECR, `helm upgrade` to EKS, Terraform for VPC, EKS, ElastiCache and ECR, Aurora for facts once enrichment lands, OTLP to Datadog.
+Multi-stage Dockerfile (build, runtime on Node LTS alpine, non-root). `docker-compose.yml`: `api` and `redis` (`appendonly yes`, volume). GitHub Actions on every push: install with a frozen lockfile, lint, type check, tests with a redis service container, image build, `helm lint`. `deploy/helm/activity-ranking`: a chart skeleton with a Deployment, Service, HPA, ConfigMap from `.env.example`, liveness on `/health/live` and readiness on `/health/ready`; values for image and Redis URL; not deployed. With `worker.enabled`, a worker Deployment from the same image runs the queue processors and the API pods run with `QUEUE_PROCESSORS_ENABLED=false`; `docker-compose.scale.yml` does the same locally. Production path, described in the README: image to ECR, `helm upgrade` to EKS, Terraform for VPC, EKS, ElastiCache and ECR, Aurora for facts once enrichment lands, OTLP to Datadog.

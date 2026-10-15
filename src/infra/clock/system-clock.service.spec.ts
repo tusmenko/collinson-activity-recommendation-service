@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SystemClock } from './system-clock.service.js';
+import { SystemClock } from './system-clock.service';
 
 describe('SystemClock', () => {
   it('U-INFRA-3 now() returns the wall-clock time', () => {

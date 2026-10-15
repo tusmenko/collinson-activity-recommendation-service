@@ -1,0 +1,59 @@
+{
+  "version": "1.1.0",
+  "poorCap": {
+    "max": 30,
+    "minWeight": 2,
+    "note": "One disqualifying signal outweighs the rest"
+  },
+  "applicability": {
+    "minElevation": 800,
+    "note": "Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not. Elevation is the geocoding value; unknown is not applicable"
+  },
+  "gate": {
+    "signal": "snowDepth",
+    "min": 5,
+    "note": "Snowpack is the applicability signal: under 5 cm on every day is not applicable. Known false negative: glacier cells with no model snow, such as Soelden at 3340 m (A-50)"
+  },
+  "factors": [
+    {
+      "signal": "snowDepth",
+      "unit": "cm",
+      "weight": 3,
+      "good": [{ "gte": 30 }],
+      "poor": [{ "lte": 15 }],
+      "note": "Snow depth, daily max of the hourly model value; a base of 15 cm or less is poor, including a bare day inside an applicable window"
+    },
+    {
+      "signal": "snowfall",
+      "unit": "cm",
+      "weight": 1,
+      "good": [{ "gte": 5 }],
+      "poor": [{ "lte": 0 }],
+      "note": "Fresh snow is a bonus on top of the base, not the gate"
+    },
+    {
+      "signal": "tempMax",
+      "unit": "°C",
+      "weight": 2,
+      "good": [{ "gte": -10, "lte": 3 }],
+      "poor": [{ "gt": 8 }],
+      "note": "Above about 8 the snow rots"
+    },
+    {
+      "signal": "windGusts",
+      "unit": "km/h",
+      "weight": 2,
+      "good": [{ "lt": 40 }],
+      "poor": [{ "gt": 60 }],
+      "note": "Lifts close around 60 to 80"
+    },
+    {
+      "signal": "visibility",
+      "unit": "m",
+      "weight": 0.5,
+      "good": [{ "gt": 5000 }],
+      "poor": [{ "lt": 1000 }],
+      "note": "Whiteout risk; weak signal"
+    }
+  ]
+}

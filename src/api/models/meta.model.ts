@@ -1,9 +1,9 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-import { ActivityReasonModel } from './activity-reason.model.js';
-import { LocationModel } from './location.model.js';
-import { DateTimeScalar } from './scalars.model.js';
-import { SourceStatusModel } from './source-status.model.js';
+import { ActivityReasonModel } from './activity-reason.model';
+import { LocationModel } from './location.model';
+import { DateTimeScalar } from './scalars.model';
+import { SourceStatusModel } from './source-status.model';
 
 // `reasons` is a field resolver (MetaResolver) over `unranked`, computed with the rankings.
 @ObjectType('Meta', { description: 'Data age, degradation and the other places the name matched.' })

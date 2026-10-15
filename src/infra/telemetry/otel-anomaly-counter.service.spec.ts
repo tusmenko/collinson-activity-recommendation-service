@@ -3,8 +3,8 @@ import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import type { DataPoint } from '@opentelemetry/sdk-metrics';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { captureLogger } from '../../../test/setup/capture-logger.js';
-import { OtelAnomalyCounter } from './otel-anomaly-counter.service.js';
+import { captureLogger } from '../../../test/setup/capture-logger';
+import { OtelAnomalyCounter } from './otel-anomaly-counter.service';
 
 // Collects on demand; the SDK itself is never started in tests.
 class CollectingReader extends MetricReader {

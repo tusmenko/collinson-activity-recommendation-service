@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { QueueConnection } from './queue-connection.service.js';
+import { QueueConnection } from './queue-connection.service';
 
 describe('QueueConnection', () => {
   it('U-INFRA-2 takes host, port, database and credentials from REDIS_URL', () => {

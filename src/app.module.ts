@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { ApiModule } from './api/index.js';
-import { InfraModule } from './infra/index.js';
-import { LocationModule } from './location/index.js';
-import { RankingModule } from './ranking/index.js';
-import { WeatherModule } from './weather/index.js';
+import { ApiModule } from './api/index';
+import { InfraModule } from './infra/index';
+import { LocationModule } from './location/index';
+import { RankingModule } from './ranking/index';
+import { WeatherModule } from './weather/index';
 
 @Module({
   imports: [InfraModule, LocationModule, WeatherModule, RankingModule, ApiModule],

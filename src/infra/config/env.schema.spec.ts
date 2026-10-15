@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadEnv } from './env.schema.js';
+import { loadEnv } from './env.schema';
 
 const HOUR_MS = 3_600_000;
 
@@ -10,7 +10,7 @@ describe('U-INFRA-2 environment schema', () => {
 
     expect(env).toMatchObject({
       NODE_ENV: 'production',
-      PORT: 3000,
+      PORT: 4510,
       REDIS_URL: 'redis://redis:6379',
       WINDOW_DAYS: 7,
       FETCH_DAYS: 8,
@@ -22,6 +22,21 @@ describe('U-INFRA-2 environment schema', () => {
       LOG_LEVEL: 'info',
       OTEL_EXPORTER: 'console',
     });
+  });
+
+  it('U-INFRA-2 leaves UPSTREAM_BASE_URL unset when absent or empty, so adapters use the real hosts', () => {
+    expect(loadEnv({}).UPSTREAM_BASE_URL).toBeUndefined();
+    expect(loadEnv({ UPSTREAM_BASE_URL: '' }).UPSTREAM_BASE_URL).toBeUndefined();
+  });
+
+  it('U-INFRA-2 accepts an http UPSTREAM_BASE_URL', () => {
+    const env = loadEnv({ UPSTREAM_BASE_URL: 'http://stub-upstream:8080' });
+
+    expect(env.UPSTREAM_BASE_URL).toBe('http://stub-upstream:8080');
+  });
+
+  it('U-INFRA-2 rejects a non-http UPSTREAM_BASE_URL, naming UPSTREAM_BASE_URL', () => {
+    expect(() => loadEnv({ UPSTREAM_BASE_URL: 'ftp://example.test' })).toThrow(/UPSTREAM_BASE_URL/);
   });
 
   it('U-INFRA-2 rejects RETENTION_TTL not above FRESHNESS_TTL, naming RETENTION_TTL', () => {

@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 
-import { ClockPort } from './clock.port.js';
-import { SystemClock } from './system-clock.service.js';
+import { ClockPort } from './clock.port';
+import { SystemClock } from './system-clock.service';
 
 @Global()
 @Module({

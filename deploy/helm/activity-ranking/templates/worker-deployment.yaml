@@ -1,0 +1,65 @@
+{{- if .Values.worker.enabled }}
+{{- /* The queue processors (ingest, enrich) on their own pods: same image and ConfigMap, no Service. */ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "activity-ranking.fullname" . }}-worker
+  labels:
+    {{- include "activity-ranking.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "activity-ranking.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "activity-ranking.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: '{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "activity-ranking.fullname" . }}
+          env:
+            - name: QUEUE_PROCESSORS_ENABLED
+              value: 'true'
+          # The process still serves HTTP; the port is for the probes only.
+          ports:
+            - name: http
+              containerPort: 4510
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+{{- end }}

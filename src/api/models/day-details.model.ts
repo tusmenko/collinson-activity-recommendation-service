@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-import { DaySignalsModel } from './day-signals.model.js';
-import { FactorModel } from './factor.model.js';
+import { DaySignalsModel } from './day-signals.model';
+import { FactorModel } from './factor.model';
 
 @ObjectType('DayDetails', { description: 'Why a day scored as it did.' })
 export class DayDetailsModel {

@@ -38,3 +38,4 @@ private/
 # tooling
 .lefthook-local.yml
 *.tsbuildinfo
+.claude/worktrees/

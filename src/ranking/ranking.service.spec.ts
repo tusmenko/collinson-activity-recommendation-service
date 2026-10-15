@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { rankingInput } from '../../test/setup/ranking-input.js';
-import type { Place } from '../../test/setup/ranking-input.js';
-import { rankingHarness } from '../../test/setup/ranking-service.js';
-import type { RankingHarness } from '../../test/setup/ranking-service.js';
-import type { DaySignals } from '../weather/index.js';
-import type { Classifier } from './classifier.port.js';
-import { UnknownActivityError } from './ranking.errors.js';
-import type { ClassifierOutput, DayScore } from './ranking.types.js';
-import type { RuleSetProvider } from './rule-set.port.js';
-import { StaticRuleSetAdapter } from './static-rule-set.adapter.js';
+import { rankingInput } from '../../test/setup/ranking-input';
+import type { Place } from '../../test/setup/ranking-input';
+import { rankingHarness } from '../../test/setup/ranking-service';
+import type { DaySignals } from '../weather/index';
+import { UnknownActivityError } from './ranking.errors';
+import type { ClassifierOutput, DayScore } from './ranking.types';
+import type { Classifier } from './registry/classifier.port';
+import outdoorRules from './classifiers/outdoor-sightseeing/outdoor-sightseeing.rules.json' with { type: 'json' };
 
 const BUILT_IN = ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING'];
 const PLACES: readonly Place[] = [
@@ -21,7 +19,8 @@ const PLACES: readonly Place[] = [
   'springfield',
 ];
 
-// A classifier written as a plain object, the way a new activity or a model-backed one would plug in.
+// A classifier written as a plain object, the way a new activity or a model-backed one would plug in; its rule file
+// reuses the outdoor thresholds under its own version.
 function fakeClassifier(
   id: string,
   output: (days: readonly DaySignals[]) => ClassifierOutput,
@@ -30,6 +29,7 @@ function fakeClassifier(
     id,
     version: '0.1.0',
     requires: ['FORECAST'],
+    ruleFile: { ...outdoorRules, version: '0.1.0' },
     score: async ({ days }) => {
       await Promise.resolve();
       return output(days);
@@ -41,24 +41,9 @@ function scored(days: readonly DaySignals[], score: number | null): DayScore[] {
   return days.map((day) => ({ date: day.date, score, factors: [] }));
 }
 
-// Built-in rule files plus a fake activity's, which reuses the outdoor thresholds.
-function rulesWithFake(id: string): RuleSetProvider {
-  const builtIn = new StaticRuleSetAdapter();
-  return {
-    version: `${builtIn.version}+${id}@0.1.0`,
-    get: (activity) => builtIn.get(activity === id ? 'OUTDOOR_SIGHTSEEING' : activity),
-  };
-}
-
-function setup(extra: readonly Classifier[] = []): RankingHarness {
-  return extra[0] === undefined
-    ? rankingHarness()
-    : rankingHarness(extra, rulesWithFake(extra[0].id));
-}
-
 describe('RankingService.rank', () => {
   it('U-RANK-1 every applicable activity has exactly WINDOW_DAYS dated scores in date order', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
 
     const { rankings } = await service.rank(rankingInput('biarritz'));
 
@@ -77,7 +62,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-3 every score of every golden place lies within 0 to 100 and no anomaly is counted', async () => {
-    const { service, lines } = setup();
+    const { service, lines } = rankingHarness();
 
     const results = await Promise.all(PLACES.map((place) => service.rank(rankingInput(place))));
 
@@ -89,7 +74,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-1 each ranked day carries the merged signals of its date', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
 
     const { rankings } = await service.rank({
       ...rankingInput('biarritz'),
@@ -105,7 +90,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-1 a date missing from the marine days leaves its wave fields null', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
     const input = rankingInput('biarritz');
     const marine = (input.days.MARINE ?? []).filter((day) => day.date !== '2026-10-16');
 
@@ -124,7 +109,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-1 with no forecast days the marine dates are the window', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
     const input = rankingInput('biarritz');
 
     const { rankings } = await service.rank({
@@ -138,7 +123,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-1 the requested activities come back in the requested order only', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
 
     const { rankings } = await service.rank({
       ...rankingInput('london'),
@@ -153,7 +138,7 @@ describe('RankingService.rank', () => {
       status: 'APPLICABLE',
       days: scored(days, 70),
     }));
-    const { service } = setup([cycling]);
+    const { service } = rankingHarness([cycling]);
 
     const { rankings, ruleSetVersion } = await service.rank(rankingInput('london'));
 
@@ -169,7 +154,7 @@ describe('RankingService.rank', () => {
       reason: 'model says no',
       days: scored(days, null),
     }));
-    const { service } = setup([llm]);
+    const { service } = rankingHarness([llm]);
 
     const { rankings } = await service.rank({ ...rankingInput('london'), activities: ['CYCLING'] });
 
@@ -177,7 +162,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-9 an unknown activity throws UnknownActivityError', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
 
     const failure = service.rank({ ...rankingInput('london'), activities: ['BASE_JUMPING'] });
 
@@ -186,7 +171,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-10 a failed marine source makes surfing UNAVAILABLE with null scores and a reason', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
     const input = rankingInput('biarritz');
 
     const { rankings } = await service.rank({
@@ -207,7 +192,7 @@ describe('RankingService.rank', () => {
   });
 
   it('U-RANK-10 a failed marine refetch with stored marine days still scores surfing', async () => {
-    const { service } = setup();
+    const { service } = rankingHarness();
     const input = rankingInput('biarritz');
 
     const { rankings } = await service.rank({
@@ -229,7 +214,7 @@ describe('RankingService classifier dates', () => {
       status: 'APPLICABLE',
       days: [...scored(days.slice(0, 6), 50), { date: '2030-01-01', score: 50, factors: [] }],
     }));
-    const { service } = setup([stray]);
+    const { service } = rankingHarness([stray]);
 
     const { rankings } = await service.rank({ ...rankingInput('london'), activities: ['CYCLING'] });
 
@@ -243,7 +228,7 @@ describe('RankingService classifier dates', () => {
 
 describe('RankingService events and invariants', () => {
   it('U-EVENT-1 one ranking event carries provider, fetched-at per source, versions and factors', async () => {
-    const { service, lines } = setup();
+    const { service, lines } = rankingHarness();
 
     await service.rank({ ...rankingInput('biarritz'), activities: ['SURFING'] });
 
@@ -256,7 +241,7 @@ describe('RankingService events and invariants', () => {
       provider: 'open-meteo',
       fetchedAt: { FORECAST: '2026-10-15T06:00:00.000Z', MARINE: '2026-10-15T06:00:00.000Z' },
       ruleSetVersion:
-        'v1+SKIING@1.0.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.0.0',
+        'v1+SKIING@1.1.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.0.0',
       activities: [
         {
           classifierId: 'SURFING',
@@ -282,7 +267,7 @@ describe('RankingService events and invariants', () => {
       status: 'APPLICABLE',
       days: scored(days, 101),
     }));
-    const { service, counter, lines } = setup([broken]);
+    const { service, counter, lines } = rankingHarness([broken]);
 
     await service.rank({ ...rankingInput('london'), activities: ['CYCLING'] });
 
@@ -298,7 +283,7 @@ describe('RankingService events and invariants', () => {
       status: 'APPLICABLE',
       days: [...scored(days.slice(0, 5), 50), ...scored(days.slice(5, 6), null)],
     }));
-    const { service, counter } = setup([short]);
+    const { service, counter } = rankingHarness([short]);
 
     await service.rank({ ...rankingInput('london'), activities: ['CYCLING'] });
 
@@ -311,7 +296,7 @@ describe('RankingService events and invariants', () => {
       status: 'APPLICABLE',
       days: scored([...days].reverse(), 50),
     }));
-    const { service, counter } = setup([reversed]);
+    const { service, counter } = rankingHarness([reversed]);
 
     await service.rank({ ...rankingInput('london'), activities: ['CYCLING'] });
 
@@ -324,7 +309,7 @@ describe('RankingService events and invariants', () => {
       reason: 'no bikes',
       days: scored(days, 10),
     }));
-    const { service, counter } = setup([scoredAnyway]);
+    const { service, counter } = rankingHarness([scoredAnyway]);
 
     await service.rank({ ...rankingInput('london'), activities: ['CYCLING'] });
 
@@ -332,7 +317,7 @@ describe('RankingService events and invariants', () => {
   });
 
   it('U-EVENT-3 a marine availability change logs one marine_availability_changed event', () => {
-    const { service, lines } = setup();
+    const { service, lines } = rankingHarness();
     const { location } = rankingInput('london');
 
     service.noteMarineAvailability(location, 'unknown', 'absent');

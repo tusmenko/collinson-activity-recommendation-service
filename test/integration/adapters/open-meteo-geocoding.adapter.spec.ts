@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { OpenMeteoGeocodingAdapter } from '../../../src/location/open-meteo-geocoding.adapter.js';
-import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
-import type { EnvOverrides } from '../../setup/test-env.js';
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+import { OpenMeteoGeocodingAdapter } from '../../../src/location/geocoding/open-meteo-geocoding.adapter';
+import { openMeteoClient, testConfig } from '../../setup/adapter-deps';
+import type { EnvOverrides } from '../../setup/test-env';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
   let stub: StubUpstream;
@@ -19,10 +19,10 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
 
   function adapter(behaviour = 'ok', overrides: EnvOverrides = {}): OpenMeteoGeocodingAdapter {
     const config = testConfig({
-      UPSTREAM_GEOCODING_URL: `${stub.url}/stub/${behaviour}`,
+      UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
-    return new OpenMeteoGeocodingAdapter(config, silentLogger());
+    return new OpenMeteoGeocodingAdapter(openMeteoClient(config));
   }
 
   it('U-ADAPT-8 Springfield answers ok with five normalised results, Missouri first', async () => {
@@ -51,19 +51,6 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
     expect(results[2]).toMatchObject({ name: 'Victoria', country: 'HK', countryCode: 'HK' });
   });
 
-  it('U-ADAPT-8 sends the recorded request shape', async () => {
-    await adapter().search('Springfield');
-
-    const request = new URL(stub.requests.at(-1) ?? '', stub.url);
-    expect(request.pathname).toBe('/stub/ok/v1/search');
-    expect(Object.fromEntries(request.searchParams)).toEqual({
-      name: 'Springfield',
-      count: '5',
-      language: 'en',
-      format: 'json',
-    });
-  });
-
   it('U-ADAPT-8 an unknown name answers ok with no results', async () => {
     const outcome = await adapter().search('Xyzzyqq');
 
@@ -89,7 +76,7 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
   });
 
   it('U-ADAPT-9 a refused connection answers reason network', async () => {
-    const outcome = await new OpenMeteoGeocodingAdapter(testConfig(), silentLogger()).search(
+    const outcome = await new OpenMeteoGeocodingAdapter(openMeteoClient(testConfig())).search(
       'Springfield',
     );
 

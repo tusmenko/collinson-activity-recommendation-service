@@ -1,12 +1,12 @@
-import type { ClockPort } from '../../../src/infra/index.js';
-import { WeatherSourcePort } from '../../../src/weather/index.js';
+import type { ClockPort } from '../../../src/infra/index';
+import { WeatherSourcePort } from '../../../src/weather/index';
 import type {
   Coordinates,
   DaySignals,
   Source,
   SourceFetchOutcome,
-} from '../../../src/weather/index.js';
-import { loadFixture } from '../fixtures.js';
+} from '../../../src/weather/index';
+import { loadFixture } from '../fixtures';
 
 type Template = 'forecast' | 'marine' | 'marineInland';
 type FailureReason = Extract<SourceFetchOutcome, { kind: 'failed' }>['reason'];

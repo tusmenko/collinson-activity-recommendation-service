@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { ClockPort } from './clock.port.js';
+import { ClockPort } from './clock.port';
 
 @Injectable()
 export class SystemClock extends ClockPort {

@@ -1,6 +1,6 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 
-import { DateScalar } from './scalars.model.js';
+import { DateScalar } from './scalars.model';
 
 @ObjectType('DaySignals', {
   description: 'One local day of provider-neutral weather signals; null means no value.',

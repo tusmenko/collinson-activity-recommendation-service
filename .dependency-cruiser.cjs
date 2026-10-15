@@ -4,6 +4,8 @@
 //   weather  -> infra
 //   location -> infra
 //   infra    -> nothing in the application
+// Each feature is a folder of sub-module folders; the rules match by feature prefix, so nesting does not weaken them.
+const FEATURES = '(api|ranking|weather|location|infra)';
 const CLIENT_LIBRARIES = '(^|/)node_modules/(ioredis|bullmq|@nestjs/bullmq)/';
 
 module.exports = {
@@ -46,10 +48,19 @@ module.exports = {
     },
     {
       name: 'cross-module-through-barrel',
-      comment: 'Another module is reached only through its index.ts.',
+      comment:
+        'Another feature is reached only through its root index.ts, whatever folder the importer sits in.',
       severity: 'error',
-      from: { path: '^src/([^/]+)/' },
-      to: { path: '^src/[^/]+/', pathNot: ['^src/$1/', '^src/[^/]+/index\\.ts$'] },
+      from: { path: `^src/${FEATURES}/` },
+      to: { path: `^src/${FEATURES}/`, pathNot: ['^src/$1/', `^src/${FEATURES}/index\\.ts$`] },
+    },
+    {
+      name: 'no-nested-barrels',
+      comment:
+        'Inside a feature, folders import each other by relative path; index.ts exists only at the root.',
+      severity: 'error',
+      from: {},
+      to: { path: `^src/${FEATURES}/.+/index\\.ts$` },
     },
     {
       name: 'composition-root-through-barrel',
@@ -59,15 +70,22 @@ module.exports = {
       to: { path: '^src/[^/]+/', pathNot: '^src/[^/]+/index\\.ts$' },
     },
     {
-      name: 'client-libraries-in-adapters-only',
+      name: 'client-libraries-in-wrappers-only',
       comment:
-        'ioredis and bullmq are wrapped by repositories, adapters, queues, processors and infra.',
+        'ioredis and bullmq are wrapped by repositories, queues, processors, clients and infra.',
       severity: 'error',
       from: {
         path: '^src/',
-        pathNot: ['^src/infra/', '\\.(repository|adapter|queue|processor)\\.ts$'],
+        pathNot: ['^src/infra/', '\\.(repository|queue|processor|client)\\.ts$'],
       },
       to: { path: CLIENT_LIBRARIES },
+    },
+    {
+      name: 'utils-are-pure',
+      comment: 'A *.util.ts holds pure helpers: no Nest, no client libraries, no services.',
+      severity: 'error',
+      from: { path: '\\.util\\.ts$' },
+      to: { path: [CLIENT_LIBRARIES, '(^|/)node_modules/@nestjs/', '\\.service\\.ts$'] },
     },
   ],
   options: {

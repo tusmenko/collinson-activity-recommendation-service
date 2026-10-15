@@ -1,16 +1,32 @@
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
-import { ConsoleMetricExporter } from '@opentelemetry/sdk-metrics';
-import { describe, expect, it } from 'vitest';
+import { metrics } from '@opentelemetry/api';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { metricExporter } from './telemetry.service.js';
+import { TelemetryService } from './telemetry.service';
 
-// Only the exporter choice is tested; starting the SDK in a test would register a global provider.
-describe('U-EVENT-2 metric export', () => {
-  it('U-EVENT-2 exports to the console when OTEL_EXPORTER is console', () => {
-    expect(metricExporter('console')).toBeInstanceOf(ConsoleMetricExporter);
+describe('TelemetryService', () => {
+  afterEach(() => {
+    metrics.disable();
+    vi.restoreAllMocks();
   });
 
-  it('U-EVENT-2 exports over OTLP HTTP when OTEL_EXPORTER is otlp', () => {
-    expect(metricExporter('otlp')).toBeInstanceOf(OTLPMetricExporter);
+  it('U-EVENT-2 start registers a global meter provider; shutdown flushes and resolves', async () => {
+    // The console exporter prints the final flush; keep the test output clean.
+    vi.spyOn(console, 'dir').mockImplementation(() => undefined);
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const before = metrics.getMeterProvider();
+    const telemetry = new TelemetryService('console');
+
+    telemetry.start();
+    const started = metrics.getMeterProvider();
+    started.getMeter('probe').createCounter('probe_total').add(1);
+
+    expect(started).not.toBe(before);
+    await expect(telemetry.shutdown()).resolves.toBeUndefined();
+  });
+
+  it('U-EVENT-2 builds the OTLP pipeline without starting it', async () => {
+    const telemetry = new TelemetryService('otlp');
+
+    await expect(telemetry.shutdown()).resolves.toBeUndefined();
   });
 });

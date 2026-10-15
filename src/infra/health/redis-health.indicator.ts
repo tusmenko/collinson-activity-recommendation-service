@@ -3,8 +3,7 @@ import { HealthIndicatorService } from '@nestjs/terminus';
 import type { HealthIndicatorResult } from '@nestjs/terminus';
 import { Redis } from 'ioredis';
 
-// Below the compose and Docker healthcheck timeouts so a hung Redis reports down instead of timing out the probe.
-const PING_TIMEOUT_MS = 1_000;
+import { PING_TIMEOUT_MS } from './health.const';
 
 @Injectable()
 export class RedisHealthIndicator {

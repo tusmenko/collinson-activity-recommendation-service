@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { rankingInput } from '../../test/setup/ranking-input.js';
-import type { Place } from '../../test/setup/ranking-input.js';
-import { rankingHarness } from '../../test/setup/ranking-service.js';
-import type { ActivityRanking } from './ranking.types.js';
+import { rankingInput } from '../../test/setup/ranking-input';
+import type { Place } from '../../test/setup/ranking-input';
+import { rankingHarness } from '../../test/setup/ranking-service';
+import type { ActivityRanking } from './ranking.types';
 
 // Golden set (H-1): recorded Open-Meteo days through the adapters' normalisation and the real rule files.
 async function ranking(place: Place, activity: string): Promise<ActivityRanking> {

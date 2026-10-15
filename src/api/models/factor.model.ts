@@ -1,7 +1,7 @@
 import { Field, Float, ObjectType } from '@nestjs/graphql';
 
-import type { Effect } from '../../ranking/index.js';
-import { EffectEnum } from './enums.model.js';
+import type { Effect } from '../../ranking/index';
+import { EffectEnum } from './enums.model';
 
 @ObjectType('Factor', {
   description: 'One signal that moved the score, with its value and effect.',

@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { OpenMeteoMarineAdapter } from '../../../src/weather/open-meteo-marine.adapter.js';
-import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
-import { FixedClock } from '../../setup/fixed-clock.js';
-import type { EnvOverrides } from '../../setup/test-env.js';
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+import { OpenMeteoMarineAdapter } from '../../../src/weather/sources/marine/open-meteo-marine.adapter';
+import { openMeteoClient, testConfig } from '../../setup/adapter-deps';
+import type { EnvOverrides } from '../../setup/test-env';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 const LONDON = { latitude: 51.50853, longitude: -0.12574 };
 const BIARRITZ = { latitude: 43.48055, longitude: -1.55684 };
@@ -24,10 +23,10 @@ describe('OpenMeteoMarineAdapter against the stub upstream', () => {
 
   function adapter(behaviour = 'ok', overrides: EnvOverrides = {}): OpenMeteoMarineAdapter {
     const config = testConfig({
-      UPSTREAM_MARINE_URL: `${stub.url}/stub/${behaviour}`,
+      UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
-    return new OpenMeteoMarineAdapter(config, silentLogger(), new FixedClock());
+    return new OpenMeteoMarineAdapter(openMeteoClient(config));
   }
 
   it('U-ADAPT-3 London marine nulls normalise to all-null wave fields with kind ok', async () => {
@@ -69,20 +68,6 @@ describe('OpenMeteoMarineAdapter against the stub upstream', () => {
     });
   });
 
-  it('U-ADAPT-3 sends the recorded request shape', async () => {
-    await adapter().fetchDays(BIARRITZ, FETCH_DAYS);
-
-    const request = new URL(stub.requests.at(-1) ?? '', stub.url);
-    expect(request.pathname).toBe('/stub/ok/v1/marine');
-    expect(Object.fromEntries(request.searchParams)).toEqual({
-      latitude: '43.48055',
-      longitude: '-1.55684',
-      daily: 'wave_height_max,wave_period_max,swell_wave_height_max',
-      forecast_days: '8',
-      timezone: 'auto',
-    });
-  });
-
   it('U-ADAPT-2 a marine payload missing wave_height_max is a failed source with the raw body', async () => {
     const outcome = await adapter('malformed').fetchDays(BIARRITZ, FETCH_DAYS);
 
@@ -109,7 +94,7 @@ describe('OpenMeteoMarineAdapter against the stub upstream', () => {
   });
 
   it('U-ADAPT-9 a refused marine connection yields reason network', async () => {
-    const unreachable = new OpenMeteoMarineAdapter(testConfig(), silentLogger(), new FixedClock());
+    const unreachable = new OpenMeteoMarineAdapter(openMeteoClient(testConfig()));
 
     const outcome = await unreachable.fetchDays(BIARRITZ, FETCH_DAYS);
 

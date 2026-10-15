@@ -1,21 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { FIXED_NOW, FixedClock } from '../../test/setup/fixed-clock.js';
-import { loadFixture } from '../../test/setup/fixtures.js';
-import { FactsRepositoryPort } from './facts.port.js';
-import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors.js';
-import { LocationService } from './location.service.js';
+import { FIXED_NOW, FixedClock } from '../../test/setup/fixed-clock';
+import { loadFixture } from '../../test/setup/fixtures';
+import { GeocodingPayloadSchema } from '../infra/index';
+import { FactsRepositoryPort } from './facts/facts.port';
+import { toGeocodingResults } from './geocoding/open-meteo-geocoding.util';
+import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
+import { LocationService } from './location.service';
 import type {
   GeocodingOutcome,
   GeocodingResult,
   LocationFacts,
   MarineAvailability,
-} from './location.types.js';
-import { toGeocodingResults } from './open-meteo-geocoding.adapter.js';
-import { OpenMeteoGeocodingSchema } from './open-meteo-geocoding.schema.js';
+} from './location.types';
 
 function fixtureResults(name: string): GeocodingResult[] {
-  const payload = OpenMeteoGeocodingSchema.parse(
+  const payload = GeocodingPayloadSchema.parse(
     loadFixture(`open-meteo/v1/geocoding/${name.toLowerCase()}.json`),
   );
   return toGeocodingResults(payload);

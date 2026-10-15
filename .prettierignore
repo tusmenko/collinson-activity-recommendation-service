@@ -10,3 +10,5 @@ test/fixtures/**/*.json
 schema.gql
 # Helm templates are Go templates, not YAML.
 deploy/helm/*/templates/
+# Local agent state, including worktrees with their own copy of the sources.
+.claude/

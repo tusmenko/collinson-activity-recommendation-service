@@ -1,33 +1,43 @@
-import type { LocationFacts } from '../../src/location/index.js';
-import type { RankingInput } from '../../src/ranking/index.js';
-import type { DaySignals } from '../../src/weather/index.js';
-import { normaliseForecastPayload } from '../../src/weather/open-meteo-forecast.adapter.js';
-import { normaliseMarinePayload } from '../../src/weather/open-meteo-marine.adapter.js';
-import { FIXED_NOW } from './fixed-clock.js';
-import { loadFixture } from './fixtures.js';
+import type { ZodType } from 'zod';
+
+import { ForecastPayloadSchema, MarinePayloadSchema } from '../../src/infra/index';
+import type { LocationFacts } from '../../src/location/index';
+import type { RankingInput } from '../../src/ranking/index';
+import type { DaySignals } from '../../src/weather/index';
+import { toDaySignals as forecastDays } from '../../src/weather/sources/forecast/open-meteo-forecast.util';
+import { toDaySignals as marineDays } from '../../src/weather/sources/marine/open-meteo-marine.util';
+import { FIXED_NOW } from './fixed-clock';
+import { loadFixture } from './fixtures';
 
 // Recorded places; the archive entry is Chamonix 2026-01-10 to 17 and has no marine body.
+// Elevation comes from the recorded geocoding body, as it does in the app (A-8).
 const PLACES = {
-  chamonix: { forecast: 'forecast/chamonix', marine: 'marine/chamonix' },
-  'chamonix-january': { forecast: 'archive/chamonix-2026-01-10', marine: null },
-  hintertux: { forecast: 'forecast/hintertux', marine: null },
-  biarritz: { forecast: 'forecast/biarritz', marine: 'marine/biarritz' },
-  dubai: { forecast: 'forecast/dubai', marine: 'marine/dubai' },
-  london: { forecast: 'forecast/london', marine: 'marine/london' },
-  springfield: { forecast: 'forecast/springfield', marine: 'marine/springfield' },
+  chamonix: { geocoding: 'chamonix', forecast: 'forecast/chamonix', marine: 'marine/chamonix' },
+  'chamonix-january': {
+    geocoding: 'chamonix',
+    forecast: 'archive/chamonix-2026-01-10',
+    marine: null,
+  },
+  hintertux: { geocoding: 'hintertux', forecast: 'forecast/hintertux', marine: null },
+  biarritz: { geocoding: 'biarritz', forecast: 'forecast/biarritz', marine: 'marine/biarritz' },
+  dubai: { geocoding: 'dubai', forecast: 'forecast/dubai', marine: 'marine/dubai' },
+  london: { geocoding: 'london', forecast: 'forecast/london', marine: 'marine/london' },
+  springfield: {
+    geocoding: 'springfield',
+    forecast: 'forecast/springfield',
+    marine: 'marine/springfield',
+  },
 } as const;
 
 export type Place = keyof typeof PLACES;
 
-function normalised(
+// The recorded body through the client's pinned schema and the adapter's translation; throws on a schema mismatch.
+function normalised<Payload>(
   path: string,
-  normalise: (payload: unknown) => DaySignals[] | null,
+  schema: ZodType<Payload>,
+  toDays: (payload: Payload) => DaySignals[],
 ): DaySignals[] {
-  const days = normalise(loadFixture(`open-meteo/v1/${path}.json`));
-  if (days === null) {
-    throw new Error(`Fixture ${path} does not match the adapter schema`);
-  }
-  return days;
+  return toDays(schema.parse(loadFixture(`open-meteo/v1/${path}.json`)));
 }
 
 function facts(place: Place): LocationFacts {
@@ -36,6 +46,9 @@ function facts(place: Place): LocationFacts {
     longitude: number;
     timezone: string;
   };
+  const geocoding = loadFixture(`open-meteo/v1/geocoding/${PLACES[place].geocoding}.json`) as {
+    results: { elevation: number }[];
+  };
   return {
     id: place,
     name: place,
@@ -43,6 +56,7 @@ function facts(place: Place): LocationFacts {
     latitude: body.latitude,
     longitude: body.longitude,
     timezone: body.timezone,
+    ...(geocoding.results[0] === undefined ? {} : { elevation: geocoding.results[0].elevation }),
     marineDataAvailable: 'unknown',
     updatedAt: FIXED_NOW.toISOString(),
   };
@@ -56,8 +70,8 @@ export function rankingInput(place: Place, overrides: Partial<RankingInput> = {}
     location: facts(place),
     activities: [],
     days: {
-      FORECAST: normalised(forecast, normaliseForecastPayload),
-      ...(marine === null ? {} : { MARINE: normalised(marine, normaliseMarinePayload) }),
+      FORECAST: normalised(forecast, ForecastPayloadSchema, forecastDays),
+      ...(marine === null ? {} : { MARINE: normalised(marine, MarinePayloadSchema, marineDays) }),
     },
     sources: [
       { source: 'FORECAST', status: 'OK', fetchedAt },

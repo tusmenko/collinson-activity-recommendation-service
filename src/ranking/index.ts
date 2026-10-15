@@ -1,15 +1,14 @@
 // The api module (phase 4) is the consumer of most of this surface; @public keeps knip from reporting it before then.
 /** @public */
-export { ACTIVITIES } from './ranking.const.js';
-export { Classifier } from './classifier.port.js';
-export { ClassifierRegistry } from './classifier-registry.service.js';
-export { RankingModule } from './ranking.module.js';
-export { RankingService } from './ranking.service.js';
-export { RuleSetProvider } from './rule-set.port.js';
+export { ACTIVITIES } from './ranking.const';
+export { Classifier } from './registry/classifier.port';
+export { ClassifierRegistry } from './registry/classifier-registry.service';
+export { RankingModule } from './ranking.module';
+export { RankingService } from './ranking.service';
 /** @public */
-export { UnknownActivityError } from './ranking.errors.js';
+export { UnknownActivityError } from './ranking.errors';
 /** @public */
-export type { RuleSet } from './rule-set.schema.js';
+export type { RuleSet } from './rules/rule-set.schema';
 /** @public */
 export type {
   Activity,
@@ -25,4 +24,4 @@ export type {
   RankingResult,
   SourceReport,
   SourceStatus,
-} from './ranking.types.js';
+} from './ranking.types';
