@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
 import { OPEN_METEO_SCHEMA_VERSION, OpenMeteoClient } from '../../../infra/index';
-import type { Coordinates, Source, SourceFetchOutcome } from '../../weather.types';
+import type { Coordinates, SourceFetchOutcome } from '../../weather.types';
 import { MarineSourcePort } from '../weather-source.port';
 import { toDaySignals } from './open-meteo-marine.util';
 
 @Injectable()
 export class OpenMeteoMarineAdapter extends MarineSourcePort {
-  readonly source: Source = 'MARINE';
-
   constructor(private readonly client: OpenMeteoClient) {
     super();
   }

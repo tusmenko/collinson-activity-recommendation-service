@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { WeatherSourcePort } from '../../../src/weather/index';
-import type { Coordinates, Source, SourceFetchOutcome } from '../../../src/weather/index';
+import type { Coordinates, SourceFetchOutcome } from '../../../src/weather/index';
 
 // A second provider: it touches only its own file and is accepted wherever the port is.
 class ConstantWeatherAdapter extends WeatherSourcePort {
-  readonly source: Source = 'FORECAST';
-
   fetchDays(_coordinates: Coordinates, days: number): Promise<SourceFetchOutcome> {
     return Promise.resolve({
       kind: 'ok',

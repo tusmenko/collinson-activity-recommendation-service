@@ -1,9 +1,7 @@
-import type { Coordinates, Source, SourceFetchOutcome } from '../weather.types';
+import type { Coordinates, SourceFetchOutcome } from '../weather.types';
 
 // Never throws: every upstream problem is a `failed` outcome.
 export abstract class WeatherSourcePort {
-  abstract readonly source: Source;
-
   abstract fetchDays(coordinates: Coordinates, days: number): Promise<SourceFetchOutcome>;
 }
 
