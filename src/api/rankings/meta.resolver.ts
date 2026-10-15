@@ -7,7 +7,7 @@ import { MetaModel } from '../models/meta.model';
 export class MetaResolver {
   // Serialised only when selected (D-3); the ranking computed the reasons anyway.
   @ResolveField('reasons', () => [ActivityReasonModel], {
-    description: 'Why each NOT_APPLICABLE or UNAVAILABLE activity has no scores.',
+    description: 'Why each NOT_APPLICABLE, NO_CONDITIONS or UNAVAILABLE activity has no scores.',
   })
   reasons(@Parent() meta: MetaModel): readonly ActivityReasonModel[] {
     return meta.unranked;

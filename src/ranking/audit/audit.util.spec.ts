@@ -44,6 +44,13 @@ describe('ranking invariants', () => {
     ]);
   });
 
+  it('U-RANK-16 NO_CONDITIONS with null scores is no anomaly; a score under it is', () => {
+    expect(violations(ranking('NO_CONDITIONS', [rankedDay('2026-10-15', null)]), 7)).toEqual([]);
+    expect(violations(ranking('NO_CONDITIONS', WINDOW), 2)).toEqual([
+      'score_without_applicability',
+    ]);
+  });
+
   it('U-EVENT-2 a non-applicable ranking is not checked for its window, only for scores', () => {
     const days = [rankedDay('2026-10-15', null)];
 

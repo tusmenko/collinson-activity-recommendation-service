@@ -20,13 +20,21 @@ export class SkiingClassifier extends Classifier {
     super();
   }
 
+  // The place decides NOT_APPLICABLE (elevation); the window decides NO_CONDITIONS (no snowpack this week).
   score({ days, facts, rules }: ClassifierInput): Promise<ClassifierOutput> {
     const place = this.engine.placeGate(facts, rules);
-    const reason = place.applicable ? this.snowReason(days, rules) : place.reason;
-    if (reason !== null) {
+    if (!place.applicable) {
       return Promise.resolve({
         status: 'NOT_APPLICABLE',
-        reason,
+        reason: place.reason,
+        days: this.engine.unscored(days),
+      });
+    }
+    const snow = this.snowReason(days, rules);
+    if (snow !== null) {
+      return Promise.resolve({
+        status: 'NO_CONDITIONS',
+        reason: snow,
         days: this.engine.unscored(days),
       });
     }

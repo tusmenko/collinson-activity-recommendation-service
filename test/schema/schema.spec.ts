@@ -84,6 +84,17 @@ describe('S-SCHEMA generated schema', () => {
     expect(enumValues(schema, 'Activity')).toEqual([...BUILT_IN, 'CYCLING'].sort());
   });
 
+  it('S-SCHEMA-4 ActivityStatus adds NO_CONDITIONS and keeps every earlier value', async () => {
+    const { schema } = await buildSchema(registryOf(BUILT_IN));
+
+    expect(enumValues(schema, 'ActivityStatus')).toEqual([
+      'APPLICABLE',
+      'NOT_APPLICABLE',
+      'NO_CONDITIONS',
+      'UNAVAILABLE',
+    ]);
+  });
+
   it('S-SCHEMA-3 both activities arguments say omitted means all and an empty list is rejected', async () => {
     const { schema } = await buildSchema(registryOf(BUILT_IN));
     const argument = (type: string, field: string): string | null | undefined => {

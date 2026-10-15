@@ -25,11 +25,11 @@ function scoreOn(entry: ActivityRanking, date: string): number | null {
 }
 
 describe('golden set: skiing', () => {
-  it('U-SKI-1 Chamonix in October is NOT_APPLICABLE and the reason names snow depth', async () => {
+  it('U-SKI-1 Chamonix in October is NO_CONDITIONS and the reason names snow depth', async () => {
     const skiing = await ranking('chamonix', 'SKIING');
 
     expect(skiing).toMatchObject({
-      status: 'NOT_APPLICABLE',
+      status: 'NO_CONDITIONS',
       reason: 'snow depth below 5 cm on every day (max 0 cm)',
     });
     expect(scores(skiing).every((score) => score === null)).toBe(true);
