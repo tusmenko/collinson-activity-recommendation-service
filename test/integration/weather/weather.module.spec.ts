@@ -4,13 +4,10 @@ import { Redis } from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { ConfigService, InfraModule } from '../../../src/infra/index';
-import {
-  ForecastSourcePort,
-  MarineSourcePort,
-  SOURCES,
-  WeatherModule,
-} from '../../../src/weather/index';
+import { ForecastSourcePort, MarineSourcePort, WeatherModule } from '../../../src/weather/index';
 import type { DaySignals } from '../../../src/weather/index';
+import { OpenMeteoForecastAdapter } from '../../../src/weather/sources/forecast/open-meteo-forecast.adapter';
+import { OpenMeteoMarineAdapter } from '../../../src/weather/sources/marine/open-meteo-marine.adapter';
 import { testConfig } from '../../setup/adapter-deps';
 import { createTestRedis } from '../../setup/redis';
 import { startStubUpstream } from '../../stub-upstream/server';
@@ -40,12 +37,8 @@ describe('WeatherModule wiring', () => {
   });
 
   it('U-ADAPT-10 the forecast and marine tokens resolve to adapters for each source', () => {
-    const sources = [
-      moduleRef.get(ForecastSourcePort).source,
-      moduleRef.get(MarineSourcePort).source,
-    ];
-
-    expect(sources).toEqual([...SOURCES]);
+    expect(moduleRef.get(ForecastSourcePort)).toBeInstanceOf(OpenMeteoForecastAdapter);
+    expect(moduleRef.get(MarineSourcePort)).toBeInstanceOf(OpenMeteoMarineAdapter);
   });
 
   it('U-ADAPT-10 both injected adapters fetch Dubai from the stub', async () => {
