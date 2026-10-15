@@ -69,6 +69,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [NFR-12](arch/02-requirements.md#nfr-12) security, review C2 | U-INFRA-6 `TRUST_PROXY` is off when unset or empty and parses a hop count, `true`, `false` or a named range | unit | review |
 | [NFR-9](arch/02-requirements.md#nfr-9) upstream access, review C3 | U-API-13 a `rankings` selection under `Meta.alternatives` counts four times: the alternatives example counts five, passes at the default limit and is rejected at four | unit | review |
 | [NFR-13](arch/02-requirements.md#nfr-13) traceability, review C4 | I-INGEST-13 a malformed payload increments `ranking_anomalies_total{type="upstream_drift"}` once per attempt | integration | review |
+| [DF-5](arch/02-requirements.md#df-5) data age, review C7 | I-INGEST-14 stored days carry the adapter's `fetchedAt`, not the processor's clock | integration | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 

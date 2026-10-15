@@ -157,6 +157,16 @@ describe('IngestService refresh on read and degradation', () => {
     );
   });
 
+  it("I-INGEST-14 stored days carry the adapter's fetchedAt, not the processor's clock", async () => {
+    const fetchedAt = '2026-10-15T05:59:58.000Z';
+    harness.forecast.always({ kind: 'ok', fetchedAt });
+
+    const result = await harness.service.ensure(LONDON, ['FORECAST']);
+
+    expect(result.fetchedAt).toBe(fetchedAt);
+    expect(statusOf(result, 'FORECAST')?.fetchedAt).toBe(fetchedAt);
+  });
+
   it('I-INGEST-5 a marine failure serves the forecast with partial: true and persists it', async () => {
     harness.marine.always({ kind: 'fail', reason: 'http' });
 
