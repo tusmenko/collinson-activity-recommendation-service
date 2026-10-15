@@ -9,9 +9,7 @@ export function testEnv(overrides: EnvOverrides = {}): NodeJS.ProcessEnv {
   return {
     PORT: '0',
     REDIS_URL: TEST_REDIS_URL,
-    UPSTREAM_GEOCODING_URL: UNREACHABLE_UPSTREAM,
-    UPSTREAM_FORECAST_URL: UNREACHABLE_UPSTREAM,
-    UPSTREAM_MARINE_URL: UNREACHABLE_UPSTREAM,
+    UPSTREAM_BASE_URL: UNREACHABLE_UPSTREAM,
     LOG_LEVEL: 'silent',
     ...overrides,
   };

@@ -7,14 +7,23 @@ import { FIXED_NOW } from './fixed-clock.js';
 import { loadFixture } from './fixtures.js';
 
 // Recorded places; the archive entry is Chamonix 2026-01-10 to 17 and has no marine body.
+// Elevation comes from the recorded geocoding body, as it does in the app (A-8).
 const PLACES = {
-  chamonix: { forecast: 'forecast/chamonix', marine: 'marine/chamonix' },
-  'chamonix-january': { forecast: 'archive/chamonix-2026-01-10', marine: null },
-  hintertux: { forecast: 'forecast/hintertux', marine: null },
-  biarritz: { forecast: 'forecast/biarritz', marine: 'marine/biarritz' },
-  dubai: { forecast: 'forecast/dubai', marine: 'marine/dubai' },
-  london: { forecast: 'forecast/london', marine: 'marine/london' },
-  springfield: { forecast: 'forecast/springfield', marine: 'marine/springfield' },
+  chamonix: { geocoding: 'chamonix', forecast: 'forecast/chamonix', marine: 'marine/chamonix' },
+  'chamonix-january': {
+    geocoding: 'chamonix',
+    forecast: 'archive/chamonix-2026-01-10',
+    marine: null,
+  },
+  hintertux: { geocoding: 'hintertux', forecast: 'forecast/hintertux', marine: null },
+  biarritz: { geocoding: 'biarritz', forecast: 'forecast/biarritz', marine: 'marine/biarritz' },
+  dubai: { geocoding: 'dubai', forecast: 'forecast/dubai', marine: 'marine/dubai' },
+  london: { geocoding: 'london', forecast: 'forecast/london', marine: 'marine/london' },
+  springfield: {
+    geocoding: 'springfield',
+    forecast: 'forecast/springfield',
+    marine: 'marine/springfield',
+  },
 } as const;
 
 export type Place = keyof typeof PLACES;
@@ -36,6 +45,9 @@ function facts(place: Place): LocationFacts {
     longitude: number;
     timezone: string;
   };
+  const geocoding = loadFixture(`open-meteo/v1/geocoding/${PLACES[place].geocoding}.json`) as {
+    results: { elevation: number }[];
+  };
   return {
     id: place,
     name: place,
@@ -43,6 +55,7 @@ function facts(place: Place): LocationFacts {
     latitude: body.latitude,
     longitude: body.longitude,
     timezone: body.timezone,
+    ...(geocoding.results[0] === undefined ? {} : { elevation: geocoding.results[0].elevation }),
     marineDataAvailable: 'unknown',
     updatedAt: FIXED_NOW.toISOString(),
   };

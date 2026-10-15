@@ -25,10 +25,7 @@ describe('WeatherModule wiring', () => {
 
   beforeAll(async () => {
     stub = await startStubUpstream(0);
-    const config = testConfig({
-      UPSTREAM_FORECAST_URL: stub.url,
-      UPSTREAM_MARINE_URL: stub.url,
-    });
+    const config = testConfig({ UPSTREAM_BASE_URL: stub.url });
     moduleRef = await Test.createTestingModule({ imports: [InfraModule, WeatherModule] })
       .overrideProvider(ConfigService)
       .useValue(config)

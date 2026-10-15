@@ -1,9 +1,13 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "poorCap": {
     "max": 30,
     "minWeight": 2,
     "note": "One disqualifying signal outweighs the rest"
+  },
+  "applicability": {
+    "minElevation": 800,
+    "note": "Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not. Elevation is the geocoding value; unknown is not applicable"
   },
   "gate": {
     "signal": "snowDepth",

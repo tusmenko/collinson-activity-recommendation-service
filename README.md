@@ -26,7 +26,7 @@ curl -s http://localhost:4510/graphql -H 'content-type: application/json' \
 
 The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL runs at <http://localhost:4510/graphql> in a browser, with introspection on. The service speaks plain HTTP only; an `https://` URL fails before it reaches the container, so keep the `http://` prefix (browsers sometimes upgrade `localhost` to HTTPS on their own).
 
-To run without calling Open-Meteo, start the `demo` profile. It adds `api-demo` on port 4511, wired to a stub upstream that serves recorded fixtures (recorded 2026-10-15, dates shifted so the first day is today) for Biarritz, Chamonix, Dubai, Hintertux, London and Springfield:
+To run without calling Open-Meteo, start the `demo` profile. It adds `api-demo` on port 4511, wired through `UPSTREAM_BASE_URL` to a stub upstream that serves recorded fixtures (recorded 2026-10-15, dates shifted so the first day is today) for Biarritz, Chamonix, Dubai, Hintertux, London and Springfield:
 
 ```sh
 docker compose --profile demo up --build
@@ -97,7 +97,7 @@ Fixtures are recorded once and served by the stub; to record them again follow [
 | Geocoding fails | `UPSTREAM_UNAVAILABLE` |
 | No geocoding match | `NOT_FOUND` naming the input; no forecast call |
 
-**Scoring.** Scores are computed on every read from the stored signals, so a rule change needs no re-ingest. Each activity is a registered classifier that declares the sources it needs and reads its thresholds from a JSON file next to it (`src/ranking/*/*.rules.json`, each threshold with a note). A factor scores 100 in its good band, 0 in its poor band and 50 between; the day is the weighted mean, capped at 30 when a heavy factor is poor, and indoor sightseeing never drops below 40. Skiing is applicable only when the forecast carries snow depth; surfing only where the marine API has data. Ranking events record the rule-set version and each classifier's version; adding an activity is one classifier and one registration ([D-6](docs/ACTIVITY_RANKING_DESIGN.md#d-6)).
+**Scoring.** Scores are computed on every read from the stored signals, so a rule change needs no re-ingest. Each activity is a registered classifier that declares the sources it needs and reads its thresholds from a JSON file next to it (`src/ranking/*/*.rules.json`, each threshold with a note). A factor scores 100 in its good band, 0 in its poor band and 50 between; the day is the weighted mean, capped at 30 when a heavy factor is poor, and indoor sightseeing never drops below 40. Skiing is applicable only at 800 m or higher (the place's geocoding elevation) and when the forecast carries snow depth; surfing only where the marine API has data. Ranking events record the rule-set version and each classifier's version; adding an activity is one classifier and one registration ([D-6](docs/ACTIVITY_RANKING_DESIGN.md#d-6)).
 
 **Events and anomalies.** Every ranking writes one JSON log event with the location, fetched-at per source, classifier and rule-set versions, scores and factors; every ingest run writes one with its duration and outcome. Invariants (score range, one score per day of the window, no score on a non-applicable activity) run on each request; a violation logs at warn and increments the OpenTelemetry counter `ranking_anomalies_total{type}`, exported to the console every 60 s or over OTLP ([D-7](docs/ACTIVITY_RANKING_DESIGN.md#d-7)).
 
@@ -125,7 +125,7 @@ From the [assumptions register](docs/arch/registers.md#assumptions-register); ea
 - A-5: "next 7 days" is today plus six days, in the location's own timezone.
 - A-6: scores are rule-based, 0 to 100 per activity per day, with documented thresholds; no machine learning.
 - A-7: the output is a score per day per activity; ordering is left to the consumer; no rank field.
-- A-8: skiing uses the place's own forecast, with no search for a nearby resort; no snow signal means not applicable.
+- A-8: skiing uses the place's own forecast, with no search for a nearby resort; below 800 m elevation, or with no snow signal, it is not applicable.
 - A-9: surfing is not applicable where the marine API returns nulls; lakes and lagoons that return waves are scored, low.
 - A-10: an ambiguous name resolves to Open-Meteo's first result, preferring an exact name match; alternatives are returned and `country` filters.
 - A-12: metric units, English place names.
@@ -152,28 +152,27 @@ From the [assumptions register](docs/arch/registers.md#assumptions-register); ea
 - A-39: the lockfile is committed and CI installs from it frozen.
 - A-50: skiing applicability is gated on the model's snow depth; glacier cells without model snow (Sölden on 2026-10-14) read as not applicable.
 - A-51: a stale or missing read waits for one shared refetch and returns fresh data; `stale` means the refetch failed.
+- A-52: pnpm is the package manager, by the owner's instruction.
+- A-53: one optional `UPSTREAM_BASE_URL` points the whole provider at the stub upstream; unset, each adapter uses its real Open-Meteo host.
 
-Open questions a product manager would answer, with the answer assumed meanwhile ([open questions log](docs/arch/registers.md#open-questions-log)):
+Open questions a product manager would answer, with the answer assumed meanwhile or the owner's decision of 2026-10-15 ([open questions log](docs/arch/registers.md#open-questions-log)):
 
-- OQ-2: what makes a day good for each activity? Documented thresholds, to be calibrated (A-6).
-- OQ-3: skiing in a city without mountains? Scored from the city's own forecast; not applicable without snow (A-8).
-- OQ-4: surfing inland? Not applicable, with the reason (A-9).
-- OQ-5: ambiguous names? First result plus alternatives, optional country (A-10).
-- OQ-6: how fresh must data be? Six hours, configurable (A-11).
-- OQ-7: does "next 7 days" include today? Yes, in local time (A-5).
-- OQ-12: is indoor sightseeing ever bad? Never; better when outdoors is worse (A-13).
-- OQ-13: what does an unknown name return? A typed not-found error (A-14).
+- OQ-2: what makes a day good for each activity? Open, a product decision; the documented default thresholds stand (A-6).
+- OQ-3: skiing in a city without mountains? Resolved: not applicable below 800 m elevation, then gated on snow depth from the city's own forecast (A-8).
+- OQ-4: surfing inland? Resolved: not applicable, with the reason (A-9).
+- OQ-5: ambiguous names? Resolved: first result plus alternatives, optional country (A-10).
+- OQ-6: how fresh must data be? Resolved: six hours, configurable, matching the slowest Open-Meteo model refresh (A-11).
+- OQ-7: does "next 7 days" include today? Resolved: yes, in local time (A-5).
+- OQ-12: should indoor sightseeing ever score low, for example on a perfect outdoor day, or is it always at least acceptable? Open; always acceptable meanwhile, better when outdoors is worse (A-13).
+- OQ-13: what does an unknown name return? Resolved: a typed not-found error (A-14).
 
 Taken during the overnight build ([OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md)):
 
-- ON-1: the three Open-Meteo base URLs are environment variables, so the stub upstream can replace them.
-- ON-2: agent worklogs under `.claude/worklogs/` stay untracked.
-- ON-3: pnpm instead of npm, by the owner's instruction.
-- ON-4: one pull request per phase, squash-merged on green CI.
 - ON-5: fixtures were recorded live once, with the adapters' exact requests.
 - ON-6: `OUTBOUND_LIMIT_WINDOW_MS` is a test knob; the processor runs 16 jobs at once; a fair-use breach is not retried; an invalid payload keeps the stored days.
 - ON-7: scoring adds a deal-breaker cap (30) and an indoor floor (40), and widens the skiing poor snow band, after the plain weighted mean failed the golden set.
 - ON-8: `NODE_ENV` controls `schema.gql` writing and stack traces; a small Redis throttler storage replaces the package that stops at Nest 11.
+- ON-9: the service listens on 4510 (demo 4511) instead of 3000; `API_PORT` and `API_DEMO_PORT` move the host ports.
 
 ## What was cut and why
 

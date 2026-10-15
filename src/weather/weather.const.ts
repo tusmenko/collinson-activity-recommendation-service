@@ -1,5 +1,9 @@
 export const SOURCES = ['FORECAST', 'MARINE'] as const;
 
+// Open-Meteo hosts, used unless UPSTREAM_BASE_URL points the whole provider elsewhere (design D-2).
+export const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com';
+export const OPEN_METEO_MARINE_URL = 'https://marine-api.open-meteo.com';
+
 // Pinned Open-Meteo payload schemas; a provider shape change is a new version and a new key prefix (R-9).
 export const FORECAST_SCHEMA_VERSION = 'v1';
 export const MARINE_SCHEMA_VERSION = 'v1';

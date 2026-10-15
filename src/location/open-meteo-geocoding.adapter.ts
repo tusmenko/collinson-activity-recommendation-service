@@ -3,7 +3,11 @@ import type { Logger } from 'pino';
 
 import { AppLogger, ConfigService } from '../infra/index.js';
 import { GeocodingPort } from './geocoding.port.js';
-import { GEOCODING_RESULT_COUNT, GEOCODING_SCHEMA_VERSION } from './location.const.js';
+import {
+  GEOCODING_RESULT_COUNT,
+  GEOCODING_SCHEMA_VERSION,
+  OPEN_METEO_GEOCODING_URL,
+} from './location.const.js';
 import type { GeocodingOutcome, GeocodingResult } from './location.types.js';
 import { OpenMeteoGeocodingSchema } from './open-meteo-geocoding.schema.js';
 import type { OpenMeteoGeocoding } from './open-meteo-geocoding.schema.js';
@@ -84,8 +88,9 @@ export class OpenMeteoGeocodingAdapter extends GeocodingPort {
 
   // String concatenation keeps any path on the base URL (a proxy prefix or the stub's behaviour prefix).
   private url(name: string): URL {
-    const base = this.config.get('UPSTREAM_GEOCODING_URL').replace(/\/$/, '');
-    const url = new URL(`${base}/v1/search`);
+    // Unset means the real host; set, it is the stub upstream or a proxy for the whole provider.
+    const base = this.config.get('UPSTREAM_BASE_URL') ?? OPEN_METEO_GEOCODING_URL;
+    const url = new URL(`${base.replace(/\/$/, '')}/v1/search`);
     url.searchParams.set('name', name);
     url.searchParams.set('count', String(GEOCODING_RESULT_COUNT));
     url.searchParams.set('language', 'en');

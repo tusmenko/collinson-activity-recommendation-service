@@ -19,4 +19,20 @@ describe('OpenMeteoMarineAdapter failure mapping', () => {
 
     expect(outcome).toMatchObject({ kind: 'failed', reason: 'malformed' });
   });
+
+  it('U-ADAPT-13 with UPSTREAM_BASE_URL unset the marine call goes to the real Open-Meteo host', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal('fetch', (url: URL) => {
+      urls.push(url.href);
+      return Promise.resolve(new Response('{}'));
+    });
+    const config = testConfig({ UPSTREAM_BASE_URL: '' });
+
+    await new OpenMeteoMarineAdapter(config, silentLogger(), new FixedClock()).fetchDays(
+      BIARRITZ,
+      8,
+    );
+
+    expect(urls[0]).toMatch(/^https:\/\/marine-api\.open-meteo\.com\/v1\/marine\?/);
+  });
 });

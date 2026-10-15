@@ -40,9 +40,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | --- | --- | --- |
 | `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([ON-9](OVERNIGHT_NOTES.md#on-9)) |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
-| `UPSTREAM_GEOCODING_URL` | `https://geocoding-api.open-meteo.com` | Geocoding base URL; the stub upstream replaces it in tests and the `demo` profile |
-| `UPSTREAM_FORECAST_URL` | `https://api.open-meteo.com` | Forecast base URL; same |
-| `UPSTREAM_MARINE_URL` | `https://marine-api.open-meteo.com` | Marine base URL; same |
+| `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `weather.const.ts` or `location.const.ts` ([A-53](arch/registers.md#a-53)) |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
 | `FETCH_DAYS` | `8` | Days fetched per ingest; `WINDOW_DAYS + 1` covers local midnight |
 | `FRESHNESS_TTL` | `6h` | Data older than this is refetched before it is served; served flagged stale only if the refetch fails |
@@ -206,7 +204,7 @@ interface Classifier {
 }
 ```
 
-The registry is a map from `Activity` to `Classifier`, filled by module registration; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
+The registry is a map from `Activity` to `Classifier`, filled by module registration; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below) and otherwise when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
 
 ### D-6.1 Provisional thresholds
 
@@ -214,6 +212,7 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 
 | Activity | Signal | Good | Poor | Not applicable | Note |
 | --- | --- | --- | --- | --- | --- |
+| Skiing | place elevation, m (geocoding) | — | — | < 800, or unknown | Checked before the snow gate. Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not ([A-8](arch/registers.md#a-8)) |
 | Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | < 5 every day | Snowpack is the applicability signal. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
 | Skiing | snowfall, cm per day | ≥ 5 | 0 | — | Fresh snow is a bonus on top of the base, not the gate |
 | Skiing | tmax, °C | −10 to 3 | > 8 | — | Above about 8 the snow rots |

@@ -51,7 +51,7 @@ interface RankingsData {
 }
 
 function upstream(url: string): Record<string, string> {
-  return { UPSTREAM_GEOCODING_URL: url, UPSTREAM_FORECAST_URL: url, UPSTREAM_MARINE_URL: url };
+  return { UPSTREAM_BASE_URL: url };
 }
 
 function rankingOf(response: GraphqlResponse<RankingsData>, activity: string): Ranking | undefined {

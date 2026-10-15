@@ -22,7 +22,8 @@ describe('U-INFRA-1 health check', () => {
 
     const result = await controller.check();
 
-    expect(result).toMatchObject({ status: 'ok', info: { redis: { status: 'up' } } });
+    expect(result).toMatchObject({ status: 'ok', details: { redis: { status: 'up' } } });
+    expect(Object.keys(result).sort()).toEqual(['details', 'status']);
   });
 
   it('U-INFRA-1 reports Redis down and status error when ping rejects', async () => {
@@ -31,9 +32,11 @@ describe('U-INFRA-1 health check', () => {
     const failure: unknown = await controller.check().catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(ServiceUnavailableException);
-    expect((failure as ServiceUnavailableException).getResponse()).toMatchObject({
+    const body = (failure as ServiceUnavailableException).getResponse();
+    expect(body).toMatchObject({
       status: 'error',
-      error: { redis: { status: 'down', message: 'ECONNREFUSED' } },
+      details: { redis: { status: 'down', message: 'ECONNREFUSED' } },
     });
+    expect(Object.keys(body).sort()).toEqual(['details', 'status']);
   });
 });

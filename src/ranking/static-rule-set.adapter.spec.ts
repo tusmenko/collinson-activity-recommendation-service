@@ -15,7 +15,7 @@ describe('StaticRuleSetAdapter', () => {
     const provider = new StaticRuleSetAdapter();
 
     expect(provider.version).toBe(
-      'v1+SKIING@1.0.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.0.0',
+      'v1+SKIING@1.1.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.0.0',
     );
   });
 

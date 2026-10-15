@@ -41,6 +41,11 @@ export const RuleSetSchema = z
       })
       .strict()
       .optional(),
+    // Place applicability, checked before the gate: below `minElevation` metres (or unknown) is not applicable.
+    applicability: z
+      .object({ minElevation: z.number(), note: z.string().min(1) })
+      .strict()
+      .optional(),
     // Applicability: below `min` on every day (or no value) makes the activity not applicable.
     gate: z
       .object({ signal: z.enum(SCORABLE_SIGNALS), min: z.number(), note: z.string().min(1) })

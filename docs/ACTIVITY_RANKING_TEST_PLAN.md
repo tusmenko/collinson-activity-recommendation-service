@@ -46,7 +46,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [FR-4](arch/02-requirements.md#fr-4) score per day per activity | U-RANK-3 scores within 0 to 100 in date order | unit | 3 |
 | [DF-1](arch/02-requirements.md#df-1) ambiguity | U-LOC-2 exact-name preference (Victoria versus Vitória); U-LOC-3 Springfield gives Missouri plus four alternatives; E-API-2 alternatives in `meta` | unit, end-to-end | 1, 4 |
 | [DF-2](arch/02-requirements.md#df-2) unknown name | U-LOC-4 no results gives `NOT_FOUND`; E-API-3 error code and no forecast call | unit, end-to-end | 1, 4 |
-| [DF-3](arch/02-requirements.md#df-3) not applicable | U-SURF-1 marine nulls give `NOT_APPLICABLE` with reason; U-SKI-1 snow depth under 5 cm every day gives `NOT_APPLICABLE` | unit | 3 |
+| [DF-3](arch/02-requirements.md#df-3) not applicable | U-SURF-1 marine nulls give `NOT_APPLICABLE` with reason; U-SKI-1 snow depth under 5 cm every day gives `NOT_APPLICABLE`; U-SKI-4 a place below 800 m (London, 25 m) or of unknown elevation gives `NOT_APPLICABLE` naming the elevation, even with snow; U-SKI-5 Chamonix at 1060 m with the January window stays `APPLICABLE` | unit | 3 |
 | [DF-4](arch/02-requirements.md#df-4) factors on selection | E-API-4 default query has no `details`; E-API-5 details query returns factors and signals; U-EVENT-1 event always carries factors | end-to-end, unit | 3, 4 |
 | [DF-5](arch/02-requirements.md#df-5) data age | E-API-6 `meta.fetchedAt` and `stale` present | end-to-end | 4 |
 | [DF-6](arch/02-requirements.md#df-6) per-source failure | I-INGEST-5 marine fails: surfing `UNAVAILABLE`, `partial: true`, forecast persisted; I-INGEST-6 forecast fails with empty store: `UPSTREAM_UNAVAILABLE` under 4.5 s with location | integration | 2 |

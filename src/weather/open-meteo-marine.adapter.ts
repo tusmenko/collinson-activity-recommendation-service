@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
 import { AppLogger, ClockPort, ConfigService } from '../infra/index.js';
-import { MARINE_SCHEMA_VERSION } from './weather.const.js';
+import { MARINE_SCHEMA_VERSION, OPEN_METEO_MARINE_URL } from './weather.const.js';
 import { MarineSourcePort } from './weather-source.port.js';
 import type { Coordinates, DaySignals, Source, SourceFetchOutcome } from './weather.types.js';
 import { OpenMeteoMarineSchema } from './open-meteo-marine.schema.js';
@@ -113,8 +113,9 @@ export class OpenMeteoMarineAdapter extends MarineSourcePort {
 
   // String concatenation keeps any path on the base URL (a proxy prefix or the stub's behaviour prefix).
   private url({ latitude, longitude }: Coordinates, days: number): URL {
-    const base = this.config.get('UPSTREAM_MARINE_URL').replace(/\/$/, '');
-    const url = new URL(`${base}/v1/marine`);
+    // Unset means the real host; set, it is the stub upstream or a proxy for the whole provider.
+    const base = this.config.get('UPSTREAM_BASE_URL') ?? OPEN_METEO_MARINE_URL;
+    const url = new URL(`${base.replace(/\/$/, '')}/v1/marine`);
     url.searchParams.set('latitude', String(latitude));
     url.searchParams.set('longitude', String(longitude));
     url.searchParams.set('daily', DAILY_VARIABLES);

@@ -46,6 +46,22 @@ describe('OpenMeteoForecastAdapter normalisation', () => {
     expect(outcome).toMatchObject({ kind: 'failed', reason: 'malformed' });
   });
 
+  it('U-ADAPT-13 with UPSTREAM_BASE_URL unset the forecast goes to the real Open-Meteo host', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal('fetch', (url: URL) => {
+      urls.push(url.href);
+      return Promise.resolve(new Response('{}'));
+    });
+    const config = testConfig({ UPSTREAM_BASE_URL: '' });
+
+    await new OpenMeteoForecastAdapter(config, silentLogger(), new FixedClock()).fetchDays(
+      CHAMONIX,
+      8,
+    );
+
+    expect(urls[0]).toMatch(/^https:\/\/api\.open-meteo\.com\/v1\/forecast\?/);
+  });
+
   it('U-ADAPT-2 the pure normalisation returns null for a payload that fails the schema', () => {
     expect(normaliseForecastPayload({ daily: {} })).toBeNull();
     expect(normaliseMarinePayload({ daily: {} })).toBeNull();

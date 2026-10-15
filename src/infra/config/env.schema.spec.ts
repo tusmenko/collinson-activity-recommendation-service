@@ -24,6 +24,21 @@ describe('U-INFRA-2 environment schema', () => {
     });
   });
 
+  it('U-INFRA-2 leaves UPSTREAM_BASE_URL unset when absent or empty, so adapters use the real hosts', () => {
+    expect(loadEnv({}).UPSTREAM_BASE_URL).toBeUndefined();
+    expect(loadEnv({ UPSTREAM_BASE_URL: '' }).UPSTREAM_BASE_URL).toBeUndefined();
+  });
+
+  it('U-INFRA-2 accepts an http UPSTREAM_BASE_URL', () => {
+    const env = loadEnv({ UPSTREAM_BASE_URL: 'http://stub-upstream:8080' });
+
+    expect(env.UPSTREAM_BASE_URL).toBe('http://stub-upstream:8080');
+  });
+
+  it('U-INFRA-2 rejects a non-http UPSTREAM_BASE_URL, naming UPSTREAM_BASE_URL', () => {
+    expect(() => loadEnv({ UPSTREAM_BASE_URL: 'ftp://example.test' })).toThrow(/UPSTREAM_BASE_URL/);
+  });
+
   it('U-INFRA-2 rejects RETENTION_TTL not above FRESHNESS_TTL, naming RETENTION_TTL', () => {
     expect(() => loadEnv({ RETENTION_TTL: '1h', FRESHNESS_TTL: '6h' })).toThrow(/RETENTION_TTL/);
   });

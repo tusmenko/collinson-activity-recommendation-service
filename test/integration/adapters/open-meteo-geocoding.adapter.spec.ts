@@ -19,7 +19,7 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
 
   function adapter(behaviour = 'ok', overrides: EnvOverrides = {}): OpenMeteoGeocodingAdapter {
     const config = testConfig({
-      UPSTREAM_GEOCODING_URL: `${stub.url}/stub/${behaviour}`,
+      UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
     return new OpenMeteoGeocodingAdapter(config, silentLogger());

@@ -24,7 +24,7 @@ describe('OpenMeteoMarineAdapter against the stub upstream', () => {
 
   function adapter(behaviour = 'ok', overrides: EnvOverrides = {}): OpenMeteoMarineAdapter {
     const config = testConfig({
-      UPSTREAM_MARINE_URL: `${stub.url}/stub/${behaviour}`,
+      UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
     return new OpenMeteoMarineAdapter(config, silentLogger(), new FixedClock());

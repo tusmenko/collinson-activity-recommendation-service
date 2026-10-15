@@ -25,7 +25,7 @@ describe('OpenMeteoForecastAdapter against the stub upstream', () => {
 
   function adapter(behaviour = 'ok', overrides: EnvOverrides = {}): OpenMeteoForecastAdapter {
     const config = testConfig({
-      UPSTREAM_FORECAST_URL: `${stub.url}/stub/${behaviour}`,
+      UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
     return new OpenMeteoForecastAdapter(config, silentLogger(), new FixedClock());

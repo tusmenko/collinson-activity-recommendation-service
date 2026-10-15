@@ -14,10 +14,15 @@ describe('harness e2e health over HTTP', () => {
     await testApp.close();
   });
 
-  it('harness GET /health answers 200 with status ok', async () => {
+  it('harness GET /health answers 200 with status and details only', async () => {
     const response = await fetch(`${testApp.url}/health`);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ status: 'ok' });
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      status: 'ok',
+      details: { redis: { status: 'up' }, memory_heap: { status: 'up' } },
+    });
+    expect(Object.keys(body).sort()).toEqual(['details', 'status']);
   });
 });

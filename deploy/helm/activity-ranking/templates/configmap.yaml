@@ -1,10 +1,8 @@
-{{- /* Every key of .env.example with its default (design D-2); REDIS_URL from values; values.env overrides any key. */ -}}
+{{- /* Every key of .env.example with its default (design D-2); REDIS_URL from values; values.env overrides any key.
+UPSTREAM_BASE_URL has no default (unset means Open-Meteo's real hosts); set it in values.env to point at a stub. */ -}}
 {{- $defaults := dict
   "NODE_ENV" "production"
   "PORT" "4510"
-  "UPSTREAM_GEOCODING_URL" "https://geocoding-api.open-meteo.com"
-  "UPSTREAM_FORECAST_URL" "https://api.open-meteo.com"
-  "UPSTREAM_MARINE_URL" "https://marine-api.open-meteo.com"
   "WINDOW_DAYS" "7"
   "FETCH_DAYS" "8"
   "FRESHNESS_TTL" "6h"

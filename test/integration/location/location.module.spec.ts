@@ -25,7 +25,7 @@ describe('LocationModule wiring', () => {
 
   // RedisModule quits its client on close, so every compiled module gets its own.
   async function compile(behaviour: string, client: Redis): Promise<TestingModule> {
-    const config = testConfig({ UPSTREAM_GEOCODING_URL: `${stub.url}/stub/${behaviour}` });
+    const config = testConfig({ UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}` });
     return Test.createTestingModule({ imports: [InfraModule, LocationModule] })
       .overrideProvider(ConfigService)
       .useValue(config)

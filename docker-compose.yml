@@ -45,9 +45,7 @@ services:
     profiles: [demo]
     environment:
       <<: *api-env
-      UPSTREAM_GEOCODING_URL: http://stub-upstream:8080
-      UPSTREAM_FORECAST_URL: http://stub-upstream:8080
-      UPSTREAM_MARINE_URL: http://stub-upstream:8080
+      UPSTREAM_BASE_URL: http://stub-upstream:8080
       # The load job (scripts/load.mjs) sends thousands of requests a minute from one client; the default 60 would
       # turn most of them into RATE_LIMITED. Only the demo service is raised; api keeps the default.
       INBOUND_PER_MINUTE: '100000'
