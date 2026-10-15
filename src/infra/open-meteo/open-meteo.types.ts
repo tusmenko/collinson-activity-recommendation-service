@@ -8,6 +8,12 @@ export interface Coordinates {
   readonly longitude: number;
 }
 
+// Optional server-side narrowing of a location search.
+export interface LocationSearchNarrowing {
+  // Sent as a qualifier after a comma in `name`; the provider matches it exactly against a country or admin1.
+  readonly region?: string;
+}
+
 // The failed branch every endpoint returns instead of throwing.
 export interface OpenMeteoFailure {
   readonly kind: 'failed';

@@ -16,13 +16,16 @@ export class LocationService {
     private readonly clock: ClockPort,
   ) {}
 
-  async resolve(city: string, country?: string): Promise<ResolvedLocation> {
-    const query = normaliseQuery(city, country);
+  async resolve(city: string, country?: string, region?: string): Promise<ResolvedLocation> {
+    const query = normaliseQuery(city, country, region);
     const cached = await this.fromCache(query);
     if (cached !== null) {
       return cached;
     }
-    const outcome = await this.geocoding.search(city.trim());
+    const outcome = await this.geocoding.search(
+      city.trim(),
+      region === undefined ? {} : { region: region.trim() },
+    );
     if (outcome.kind === 'failed') {
       throw new GeocodingUnavailableError(outcome.reason);
     }

@@ -19,7 +19,11 @@ export class RankingsQueryService {
   ) {}
 
   async byCity(args: RankingsArgs, requestId: string): Promise<RankingsResultModel> {
-    const { location, alternatives } = await this.locations.resolve(args.city, args.country);
+    const { location, alternatives } = await this.locations.resolve(
+      args.city,
+      args.country,
+      args.region,
+    );
     const ranked = await this.ranker.rank(location, args.activities, requestId);
     return this.mapper.toResult(ranked, alternatives, this.clock.now());
   }

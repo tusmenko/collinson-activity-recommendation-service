@@ -19,7 +19,12 @@ import {
   MarinePayloadSchema,
 } from './open-meteo.schema';
 import type { ForecastPayload, GeocodingPayload, MarinePayload } from './open-meteo.schema';
-import type { Coordinates, OpenMeteoOutcome, OpenMeteoRequest } from './open-meteo.types';
+import type {
+  Coordinates,
+  LocationSearchNarrowing,
+  OpenMeteoOutcome,
+  OpenMeteoRequest,
+} from './open-meteo.types';
 import { failureOf } from './open-meteo.util';
 
 // Open-Meteo as three typed endpoints. The client owns hosts, parameters, pinned payload schemas, timeouts and the
@@ -36,11 +41,19 @@ export class OpenMeteoClient {
     this.logger = logger.pino.child({ component: 'OpenMeteoClient' });
   }
 
-  searchLocations(name: string): Promise<OpenMeteoOutcome<GeocodingPayload>> {
+  searchLocations(
+    name: string,
+    { region }: LocationSearchNarrowing = {},
+  ): Promise<OpenMeteoOutcome<GeocodingPayload>> {
     return this.request({
       host: 'geocoding',
       path: OPEN_METEO_PATHS.search,
-      params: { name, count: String(GEOCODING_COUNT), language: 'en', format: 'json' },
+      params: {
+        name: region === undefined ? name : `${name}, ${region}`,
+        count: String(GEOCODING_COUNT),
+        language: 'en',
+        format: 'json',
+      },
       schema: GeocodingPayloadSchema,
       label: 'geocoding',
     });

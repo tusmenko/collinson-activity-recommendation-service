@@ -1,7 +1,9 @@
 import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types';
 
-export function normaliseQuery(city: string, country: string | undefined): string {
-  return `${city.trim().toLowerCase()}|${country?.trim().toLowerCase() ?? ''}`;
+// The region part is appended only when given, so keys written before regions existed stay valid.
+export function normaliseQuery(city: string, country: string | undefined, region?: string): string {
+  const base = `${city.trim().toLowerCase()}|${country?.trim().toLowerCase() ?? ''}`;
+  return region === undefined ? base : `${base}|${region.trim().toLowerCase()}`;
 }
 
 export function inCountry(result: GeocodingResult, country: string): boolean {

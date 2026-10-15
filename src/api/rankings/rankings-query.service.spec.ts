@@ -41,11 +41,11 @@ describe('RankingsQueryService', () => {
     const { service, resolve, rank, paris } = setup();
 
     const result = await service.byCity(
-      { city: 'Paris', country: 'FR', activities: ['SKIING'] },
+      { city: 'Paris', country: 'FR', region: 'Île-de-France', activities: ['SKIING'] },
       'req-1',
     );
 
-    expect(resolve).toHaveBeenCalledWith('Paris', 'FR');
+    expect(resolve).toHaveBeenCalledWith('Paris', 'FR', 'Île-de-France');
     expect(rank).toHaveBeenCalledWith(paris, ['SKIING'], 'req-1');
     expect(result.location.id).toBe('2988507');
     expect(result.meta.alternatives.map(({ id }) => id)).toEqual(['2996944']);

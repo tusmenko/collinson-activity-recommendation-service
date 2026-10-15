@@ -15,6 +15,9 @@ function optional<Schema extends z.ZodType>(
 
 export const CitySchema = z.string().trim().min(1).max(80).regex(PLACE_NAME, PLACE_NAME_MESSAGE);
 
+// A first-level administrative area such as a state or province; same rules as the city.
+export const RegionSchema = optional(CitySchema);
+
 export const CountrySchema = optional(
   z.string().trim().min(2).max(56).regex(PLACE_NAME, PLACE_NAME_MESSAGE),
 );
@@ -26,5 +29,6 @@ export const ActivitiesSchema = optional(z.array(z.string()).min(1));
 export interface RankingsArgs {
   readonly city: z.output<typeof CitySchema>;
   readonly country: z.output<typeof CountrySchema>;
+  readonly region: z.output<typeof RegionSchema>;
   readonly activities: z.output<typeof ActivitiesSchema>;
 }

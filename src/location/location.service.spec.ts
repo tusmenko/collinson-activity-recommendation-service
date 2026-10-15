@@ -7,6 +7,7 @@ import { FactsRepositoryPort } from './facts/facts.port';
 import { toGeocodingResults } from './geocoding/open-meteo-geocoding.util';
 import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
 import { LocationService } from './location.service';
+import type { GeocodingPort } from './geocoding/geocoding.port';
 import type {
   GeocodingOutcome,
   GeocodingResult,
@@ -56,7 +57,7 @@ class InMemoryFactsRepository extends FactsRepositoryPort {
 }
 
 function setup(outcome?: GeocodingOutcome) {
-  const search = vi.fn((name: string): Promise<GeocodingOutcome> =>
+  const search = vi.fn<GeocodingPort['search']>((name) =>
     Promise.resolve(outcome ?? { kind: 'ok', results: fixtureResults(name) }),
   );
   const facts = new InMemoryFactsRepository();
@@ -177,6 +178,15 @@ describe('LocationService.resolve', () => {
     const { service } = setup();
 
     await expect(service.resolve('London', 'Japan')).rejects.toBeInstanceOf(LocationNotFoundError);
+  });
+
+  it('U-LOC-13 a region narrows the provider search and is part of the cache key', async () => {
+    const { service, search, facts } = setup();
+
+    await service.resolve('Springfield', undefined, ' Illinois ');
+
+    expect(search).toHaveBeenCalledWith('Springfield', { region: 'Illinois' });
+    expect([...facts.geocodes.keys()]).toEqual(['springfield||illinois']);
   });
 
   it('U-LOC-7 a failed geocoding call throws GeocodingUnavailableError with the reason', async () => {

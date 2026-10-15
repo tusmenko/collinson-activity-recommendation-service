@@ -65,7 +65,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 
 ```graphql
 type Query {
-  activityRankings(city: String!, country: String, activities: [Activity!]): RankingsResult!
+  activityRankings(city: String!, country: String, region: String, activities: [Activity!]): RankingsResult!
 }
 
 type RankingsResult {
@@ -160,6 +160,17 @@ enum Effect { POSITIVE NEGATIVE NEUTRAL }
 scalar Date
 scalar DateTime
 ```
+
+Arguments of `Query.activityRankings`:
+
+| Argument | Rules | Effect |
+| --- | --- | --- |
+| `city` | required; trimmed; 1 to 80 characters; letters in any script, digits, spaces, hyphens, dots, apostrophes | sent to Open-Meteo geocoding as `name`; the first hit is the match ([A-10](arch/registers.md#a-10)), up to four more are `meta.alternatives` |
+| `country` | optional; trimmed; 2 to 56 characters; same characters | keeps only hits in that country, by name or ISO code |
+| `region` | optional; same rules as `city` | a first-level area (state, province); sent as `name=<city>, <region>`, which Open-Meteo matches exactly against a country or admin1 |
+| `activities` | optional; a non-empty list of `Activity` | ranks only those; omitted means all |
+
+The geocode cache key is the normalised city, country and region (`geocode:v1:{city}|{country}[|{region}]`, [D-4](#d-4)).
 
 Rules:
 

@@ -77,6 +77,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [DF-3](arch/02-requirements.md#df-3) not applicable, status split | U-RANK-16 `NO_CONDITIONS` with null scores is no anomaly, a score under it is; S-SCHEMA-4 `ActivityStatus` adds `NO_CONDITIONS` and keeps every earlier value; E-API-16 Chamonix in October gives skiing `NO_CONDITIONS` with the snow reason in `meta.reasons`; U-API-11 `NO_CONDITIONS` is listed in `meta.reasons` | unit, schema, end-to-end | review |
 | [FR-4](arch/02-requirements.md#fr-4) score per day, indoor boost | U-RANK-17 a heavy good factor lifts the day to the `goodBoost` minimum, a light one or a higher mean does not, and a `poorCap` wins over the boost before the floor; U-INDOOR-1 Dubai indoor scores at least 60 on every day | unit | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
+| [DF-1](arch/02-requirements.md#df-1) ambiguity, region | U-API-15 `region` is optional and follows the city's charset and length rules; U-ADAPT-15 the client sends `name=<city>, <region>`; U-LOC-13 the service passes the region to the geocoder and keys the cache on it; E-API-17 `activityRankings(city: "Springfield", region: "Illinois")` resolves Illinois first | unit, end-to-end | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 
 ## Golden set and fixtures

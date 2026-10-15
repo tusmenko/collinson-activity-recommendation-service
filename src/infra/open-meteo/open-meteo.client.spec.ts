@@ -89,6 +89,17 @@ describe('OpenMeteoClient', () => {
     ]);
   });
 
+  it('U-ADAPT-15 a region is sent as a qualifier after a comma in the name', async () => {
+    const urls = answering(() => Promise.resolve(Response.json({})));
+    const client = openMeteoClient(testConfig({ UPSTREAM_BASE_URL: 'http://stub:1' }));
+
+    await client.searchLocations('Springfield', { region: 'Illinois' });
+
+    expect(urls).toEqual([
+      'http://stub:1/v1/search?name=Springfield%2C+Illinois&count=5&language=en&format=json',
+    ]);
+  });
+
   it('U-ADAPT-13 with UPSTREAM_BASE_URL unset each endpoint goes to its real Open-Meteo host', async () => {
     const urls = answering(() => Promise.resolve(Response.json({})));
     const client = openMeteoClient(testConfig({ UPSTREAM_BASE_URL: '' }));

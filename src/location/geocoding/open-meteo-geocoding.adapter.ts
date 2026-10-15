@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { OpenMeteoClient } from '../../infra/index';
-import type { GeocodingOutcome } from '../location.types';
+import type { GeocodingNarrowing, GeocodingOutcome } from '../location.types';
 import { GeocodingPort } from './geocoding.port';
 import { toGeocodingResults } from './open-meteo-geocoding.util';
 
@@ -11,8 +11,8 @@ export class OpenMeteoGeocodingAdapter extends GeocodingPort {
     super();
   }
 
-  async search(name: string): Promise<GeocodingOutcome> {
-    const outcome = await this.client.searchLocations(name);
+  async search(name: string, narrowing: GeocodingNarrowing = {}): Promise<GeocodingOutcome> {
+    const outcome = await this.client.searchLocations(name, narrowing);
     if (outcome.kind === 'failed') {
       return { kind: 'failed', reason: outcome.reason, detail: outcome.detail };
     }
