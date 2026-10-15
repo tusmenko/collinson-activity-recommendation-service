@@ -97,7 +97,7 @@ Fixtures are recorded once and served by the stub; to record them again follow [
 | Geocoding fails | `UPSTREAM_UNAVAILABLE` |
 | No geocoding match | `NOT_FOUND` naming the input; no forecast call |
 
-**Scoring.** Scores are computed on every read from the stored signals, so a rule change needs no re-ingest. Each activity is a registered classifier that declares the sources it needs and reads its thresholds from a JSON file next to it (`src/ranking/*/*.rules.json`, each threshold with a note). A factor scores 100 in its good band, 0 in its poor band and 50 between; the day is the weighted mean, capped at 30 when a heavy factor is poor, and indoor sightseeing never drops below 40. Skiing is applicable only at 800 m or higher (the place's geocoding elevation) and when the forecast carries snow depth; surfing only where the marine API has data. Ranking events record the rule-set version and each classifier's version; adding an activity is one classifier and one registration ([D-6](docs/ACTIVITY_RANKING_DESIGN.md#d-6)).
+**Scoring.** Scores are computed on every read from the stored signals, so a rule change needs no re-ingest. Each activity is a registered classifier that declares the sources it needs and carries its thresholds in a JSON file next to it (`src/ranking/classifiers/*/*.rules.json`, each threshold with a note); the rule-set version is built from the registered files. A factor scores 100 in its good band, 0 in its poor band and 50 between; the day is the weighted mean, capped at 30 when a heavy factor is poor, and indoor sightseeing never drops below 40. Skiing is applicable only at 800 m or higher (the place's geocoding elevation; a minimum elevation in any activity's rules is checked by the shared engine) and when the forecast shows at least 5 cm of snow depth on some day of the window; surfing only where the marine API has data. Ranking events record the rule-set version and each classifier's version; adding an activity is one classifier and one registration, a line in `RankingModule`'s list ([D-6](docs/ACTIVITY_RANKING_DESIGN.md#d-6)).
 
 **Events and anomalies.** Every ranking writes one JSON log event with the location, fetched-at per source, classifier and rule-set versions, scores and factors; every ingest run writes one with its duration and outcome. Invariants (score range, one score per day of the window, no score on a non-applicable activity) run on each request; a violation logs at warn and increments the OpenTelemetry counter `ranking_anomalies_total{type}`, exported to the console every 60 s or over OTLP ([D-7](docs/ACTIVITY_RANKING_DESIGN.md#d-7)).
 
@@ -136,7 +136,7 @@ From the [assumptions register](docs/arch/registers.md#assumptions-register); ea
 - A-19: upstream timeout 2 s with one retry; stale data served with a flag on failure; `UPSTREAM_UNAVAILABLE` with a retry hint when nothing is stored; a marine-only failure degrades surfing only.
 - A-20: structured logs per upstream call and refresh plus `/health` are enough observability for the exercise.
 - A-21: tests cover every level without the live upstream; the load job is a `main` and nightly gate, not a per-push one.
-- A-22: a new activity is one classifier module and one registration, with no change elsewhere.
+- A-22: a new activity is one classifier folder and one registration, with no change elsewhere.
 - A-24: interactive use: one reviewer, tens of requests a minute, a handful of places.
 - A-25: the process is stateless; one process, one store.
 - A-26: open on localhost, no user data.

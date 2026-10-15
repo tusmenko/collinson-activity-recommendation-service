@@ -204,7 +204,7 @@ interface Classifier {
 }
 ```
 
-The registry is a map from `Activity` to `Classifier`, filled by module registration; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below) and otherwise when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
+The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below) and otherwise when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
 
 ### D-6.1 Provisional thresholds
 
@@ -372,7 +372,7 @@ sequenceDiagram
     note over P: marine-only failure: forecast keys written, surfing UNAVAILABLE, partial=true
 ```
 
-Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime sequence: one classifier module exporting `id`, `version`, `requires`, `score`, one registry entry; the `Activity` enum regenerates at startup; a test registers a fake activity and asserts it appears.
+Adding an activity ([QAS-7](arch/02-requirements.md#qas-7)) is not a runtime sequence: one classifier exporting `id`, `version`, `requires`, `ruleFile`, `score`, one entry in the `RankingModule` classifier list; the `Activity` enum regenerates at startup; a test registers a fake activity and asserts it appears.
 
 <a id="d-10"></a>
 ## D-10 Test layout

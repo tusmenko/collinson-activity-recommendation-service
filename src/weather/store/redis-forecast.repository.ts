@@ -6,7 +6,8 @@ import type { Source } from '../weather.types';
 import { ForecastRepositoryPort } from './forecast.port';
 import { FAIR_USE_COUNTER_TTL_MS, LAST_ERROR_TTL_MS } from './store.const';
 import type { LastIngestError, StoredDay, WindowRead, WindowState } from './store.types';
-import { counterKey, dayKey, lastErrorKey, oldest, rawKey } from './store.util';
+import { minIso } from '../weather.util';
+import { counterKey, dayKey, lastErrorKey, rawKey } from './store.util';
 
 @Injectable()
 export class RedisForecastRepository extends ForecastRepositoryPort {
@@ -32,7 +33,11 @@ export class RedisForecastRepository extends ForecastRepositoryPort {
     const days = values.flatMap((value) =>
       value === null ? [] : [JSON.parse(value) as StoredDay],
     );
-    return { state: this.stateOf(days.length < dates.length, ttls), days, fetchedAt: oldest(days) };
+    return {
+      state: this.stateOf(days.length < dates.length, ttls),
+      days,
+      fetchedAt: minIso(days.map((day) => day.fetchedAt)),
+    };
   }
 
   async writeWindow(

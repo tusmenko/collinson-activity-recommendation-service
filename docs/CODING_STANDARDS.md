@@ -51,6 +51,7 @@ One concern per file, named by postfix. Lint enforces the names (`eslint-plugin-
 | `*.service.ts` | one application or domain service | one class |
 | `*.resolver.ts`, `*.controller.ts` | transport | no logic beyond validation and one service call |
 | `*.adapter.ts`, `*.repository.ts` | ports and adapters implementations | the only importers of their client library |
+| `*.client.ts` | one shared outbound client used by several adapters (the Open-Meteo HTTP client) | class file; held to the adapter rules |
 | `*.port.ts` | abstract classes or interfaces that adapters and repositories implement; the DI tokens | tokens as abstract classes, no string tokens |
 | `*.types.ts` | interfaces, type aliases, enums | type declarations, exported or not, are not allowed in other files except `*.schema.ts` |
 | `*.const.ts` | exported constants and lookup tables | no logic; module-level data of a class file lives here |

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { OpenMeteoMarineAdapter } from '../../../src/weather/sources/marine/open-meteo-marine.adapter';
-import { silentLogger, testConfig } from '../../setup/adapter-deps';
+import { openMeteoClient, testConfig } from '../../setup/adapter-deps';
 import { FixedClock } from '../../setup/fixed-clock';
 import type { EnvOverrides } from '../../setup/test-env';
 import { startStubUpstream } from '../../stub-upstream/server';
@@ -27,7 +27,7 @@ describe('OpenMeteoMarineAdapter against the stub upstream', () => {
       UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
-    return new OpenMeteoMarineAdapter(config, silentLogger(), new FixedClock());
+    return new OpenMeteoMarineAdapter(openMeteoClient(config), new FixedClock());
   }
 
   it('U-ADAPT-3 London marine nulls normalise to all-null wave fields with kind ok', async () => {
@@ -109,7 +109,7 @@ describe('OpenMeteoMarineAdapter against the stub upstream', () => {
   });
 
   it('U-ADAPT-9 a refused marine connection yields reason network', async () => {
-    const unreachable = new OpenMeteoMarineAdapter(testConfig(), silentLogger(), new FixedClock());
+    const unreachable = new OpenMeteoMarineAdapter(openMeteoClient(testConfig()), new FixedClock());
 
     const outcome = await unreachable.fetchDays(BIARRITZ, FETCH_DAYS);
 

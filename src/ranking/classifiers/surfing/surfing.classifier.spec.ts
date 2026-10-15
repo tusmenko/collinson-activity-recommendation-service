@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { rankingInput } from '../../../../test/setup/ranking-input';
 import { ScoreEngine } from '../../engine/score-engine.service';
 import { mergeDays } from '../../ranking.util';
-import { StaticRuleSetAdapter } from '../../rules/static-rule-set.adapter';
+import { parseRuleSet } from '../../rules/rules.util';
 import { SurfingClassifier } from './surfing.classifier';
 
 const classifier = new SurfingClassifier(new ScoreEngine());
-const rules = new StaticRuleSetAdapter().get('SURFING');
+const rules = parseRuleSet('SURFING', classifier.ruleFile);
 
 function input(place: 'biarritz' | 'london') {
   const { location, days } = rankingInput(place);
@@ -48,5 +48,18 @@ describe('SurfingClassifier', () => {
     expect(classifier.id).toBe('SURFING');
     expect(classifier.version).toBe('1.0.0');
     expect(classifier.requires).toEqual(['FORECAST', 'MARINE']);
+  });
+  it('U-RANK-14 a minimum elevation in its rules is honoured before the marine check', async () => {
+    const biarritz = input('biarritz');
+    const facts = { ...biarritz.facts, elevation: 25 };
+    const elevated = { ...rules, applicability: { minElevation: 800, note: 'test' } };
+
+    const output = await classifier.score({ ...biarritz, facts, rules: elevated });
+
+    expect(output).toMatchObject({
+      status: 'NOT_APPLICABLE',
+      reason: 'elevation 25 m is below 800 m',
+    });
+    expect(output.days.every((day) => day.score === null)).toBe(true);
   });
 });

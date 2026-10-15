@@ -5,7 +5,6 @@ export { Classifier } from './registry/classifier.port';
 export { ClassifierRegistry } from './registry/classifier-registry.service';
 export { RankingModule } from './ranking.module';
 export { RankingService } from './ranking.service';
-export { RuleSetProvider } from './rules/rule-set.port';
 /** @public */
 export { UnknownActivityError } from './ranking.errors';
 /** @public */

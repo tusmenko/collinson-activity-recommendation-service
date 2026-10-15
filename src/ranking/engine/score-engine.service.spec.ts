@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { LocationFacts } from '../../location/index';
 import type { DaySignals } from '../../weather/index';
 import type { RuleSet } from '../rules/rule-set.schema';
 import { ScoreEngine } from './score-engine.service';
@@ -200,5 +201,34 @@ describe('ScoreEngine.gate and unscored', () => {
       ['2026-10-15', 100],
       ['2026-10-16', 0],
     ]);
+  });
+});
+
+describe('ScoreEngine.placeGate', () => {
+  const PLACE = { elevation: 25 } as LocationFacts;
+  const elevated: RuleSet = { ...WAVES, applicability: { minElevation: 800, note: 'terrain' } };
+
+  it('U-RANK-14 a rule set without applicability admits any place', () => {
+    expect(engine.placeGate(PLACE, WAVES)).toEqual({ applicable: true });
+  });
+
+  it('U-RANK-14 a place below the minimum elevation is not applicable and the reason names both heights', () => {
+    expect(engine.placeGate(PLACE, elevated)).toEqual({
+      applicable: false,
+      reason: 'elevation 25 m is below 800 m',
+    });
+  });
+
+  it('U-RANK-14 a place at the minimum elevation is applicable', () => {
+    expect(engine.placeGate({ elevation: 800 } as LocationFacts, elevated)).toEqual({
+      applicable: true,
+    });
+  });
+
+  it('U-RANK-14 a place with no known elevation is not applicable', () => {
+    expect(engine.placeGate({} as LocationFacts, elevated)).toEqual({
+      applicable: false,
+      reason: 'elevation unknown',
+    });
   });
 });

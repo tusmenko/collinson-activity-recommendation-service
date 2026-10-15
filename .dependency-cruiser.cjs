@@ -71,11 +71,12 @@ module.exports = {
     },
     {
       name: 'client-libraries-in-wrappers-only',
-      comment: 'ioredis and bullmq are wrapped by repositories, queues, processors and infra.',
+      comment:
+        'ioredis and bullmq are wrapped by repositories, queues, processors, clients and infra.',
       severity: 'error',
       from: {
         path: '^src/',
-        pathNot: ['^src/infra/', '\\.(repository|queue|processor)\\.ts$'],
+        pathNot: ['^src/infra/', '\\.(repository|queue|processor|client)\\.ts$'],
       },
       to: { path: CLIENT_LIBRARIES },
     },

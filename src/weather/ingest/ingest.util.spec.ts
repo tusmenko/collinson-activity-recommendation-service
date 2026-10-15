@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { StoredDay, WindowRead } from '../store/store.types';
 import type { DaySignals } from '../weather.types';
 import { FairUseExceededError, IngestFailedError } from './ingest.errors';
-import type { Served } from './ingest.types';
-import { fromRead, marineAvailabilityOf, oldestFetchedAt, outcomeOf, skipped } from './ingest.util';
+import { fromRead, marineAvailabilityOf, outcomeOf, skipped } from './ingest.util';
 
 const CALM: DaySignals = {
   date: '2026-10-15',
@@ -28,10 +27,6 @@ const CALM: DaySignals = {
 
 function read(fetchedAt: string | null, days: readonly StoredDay[] = []): WindowRead {
   return { state: 'fresh', days, fetchedAt };
-}
-
-function served(fetchedAt: string | null): Served {
-  return { status: { source: 'FORECAST', status: 'OK', fetchedAt }, days: null, stale: false };
 }
 
 describe('ingest helpers', () => {
@@ -60,19 +55,6 @@ describe('ingest helpers', () => {
       status: { status: 'FAILED' },
       stale: true,
     });
-  });
-
-  it('U-INGEST-1 the oldest fetchedAt across served sources; null when none has one', () => {
-    expect(
-      oldestFetchedAt([
-        served('2026-10-15T06:00:00.000Z'),
-        served(null),
-        served('2026-10-14T06:00:00.000Z'),
-        served('2026-10-15T05:00:00.000Z'),
-      ]),
-    ).toBe('2026-10-14T06:00:00.000Z');
-    expect(oldestFetchedAt([served(null)])).toBeNull();
-    expect(oldestFetchedAt([])).toBeNull();
   });
 
   it('U-EVENT-3 any wave value on any day means marine data is available', () => {

@@ -14,8 +14,11 @@ export interface BuiltSchema {
 }
 
 // The code-first schema built in-process from the api resolvers, as the app builds it at startup; no Redis, no HTTP.
-export async function buildSchema(registry: ClassifierRegistry): Promise<BuiltSchema> {
-  registerActivities(registry.ids());
+// Without a registry the Activity enum is left as the app's own wiring filled it.
+export async function buildSchema(registry?: ClassifierRegistry): Promise<BuiltSchema> {
+  if (registry !== undefined) {
+    registerActivities(registry.ids());
+  }
   const moduleRef = await Test.createTestingModule({
     imports: [GraphQLSchemaBuilderModule],
   }).compile();

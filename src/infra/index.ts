@@ -4,6 +4,7 @@ export { ClockPort } from './clock/clock.port';
 export { ConfigService } from './config/config.service';
 export { loadProcessEnv } from './config/env.schema';
 export { InfraModule } from './infra.module';
+export { OpenMeteoClient } from './open-meteo/open-meteo.client';
 export { QueueConnection } from './redis/queue-connection.service';
 export { RedisThrottlerStorage } from './throttling/redis-throttler-storage.adapter';
 export { TelemetryService } from './telemetry/telemetry.service';

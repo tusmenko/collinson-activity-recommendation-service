@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { silentLogger, testConfig } from '../../../test/setup/adapter-deps';
+import { openMeteoClient, testConfig } from '../../../test/setup/adapter-deps';
 import { OpenMeteoGeocodingAdapter } from './open-meteo-geocoding.adapter';
 
 describe('OpenMeteoGeocodingAdapter base URL', () => {
@@ -16,7 +16,7 @@ describe('OpenMeteoGeocodingAdapter base URL', () => {
     });
     const config = testConfig({ UPSTREAM_BASE_URL: '' });
 
-    await new OpenMeteoGeocodingAdapter(config, silentLogger()).search('Biarritz');
+    await new OpenMeteoGeocodingAdapter(openMeteoClient(config)).search('Biarritz');
 
     expect(urls[0]).toMatch(/^https:\/\/geocoding-api\.open-meteo\.com\/v1\/search\?/);
   });

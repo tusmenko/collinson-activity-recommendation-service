@@ -52,4 +52,16 @@ describe('U-INFRA-1 health check', () => {
 
     await expect(controller.check()).rejects.toBe(boom);
   });
+
+  it('U-INFRA-1 a 503 that is not a Terminus result propagates unchanged', async () => {
+    const plain = new ServiceUnavailableException('draining');
+    const health = { check: () => Promise.reject(plain) } as unknown as HealthCheckService;
+    const controller = new HealthController(
+      health,
+      {} as RedisHealthIndicator,
+      {} as MemoryHealthIndicator,
+    );
+
+    await expect(controller.check()).rejects.toBe(plain);
+  });
 });

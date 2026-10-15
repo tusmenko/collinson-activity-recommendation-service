@@ -1,41 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { failureOf, toGeocodingResults } from './open-meteo-geocoding.util';
-
-function named(name: string, message: string): Error {
-  const error = new Error(message);
-  error.name = name;
-  return error;
-}
+import { toGeocodingResults } from './open-meteo-geocoding.util';
 
 describe('geocoding normalisation', () => {
-  it('U-ADAPT-8 a timeout or abort is reason timeout', () => {
-    expect(failureOf(named('TimeoutError', 'took too long'))).toEqual({
-      kind: 'failed',
-      reason: 'timeout',
-      detail: 'took too long',
-    });
-    expect(failureOf(named('AbortError', 'aborted'))).toMatchObject({ reason: 'timeout' });
-  });
-
-  it('U-ADAPT-8 a body that is not JSON is reason malformed', () => {
-    expect(failureOf(new SyntaxError('Unexpected token'))).toMatchObject({
-      reason: 'malformed',
-      detail: 'Unexpected token',
-    });
-  });
-
-  it('U-ADAPT-8 anything else, thrown error or not, is reason network', () => {
-    expect(failureOf(new TypeError('fetch failed'))).toMatchObject({
-      reason: 'network',
-      detail: 'fetch failed',
-    });
-    expect(failureOf('socket hang up')).toMatchObject({
-      reason: 'network',
-      detail: 'socket hang up',
-    });
-  });
-
   it('U-ADAPT-8 optional fields are omitted when the provider leaves them out', () => {
     const [result] = toGeocodingResults({
       results: [{ id: 7, name: 'Nowhere', latitude: 1, longitude: 2, timezone: 'UTC' }],

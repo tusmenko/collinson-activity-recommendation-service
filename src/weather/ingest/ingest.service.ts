@@ -7,7 +7,8 @@ import { SOURCES } from '../weather.const';
 import { ForecastUnavailableError } from '../weather.errors';
 import type { DaySignals, Source } from '../weather.types';
 import type { EnsureLocation, EnsureResult, Served } from './ingest.types';
-import { fromRead, marineAvailabilityOf, oldestFetchedAt, skipped } from './ingest.util';
+import { minIso } from '../weather.util';
+import { fromRead, marineAvailabilityOf, skipped } from './ingest.util';
 import { WindowService } from './window.service';
 
 // Refresh on read (design D-4, D-8): a fresh window is served as stored; a stale or missing one
@@ -41,7 +42,7 @@ export class IngestService {
       throw new ForecastUnavailableError();
     }
     return {
-      fetchedAt: oldestFetchedAt(served),
+      fetchedAt: minIso(served.flatMap(({ status }) => status.fetchedAt ?? [])),
       stale: served.some((entry) => entry.stale),
       partial: sources.includes('MARINE') && days.MARINE === undefined,
       sources: served.map((entry) => entry.status),

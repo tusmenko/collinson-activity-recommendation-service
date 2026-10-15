@@ -9,6 +9,7 @@ import { failedSource, mergeDays, noSignals } from './ranking.util';
 class Requiring extends Classifier {
   readonly id = 'REQUIRING';
   readonly version = '1.0.0';
+  readonly ruleFile = {};
 
   constructor(readonly requires: readonly Source[]) {
     super();

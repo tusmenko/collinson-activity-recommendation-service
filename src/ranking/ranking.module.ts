@@ -1,27 +1,37 @@
 import { Module } from '@nestjs/common';
 
 import { AuditModule } from './audit/audit.module';
-import { IndoorSightseeingModule } from './classifiers/indoor-sightseeing/indoor-sightseeing.module';
-import { OutdoorSightseeingModule } from './classifiers/outdoor-sightseeing/outdoor-sightseeing.module';
-import { SkiingModule } from './classifiers/skiing/skiing.module';
-import { SurfingModule } from './classifiers/surfing/surfing.module';
+import { IndoorSightseeingClassifier } from './classifiers/indoor-sightseeing/indoor-sightseeing.classifier';
+import { OutdoorSightseeingClassifier } from './classifiers/outdoor-sightseeing/outdoor-sightseeing.classifier';
+import { SkiingClassifier } from './classifiers/skiing/skiing.classifier';
+import { SurfingClassifier } from './classifiers/surfing/surfing.classifier';
 import { RankingService } from './ranking.service';
+import { ClassifierRegistry } from './registry/classifier-registry.service';
 import { RegistryModule } from './registry/registry.module';
-import { RulesModule } from './rules/rules.module';
+import { RuleSetProvider } from './rules/rule-set.port';
+import { StaticRuleSetAdapter } from './rules/static-rule-set.adapter';
 
-// Adding an activity is one folder under classifiers/ (module, classifier, rules) plus one import here and its
-// rule file in RULE_FILES (QAS-7). Each classifier module registers itself on init, in this import order.
+// Adding an activity is one folder under classifiers/ (classifier, rules JSON, spec) plus one entry in this list
+// (QAS-7); the classifier carries its rule file, and the rule-set version is built from the registered set.
 @Module({
   imports: [
-    RegistryModule,
-    RulesModule,
+    RegistryModule.register([
+      SkiingClassifier,
+      SurfingClassifier,
+      OutdoorSightseeingClassifier,
+      IndoorSightseeingClassifier,
+    ]),
     AuditModule,
-    SkiingModule,
-    SurfingModule,
-    OutdoorSightseeingModule,
-    IndoorSightseeingModule,
   ],
-  providers: [RankingService],
+  providers: [
+    RankingService,
+    {
+      provide: RuleSetProvider,
+      inject: [ClassifierRegistry],
+      useFactory: (registry: ClassifierRegistry): RuleSetProvider =>
+        new StaticRuleSetAdapter(registry.ruleFiles()),
+    },
+  ],
   exports: [RankingService, RegistryModule],
 })
 export class RankingModule {}

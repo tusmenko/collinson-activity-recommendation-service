@@ -13,8 +13,7 @@ import { GqlThrottlerGuard } from './gql-throttler.guard';
 import { GraphqlConfigService } from './graphql-config.service';
 import { THROTTLE_WINDOW_MS } from './graphql.const';
 
-// The GraphQL server and its inbound throttle. RankingModule is imported for the registry the Activity enum is built
-// from; it also puts the classifier modules deeper than GraphQLModule, so they register before the schema is built.
+// The GraphQL server and its inbound throttle. RankingModule is imported for the registry the Activity enum is built from.
 @Module({
   imports: [
     GraphQLModule.forRootAsync<ApolloDriverConfig>({

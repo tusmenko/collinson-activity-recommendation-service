@@ -19,6 +19,7 @@ const TYPE_PLACEMENT = [
 const CLASS_FILES = [
   'service',
   'adapter',
+  'client',
   'repository',
   'resolver',
   'processor',
@@ -47,6 +48,7 @@ const POSTFIXES = [
   'resolver',
   'controller',
   'adapter',
+  'client',
   'repository',
   'port',
   'types',

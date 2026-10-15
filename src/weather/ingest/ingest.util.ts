@@ -15,13 +15,6 @@ export function fromRead(source: Source, read: WindowRead, refreshFailed: boolea
   };
 }
 
-export function oldestFetchedAt(served: readonly Served[]): string | null {
-  const stamps = served.flatMap(({ status }) =>
-    status.fetchedAt === null ? [] : [status.fetchedAt],
-  );
-  return stamps.length === 0 ? null : stamps.reduce((min, stamp) => (stamp < min ? stamp : min));
-}
-
 // Inland points answer with every wave value null: absence of marine data, not a failure (D-7).
 export function marineAvailabilityOf(days: readonly DaySignals[]): MarineAvailability {
   const hasWaves = days.some(

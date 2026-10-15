@@ -25,12 +25,19 @@ export class HealthController {
         ]),
       );
     } catch (error) {
-      // Terminus throws 503 with the full result as the body; keep the 503, trim the body.
+      // Terminus throws 503 with the full result as the body; keep the 503, trim the body. Any other 503 is not ours.
       if (error instanceof ServiceUnavailableException) {
-        throw new ServiceUnavailableException(this.body(error.getResponse() as HealthCheckResult));
+        const response = error.getResponse();
+        if (this.isResult(response)) {
+          throw new ServiceUnavailableException(this.body(response));
+        }
       }
       throw error;
     }
+  }
+
+  private isResult(body: unknown): body is HealthCheckResult {
+    return typeof body === 'object' && body !== null && 'details' in body;
   }
 
   private body({ status, details }: HealthCheckResult): HealthBody {

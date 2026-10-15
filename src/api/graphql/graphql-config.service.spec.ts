@@ -29,11 +29,10 @@ function requestContext(options: ApolloDriverConfig, header: unknown) {
 }
 
 describe('GraphqlConfigService', () => {
-  it('U-API-9 registers every classifier id in the Activity enum before the schema is built', () => {
-    const registry = new ClassifierRegistry();
-    registry.register(new SkiingClassifier(new ScoreEngine()));
+  it('U-API-9 the options factory registers every classifier id in the Activity enum', () => {
+    const registry = new ClassifierRegistry([new SkiingClassifier(new ScoreEngine())]);
 
-    service('production', registry).onModuleInit();
+    service('production', registry).createGqlOptions();
 
     expect(ActivityEnum).toEqual({ SKIING: 'SKIING' });
   });

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { SourceFetchOutcome } from '../../../src/weather/index';
 import { OpenMeteoForecastAdapter } from '../../../src/weather/sources/forecast/open-meteo-forecast.adapter';
-import { silentLogger, testConfig } from '../../setup/adapter-deps';
+import { openMeteoClient, testConfig } from '../../setup/adapter-deps';
 import { FIXED_NOW, FixedClock } from '../../setup/fixed-clock';
 import type { EnvOverrides } from '../../setup/test-env';
 import { startStubUpstream } from '../../stub-upstream/server';
@@ -28,7 +28,7 @@ describe('OpenMeteoForecastAdapter against the stub upstream', () => {
       UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
-    return new OpenMeteoForecastAdapter(config, silentLogger(), new FixedClock());
+    return new OpenMeteoForecastAdapter(openMeteoClient(config), new FixedClock());
   }
 
   function okDays(outcome: SourceFetchOutcome) {
@@ -121,7 +121,7 @@ describe('OpenMeteoForecastAdapter against the stub upstream', () => {
 
   it('U-ADAPT-9 a refused connection yields reason network', async () => {
     const config = testConfig();
-    const unreachable = new OpenMeteoForecastAdapter(config, silentLogger(), new FixedClock());
+    const unreachable = new OpenMeteoForecastAdapter(openMeteoClient(config), new FixedClock());
 
     const outcome = await unreachable.fetchDays(CHAMONIX, FETCH_DAYS);
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { builtInRules } from '../../../test/setup/ranking-service';
+
 import { InvalidRuleSetError, UnknownActivityError } from '../ranking.errors';
 import { StaticRuleSetAdapter } from './static-rule-set.adapter';
 
@@ -12,7 +14,7 @@ const VALID = {
 
 describe('StaticRuleSetAdapter', () => {
   it('U-RULES-1 the version lists all four built-in rule files with their versions', () => {
-    const provider = new StaticRuleSetAdapter();
+    const provider = builtInRules();
 
     expect(provider.version).toBe(
       'v1+SKIING@1.1.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.0.0',
@@ -20,7 +22,7 @@ describe('StaticRuleSetAdapter', () => {
   });
 
   it('U-RULES-1 every built-in rule set loads, and every factor carries a note', () => {
-    const provider = new StaticRuleSetAdapter();
+    const provider = builtInRules();
 
     for (const activity of ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING']) {
       const notes = provider.get(activity).factors.map((factor) => factor.note);

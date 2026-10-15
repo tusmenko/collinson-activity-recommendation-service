@@ -11,16 +11,14 @@ import { RankingService } from './ranking.service';
 import { ClassifierRegistry } from './registry/classifier-registry.service';
 
 describe('RankingModule', () => {
-  it('U-RANK-2 the registry exposes the four built-in activities', async () => {
+  it('U-RANK-2 the registry exposes the four built-in activities before any module init', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule, LoggingModule, TelemetryModule, RankingModule],
     })
       .overrideProvider(ConfigService)
       .useValue(testConfig())
       .compile();
-    // Classifier modules register on init, as the app does before the GraphQL schema is built.
-    await moduleRef.init();
-
+    // No init(): the registry is filled at construction, so the first read already sees every classifier.
     expect(moduleRef.get(ClassifierRegistry).ids()).toEqual([
       'SKIING',
       'SURFING',

@@ -1,5 +1,4 @@
 import type { Source } from '../weather.types';
-import type { StoredDay } from './store.types';
 
 export function dayKey(locationId: string, source: Source, date: string): string {
   return `forecast:v1:${locationId}:${source}:${date}`;
@@ -15,12 +14,4 @@ export function lastErrorKey(locationId: string): string {
 
 export function counterKey(date: string): string {
   return `fairuse:day:${date}`;
-}
-
-// ISO 8601 strings in UTC compare correctly as text.
-export function oldest(days: readonly StoredDay[]): string | null {
-  return days.reduce<string | null>(
-    (min, day) => (min === null || day.fetchedAt < min ? day.fetchedAt : min),
-    null,
-  );
 }

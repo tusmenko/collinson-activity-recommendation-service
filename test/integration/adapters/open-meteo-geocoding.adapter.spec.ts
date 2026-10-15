@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { OpenMeteoGeocodingAdapter } from '../../../src/location/geocoding/open-meteo-geocoding.adapter';
-import { silentLogger, testConfig } from '../../setup/adapter-deps';
+import { openMeteoClient, testConfig } from '../../setup/adapter-deps';
 import type { EnvOverrides } from '../../setup/test-env';
 import { startStubUpstream } from '../../stub-upstream/server';
 import type { StubUpstream } from '../../stub-upstream/server';
@@ -22,7 +22,7 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
       UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
-    return new OpenMeteoGeocodingAdapter(config, silentLogger());
+    return new OpenMeteoGeocodingAdapter(openMeteoClient(config));
   }
 
   it('U-ADAPT-8 Springfield answers ok with five normalised results, Missouri first', async () => {
@@ -89,7 +89,7 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
   });
 
   it('U-ADAPT-9 a refused connection answers reason network', async () => {
-    const outcome = await new OpenMeteoGeocodingAdapter(testConfig(), silentLogger()).search(
+    const outcome = await new OpenMeteoGeocodingAdapter(openMeteoClient(testConfig())).search(
       'Springfield',
     );
 

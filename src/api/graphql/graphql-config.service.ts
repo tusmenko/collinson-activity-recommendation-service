@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ApolloDriverConfig } from '@nestjs/apollo';
 import { Injectable } from '@nestjs/common';
-import type { OnModuleInit } from '@nestjs/common';
 import type { GqlOptionsFactory } from '@nestjs/graphql';
 
 import { ConfigService } from '../../infra/index';
@@ -12,21 +11,17 @@ import { ComplexityPlugin } from './complexity.plugin';
 import { REQUEST_ID_HEADER, REQUEST_ID_PATTERN, SCHEMA_FILE } from './graphql.const';
 import type { GraphqlContext, HttpPair } from './graphql.types';
 
-// Apollo options (design D-1, D-3). The schema is built in GraphQLModule's own init, after this provider's init
-// and after the classifier modules registered (they sit deeper in the import graph), so the Activity enum is complete.
+// Apollo options (design D-1, D-3); the Activity enum is filled here, before GraphQLModule builds the schema.
 @Injectable()
-export class GraphqlConfigService implements GqlOptionsFactory<ApolloDriverConfig>, OnModuleInit {
+export class GraphqlConfigService implements GqlOptionsFactory<ApolloDriverConfig> {
   constructor(
     private readonly config: ConfigService,
     private readonly registry: ClassifierRegistry,
     private readonly errors: GraphqlErrorMapper,
   ) {}
 
-  onModuleInit(): void {
-    registerActivities(this.registry.ids());
-  }
-
   createGqlOptions(): ApolloDriverConfig {
+    registerActivities(this.registry.ids());
     const development = this.config.get('NODE_ENV') === 'development';
     return {
       // The image's file system is read-only to the app user; the committed copy is checked by S-SCHEMA-1.

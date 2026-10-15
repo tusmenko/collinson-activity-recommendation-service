@@ -124,12 +124,13 @@ src/
     logging/    pino AppLogger                     redis/      connections for ioredis and BullMQ
     telemetry/  OTel SDK, AnomalyCounter port+impl throttling/ Redis throttler storage
     health/     /health controller and indicator
+    open-meteo/ OpenMeteoClient: hosts, timeout, status, JSON, schema check, one log line per call
   location/     slice: place resolution
     location.service.ts (application), location.types.ts, location.util.ts
     geocoding/  GeocodingPort, Open-Meteo geocoding adapter + schema   (outbound adapter)
     facts/      FactsRepositoryPort, Redis facts repository             (outbound adapter)
   weather/      slice: forecast data
-    weather.types.ts (DaySignals), weather.const.ts
+    weather.types.ts (DaySignals), weather.const.ts, weather.util.ts
     sources/    WeatherSourcePort; forecast/ and marine/ Open-Meteo adapters (outbound adapters)
     store/      ForecastRepositoryPort, Redis forecast repository        (outbound adapter)
     queue/      BullMQ ingest and enrich queues                          (outbound adapter)
@@ -138,7 +139,8 @@ src/
     ranking.service.ts (application), ranking.types.ts, ranking.util.ts
     engine/     ScoreEngine (domain)        rules/     RuleSetProvider port, schema, static JSON adapter
     registry/   Classifier port, registry   audit/     invariants, events, anomaly counter use
-    classifiers/skiing, surfing, outdoor-sightseeing, indoor-sightseeing (domain, one module each)
+    classifiers/skiing, surfing, outdoor-sightseeing, indoor-sightseeing (domain; classifier and rules JSON, registered
+                in one list in ranking.module.ts)
   api/          inbound adapter
     graphql/    driver config, complexity plugin, throttler guard, scalars
     errors/     error mapper and filter       models/    GraphQL object types and enums
@@ -172,8 +174,8 @@ Touch points count existing files edited; new files are listed separately. Compl
 
 | Scenario | New files | Existing files touched | What stays untouched | Complexity | Score |
 | --- | --- | --- | --- | --- | --- |
-| Add a fifth classifier (for example cycling on wind and rain) | one folder `ranking/classifiers/cycling/` with module, classifier, rules JSON, spec | 2: the import in `ranking.module.ts` and the rule-file entry in `rules/rules.const.ts` (plus the schema snapshot, which regenerates) | ingest, store, API resolvers and models (the `Activity` enum is built from the registry), existing classifiers and their tests | low: thresholds and a note per factor; the engine does the scoring | 4 (5 once the classifier module registers its own rule set, removing the const entry) |
+| Add a fifth classifier (for example cycling on wind and rain) | one folder `ranking/classifiers/cycling/` with classifier, rules JSON, spec | 1: the entry in the classifier list in `ranking.module.ts` (plus the schema snapshot, which regenerates) | ingest, store, API resolvers and models (the `Activity` enum is built from the registry), existing classifiers and their tests | low: thresholds and a note per factor; the engine does the scoring | 5 |
 | Add another geo or weather provider (for example a second forecast model, or a second geocoder) | one folder `weather/sources/<provider>/` (or `location/geocoding/<provider>/`) with module, adapter, pinned payload schema, normaliser, spec; recorded fixtures and a stub route for tests | 3: the port binding in `sources.module.ts` (or `geocoding.module.ts`), a `WEATHER_PROVIDER` or `GEOCODING_PROVIDER` key in `env.schema.ts`, `.env.example` | store (keys and `DaySignals` are provider-neutral), ingest, classifiers, API; raw payloads keep their provider schema version | medium: mapping the provider's variables and units onto `DaySignals`, recording fixtures, deciding the selection rule (env switch now; per-location routing later) | 4 |
 | Scale horizontally (several API instances, separate workers) | one Helm template `worker-deployment.yaml` and its values | 1 to 2: `values.yaml` (replicas, worker image args), `docker-compose.yml` if a local worker service is wanted | application code: the process is stateless; Redis holds facts, forecast, geocode, throttle and fair-use counters; BullMQ job ids give cluster-wide single-flight and the queue limiter is shared through Redis; `QUEUE_PROCESSORS_ENABLED=false` on API pods moves processors to the worker Deployment unchanged | low: deployment wiring; Redis becomes the component to make highly available (ElastiCache) | 4 (the worker Deployment template is not in the chart yet; readiness and liveness share one endpoint) |
 
-Overall maintainability: 4 of 5. Strong points: ports everywhere an external system is touched, provider-neutral store, scoring on read, lint-enforced layering, per-file test coverage. Weak points: slice names answer "which data" rather than "which layer", which is what section 3.1 addresses; two registrations for a new classifier instead of one; the worker Deployment exists only as an environment flag.
+Overall maintainability: 4 of 5. Strong points: ports everywhere an external system is touched, provider-neutral store, scoring on read, lint-enforced layering, per-file test coverage. Weak points: slice names answer "which data" rather than "which layer", which is what section 3.1 addresses; the worker Deployment exists only as an environment flag.

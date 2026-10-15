@@ -1,8 +1,17 @@
 import { GRAPHQL_SDL_FILE_HEADER } from '@nestjs/graphql';
+import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 
-import { ClassifierRegistry } from '../../src/ranking/index';
+import { ErrorsModule } from '../../src/api/errors/errors.module';
+import { GraphqlConfigService } from '../../src/api/graphql/graphql-config.service';
+import { registerActivities } from '../../src/api/models/enums.model';
+import { ConfigModule } from '../../src/infra/config/config.module';
+import { ConfigService } from '../../src/infra/index';
+import { LoggingModule } from '../../src/infra/logging/logging.module';
+import { TelemetryModule } from '../../src/infra/telemetry/telemetry.module';
+import { ClassifierRegistry, RankingModule } from '../../src/ranking/index';
 import type { Classifier } from '../../src/ranking/index';
+import { testConfig } from '../setup/adapter-deps';
 import { buildSchema, enumValues } from './build-schema';
 
 const BUILT_IN = ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING'];
@@ -12,6 +21,7 @@ function classifier(id: string): Classifier {
     id,
     version: '0.1.0',
     requires: ['FORECAST'],
+    ruleFile: {},
     score: () => Promise.resolve({ status: 'APPLICABLE', days: [] }),
   };
 }
@@ -35,6 +45,24 @@ describe('S-SCHEMA generated schema', () => {
     const { schema } = await buildSchema(registryOf(BUILT_IN));
 
     expect(enumValues(schema, 'Activity')).toEqual([...BUILT_IN].sort());
+  });
+
+  it('S-SCHEMA-1 the app wiring fills the Activity enum from the GraphQL options factory, with no module init', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [ConfigModule, LoggingModule, TelemetryModule, RankingModule, ErrorsModule],
+      providers: [GraphqlConfigService],
+    })
+      .overrideProvider(ConfigService)
+      .useValue(testConfig())
+      .compile();
+    // Emptied first, so only the app's own wiring can fill it.
+    registerActivities([]);
+
+    moduleRef.get(GraphqlConfigService).createGqlOptions();
+    const { schema } = await buildSchema();
+
+    expect(enumValues(schema, 'Activity')).toEqual([...BUILT_IN].sort());
+    await moduleRef.close();
   });
 
   it('S-SCHEMA-2 registering a fake CYCLING classifier adds CYCLING to the enum', async () => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { silentLogger, testConfig } from '../../../../test/setup/adapter-deps';
+import { openMeteoClient, testConfig } from '../../../../test/setup/adapter-deps';
 import { FixedClock } from '../../../../test/setup/fixed-clock';
 import { OpenMeteoMarineAdapter } from './open-meteo-marine.adapter';
 
@@ -13,7 +13,7 @@ describe('OpenMeteoMarineAdapter failure mapping', () => {
 
   it('U-ADAPT-12 a marine body that is not JSON is a malformed source, not a throw', async () => {
     vi.stubGlobal('fetch', () => Promise.resolve(new Response('<html>busy</html>')));
-    const adapter = new OpenMeteoMarineAdapter(testConfig(), silentLogger(), new FixedClock());
+    const adapter = new OpenMeteoMarineAdapter(openMeteoClient(testConfig()), new FixedClock());
 
     const outcome = await adapter.fetchDays(BIARRITZ, 8);
 
@@ -28,7 +28,7 @@ describe('OpenMeteoMarineAdapter failure mapping', () => {
     });
     const config = testConfig({ UPSTREAM_BASE_URL: '' });
 
-    await new OpenMeteoMarineAdapter(config, silentLogger(), new FixedClock()).fetchDays(
+    await new OpenMeteoMarineAdapter(openMeteoClient(config), new FixedClock()).fetchDays(
       BIARRITZ,
       8,
     );

@@ -41,7 +41,8 @@ export const RuleSetSchema = z
       })
       .strict()
       .optional(),
-    // Place applicability, checked before the gate: below `minElevation` metres (or unknown) is not applicable.
+    // Place applicability (ScoreEngine.placeGate, run by every classifier before the gate): below `minElevation`
+    // metres, or with no known elevation, the activity is not applicable.
     applicability: z
       .object({ minElevation: z.number(), note: z.string().min(1) })
       .strict()
