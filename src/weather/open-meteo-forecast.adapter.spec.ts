@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { silentLogger, testConfig } from '../../test/setup/adapter-deps.js';
 import { FixedClock } from '../../test/setup/fixed-clock.js';
 import { loadFixture } from '../../test/setup/fixtures.js';
-import { OpenMeteoForecastAdapter } from './open-meteo-forecast.adapter.js';
+import {
+  normaliseForecastPayload,
+  OpenMeteoForecastAdapter,
+} from './open-meteo-forecast.adapter.js';
+import { normaliseMarinePayload } from './open-meteo-marine.adapter.js';
 
 const CHAMONIX = { latitude: 45.92375, longitude: 6.86933 };
 
@@ -40,5 +44,10 @@ describe('OpenMeteoForecastAdapter normalisation', () => {
     const outcome = await adapterAnswering('<html>busy</html>').fetchDays(CHAMONIX, 8);
 
     expect(outcome).toMatchObject({ kind: 'failed', reason: 'malformed' });
+  });
+
+  it('U-ADAPT-2 the pure normalisation returns null for a payload that fails the schema', () => {
+    expect(normaliseForecastPayload({ daily: {} })).toBeNull();
+    expect(normaliseMarinePayload({ daily: {} })).toBeNull();
   });
 });

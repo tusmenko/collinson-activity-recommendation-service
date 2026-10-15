@@ -52,6 +52,12 @@ function toDaySignals({ daily }: OpenMeteoMarine): DaySignals[] {
   }));
 }
 
+// The adapter's normalisation without the fetch, for golden tests over recorded bodies; null when the shape is wrong.
+export function normaliseMarinePayload(payload: unknown): DaySignals[] | null {
+  const parsed = OpenMeteoMarineSchema.safeParse(payload);
+  return parsed.success ? toDaySignals(parsed.data) : null;
+}
+
 @Injectable()
 export class OpenMeteoMarineAdapter extends MarineSourcePort {
   readonly source: Source = 'MARINE';

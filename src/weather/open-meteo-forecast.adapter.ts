@@ -89,6 +89,12 @@ function toDaySignals(payload: OpenMeteoForecast): DaySignals[] {
   });
 }
 
+// The adapter's normalisation without the fetch, for golden tests over recorded bodies; null when the shape is wrong.
+export function normaliseForecastPayload(payload: unknown): DaySignals[] | null {
+  const parsed = OpenMeteoForecastSchema.safeParse(payload);
+  return parsed.success ? toDaySignals(parsed.data) : null;
+}
+
 @Injectable()
 export class OpenMeteoForecastAdapter extends ForecastSourcePort {
   readonly source: Source = 'FORECAST';

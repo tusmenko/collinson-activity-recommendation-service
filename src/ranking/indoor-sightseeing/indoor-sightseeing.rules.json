@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "floor": 40,
+  "factors": [
+    {
+      "signal": "precipitation",
+      "unit": "mm",
+      "weight": 3,
+      "good": [{ "gt": 5 }],
+      "poor": [{ "lt": 1 }],
+      "note": "Rain pushes people indoors"
+    },
+    {
+      "signal": "precipitationProbability",
+      "unit": "%",
+      "weight": 2,
+      "good": [{ "gt": 60 }],
+      "poor": [{ "lt": 30 }],
+      "note": "Likely rain pushes people indoors"
+    },
+    {
+      "signal": "tempMax",
+      "unit": "°C",
+      "weight": 2,
+      "good": [{ "gt": 32 }, { "lt": 8 }],
+      "poor": [{ "gte": 15, "lte": 27 }],
+      "note": "Heat or cold pushes people indoors; a mild day pulls them out"
+    },
+    {
+      "signal": "windGusts",
+      "unit": "km/h",
+      "weight": 1,
+      "good": [{ "gt": 55 }],
+      "poor": [{ "lt": 40 }],
+      "note": "Strong gusts push people indoors"
+    }
+  ]
+}

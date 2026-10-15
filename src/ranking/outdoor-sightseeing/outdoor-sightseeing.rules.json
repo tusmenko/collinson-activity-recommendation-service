@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "poorCap": {
+    "max": 30,
+    "minWeight": 2,
+    "note": "One disqualifying signal outweighs the rest"
+  },
+  "factors": [
+    {
+      "signal": "precipitation",
+      "unit": "mm",
+      "weight": 3,
+      "good": [{ "lt": 1 }],
+      "poor": [{ "gt": 5 }],
+      "note": "Drizzle tolerable; 83 mm is not"
+    },
+    {
+      "signal": "precipitationProbability",
+      "unit": "%",
+      "weight": 2,
+      "good": [{ "lt": 30 }],
+      "poor": [{ "gt": 60 }],
+      "note": "Likely rain spoils a day out"
+    },
+    {
+      "signal": "tempMax",
+      "unit": "°C",
+      "weight": 2,
+      "good": [{ "gte": 15, "lte": 27 }],
+      "poor": [{ "lt": 8 }, { "gt": 32 }],
+      "note": "Temperature comfort; Dubai at 34 to 38 is poor from heat"
+    },
+    {
+      "signal": "tempMin",
+      "unit": "°C",
+      "weight": 0.5,
+      "good": [{ "gte": 5 }],
+      "poor": [],
+      "note": "Temperature comfort needs a minimum of 5 or more"
+    },
+    {
+      "signal": "windGusts",
+      "unit": "km/h",
+      "weight": 1,
+      "good": [{ "lt": 40 }],
+      "poor": [{ "gt": 55 }],
+      "note": "Strong gusts make walking unpleasant"
+    },
+    {
+      "signal": "cloudCover",
+      "unit": "%",
+      "weight": 0.5,
+      "good": [{ "lt": 60 }],
+      "poor": [{ "gt": 90 }],
+      "note": "Soft signal, low weight"
+    },
+    {
+      "signal": "uvIndex",
+      "unit": null,
+      "weight": 0.25,
+      "good": [{ "lte": 7 }],
+      "poor": [{ "gte": 9 }],
+      "note": "Tie-breaker only"
+    }
+  ]
+}
