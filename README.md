@@ -64,7 +64,7 @@ Open product questions, each with the assumption in force: what makes a day good
 
 ## What was cut and why
 
-- The `enrich` queue registration was removed in the review pass: nothing enqueued to it and it held an idle Redis connection. The `ingest` queue shows the pattern an enrichment queue would follow.
+- The `enrich` queue registration, removed in the review pass: nothing enqueued to it and it held an idle Redis connection. The `ingest` queue shows the pattern a second queue would follow.
 
 ## Production path
 
@@ -79,15 +79,15 @@ Image to ECR from CI; the Helm chart in [deploy/helm/activity-ranking](deploy/he
 
 ## How this was built
 
-Architecture first, through the gated process in [docs/ACTIVITY_RANKING_ARCH_PROCESS.md](docs/ACTIVITY_RANKING_ARCH_PROCESS.md), ending in the [ADR log](docs/adr/README.md) and the [test plan](docs/ACTIVITY_RANKING_TEST_PLAN.md); then six test-first phases as pull requests #1 to #6, four small follow-ups (#7 to #10: wrap-up notes, the 4510 port, two README fixes), and an owner review pass (#11). The review pass branched after #10 and was squashed onto `main`, so #7 to #10 show in the pull request list but not as separate commits on `main`. The implementation decisions taken along the way are in [D-12](docs/ACTIVITY_RANKING_DESIGN.md#d-12) of the design document; open questions and the progress log are in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
+Architecture first, through the gated process in [docs/ACTIVITY_RANKING_ARCH_PROCESS.md](docs/ACTIVITY_RANKING_ARCH_PROCESS.md), ending in the [ADR log](docs/adr/README.md) and the [test plan](docs/ACTIVITY_RANKING_TEST_PLAN.md); then six test-first phases, and a personal review pass. The implementation decisions taken along the way are in [D-12](docs/ACTIVITY_RANKING_DESIGN.md#d-12) of the design document.
 
 ### AI use
 
 The brief asks for AI to be used, and it was, in three Claude Code sessions, each with a different degree of autonomy:
 
-1. **Architecture session**, steered step by step. A self-written solution-architect agent walks a simplified SEI process: stakeholders, requirements and quality attribute scenarios, architecturally significant requirements, options and trade-offs, recommendation, ADR, implementation plan. Every gate in `docs/arch/` is its output; every decision at a gate was mine.
-2. **Autonomous implementation session**, run unattended overnight. It built phases 0 to 5 from the handoff and the test plan, test-first, one pull request per phase merged on green CI, and logged the questions it could not answer in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
-3. **Review and refactoring sessions**, with me steering: the owner review pass (#11), then a pre-submission review that audited the code against the design and the docs against the code, and the fixes that followed.
+1. **Architecture session**, steered step by step. A self-written solution-architect agent walks a simplified SEI process: stakeholders, requirements and quality attribute scenarios, architecturally significant requirements, options and trade-offs, recommendation, ADR, implementation plan. Every gate in `docs/arch/` is its output;
+2. **Autonomous implementation session**, run unattended overnight. It built phases 0 to 5 from the handoff and the test plan, test-first, one pull request per phase.
+3. **Review and refactoring sessions**, personal and agentic review pass, and the fixes that followed.
 
 Claude Fable orchestrated and reviewed; Claude Opus did most of the editing. The conventions the sessions followed are in [CLAUDE.md](CLAUDE.md).
 
