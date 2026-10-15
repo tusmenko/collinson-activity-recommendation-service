@@ -64,7 +64,7 @@ Open product questions, each with the assumption in force: what makes a day good
 
 ## What was cut and why
 
-Nothing from the plan was cut.
+- The `enrich` queue registration was removed in the review pass: nothing enqueued to it and it held an idle Redis connection. The `ingest` queue shows the pattern an enrichment queue would follow.
 
 ## Production path
 
