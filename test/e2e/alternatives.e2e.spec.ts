@@ -65,6 +65,9 @@ describe('E-API-15 and E-API-17 ambiguous names and their alternatives', () => {
     );
 
     const result = response.data?.activityRankings;
+    expect(stub.requests).toContain(
+      '/v1/search?name=Biarritz&count=5&language=en&format=json&countryCode=FR',
+    );
     expect(result?.location).toMatchObject({ name: 'Biarritz', country: 'France' });
     expect(result?.rankings).toHaveLength(4);
     expect(result?.meta.alternatives).toEqual([

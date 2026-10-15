@@ -31,7 +31,7 @@ test/fixtures/open-meteo/v1/
 
 ## How the stub picks a file
 
-- Geocoding: by the slug of the `name` query parameter. A name with no file gets a body without a `results` key, which is what Open-Meteo returns for an unknown name.
+- Geocoding: by the slug of the `name` query parameter. A name with no file gets a body without a `results` key, which is what Open-Meteo returns for an unknown name. A `countryCode` parameter keeps only the recorded hits with that `country_code`, standing in for Open-Meteo's server-side filter; the real answer can hold more hits, because Open-Meteo filters before its count limit.
 - Forecast and marine: the file whose top-level `latitude` and `longitude` are nearest to the request's, by straight-line distance in degrees, if it is within 0.5 degrees. Otherwise 404.
 - Dates: served as recorded. With `STUB_SHIFT_DATES=1` (set in the stub's Dockerfile and the Compose `demo` profile, never in tests) `daily.time` and `hourly.time` move so the first day is today's UTC date; the day count and values stay.
 

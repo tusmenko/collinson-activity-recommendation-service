@@ -32,6 +32,8 @@ export interface ResolvedLocation {
 export interface GeocodingNarrowing {
   // A state, province or other first-level area, matched exactly by the provider.
   readonly region?: string;
+  // ISO 3166-1 alpha-2, upper case; the provider filters before its count limit.
+  readonly countryCode?: string;
 }
 
 export type UpstreamFailureReason = 'timeout' | 'http' | 'malformed' | 'network';

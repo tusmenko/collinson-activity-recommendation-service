@@ -43,7 +43,7 @@ export class OpenMeteoClient {
 
   searchLocations(
     name: string,
-    { region }: LocationSearchNarrowing = {},
+    { region, countryCode }: LocationSearchNarrowing = {},
   ): Promise<OpenMeteoOutcome<GeocodingPayload>> {
     return this.request({
       host: 'geocoding',
@@ -53,6 +53,7 @@ export class OpenMeteoClient {
         count: String(GEOCODING_COUNT),
         language: 'en',
         format: 'json',
+        ...(countryCode === undefined ? {} : { countryCode }),
       },
       schema: GeocodingPayloadSchema,
       label: 'geocoding',

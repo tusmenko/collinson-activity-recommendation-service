@@ -57,8 +57,17 @@ class InMemoryFactsRepository extends FactsRepositoryPort {
 }
 
 function setup(outcome?: GeocodingOutcome) {
-  const search = vi.fn<GeocodingPort['search']>((name) =>
-    Promise.resolve(outcome ?? { kind: 'ok', results: fixtureResults(name) }),
+  // Without a fixed outcome it answers from the fixtures and filters by country code, as Open-Meteo does.
+  const search = vi.fn<GeocodingPort['search']>((name, narrowing) =>
+    Promise.resolve(
+      outcome ?? {
+        kind: 'ok',
+        results: fixtureResults(name).filter(
+          (result) =>
+            narrowing?.countryCode === undefined || result.countryCode === narrowing.countryCode,
+        ),
+      },
+    ),
   );
   const facts = new InMemoryFactsRepository();
   const service = new LocationService({ search }, facts, new FixedClock());
@@ -166,12 +175,30 @@ describe('LocationService.resolve', () => {
     expect(facts.geocodes.get('london|canada')).toEqual([resolved.location.id]);
   });
 
-  it('U-LOC-6 the country filter matches the country code case-insensitively', async () => {
-    const { service } = setup();
+  it('U-LOC-14 a two-letter country goes to the provider as an upper-case countryCode', async () => {
+    const { service, search } = setup();
 
     const resolved = await service.resolve('London', ' ca ');
 
+    expect(search).toHaveBeenCalledWith('London', { countryCode: 'CA' });
     expect(resolved.location.admin1).toBe('Ontario');
+  });
+
+  it('U-LOC-14 with a country code the provider answer is not filtered again', async () => {
+    const { service } = setup({ kind: 'ok', results: fixtureResults('London') });
+
+    const resolved = await service.resolve('London', 'CA');
+
+    expect(resolved.location.countryCode).toBe('GB');
+    expect(resolved.alternatives).toHaveLength(4);
+  });
+
+  it('U-LOC-14 a country name is not sent upstream and filters the results here', async () => {
+    const { service, search } = setup();
+
+    await service.resolve('London', 'Canada');
+
+    expect(search).toHaveBeenCalledWith('London', {});
   });
 
   it('U-LOC-6 a country filter that removes every result throws LocationNotFoundError', async () => {

@@ -82,11 +82,26 @@ function slug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
+// `countryCode` filters the recorded hits, as Open-Meteo filters server-side; the recording holds at most five, so
+// a filtered answer can be shorter than the real one.
+function byCountry(fixture: Json, countryCode: string | null): Json {
+  if (countryCode === null || !Array.isArray(fixture.results)) {
+    return fixture;
+  }
+  const code = countryCode.toUpperCase();
+  return {
+    ...fixture,
+    results: fixture.results.filter((hit: unknown) => isRecord(hit) && hit.country_code === code),
+  };
+}
+
 // Open-Meteo answers an unknown name with 200 and no `results` key, not with 404.
 async function geocoding(url: URL): Promise<Json> {
   const name = url.searchParams.get('name') ?? '';
   const fixture = await readJson(join(FIXTURES_DIR, 'geocoding', `${slug(name)}.json`));
-  return fixture ?? { generationtime_ms: 0.1 };
+  return fixture === undefined
+    ? { generationtime_ms: 0.1 }
+    : byCountry(fixture, url.searchParams.get('countryCode'));
 }
 
 async function listFixtures(dir: string): Promise<string[]> {

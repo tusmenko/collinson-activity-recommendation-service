@@ -166,7 +166,7 @@ Arguments of `Query.activityRankings`:
 | Argument | Rules | Effect |
 | --- | --- | --- |
 | `city` | required; trimmed; 1 to 80 characters; letters in any script, digits, spaces, hyphens, dots, apostrophes | sent to Open-Meteo geocoding as `name`; the first hit is the match ([A-10](arch/registers.md#a-10)), up to four more are `meta.alternatives` |
-| `country` | optional; trimmed; 2 to 56 characters; same characters | keeps only hits in that country, by name or ISO code |
+| `country` | optional; trimmed; 2 to 56 characters; same characters | exactly two letters: an ISO 3166-1 alpha-2 code, sent upper-case as `countryCode`, which Open-Meteo filters before its count limit; anything longer: a country name, matched case-insensitively against the hits here |
 | `region` | optional; same rules as `city` | a first-level area (state, province); sent as `name=<city>, <region>`, which Open-Meteo matches exactly against a country or admin1 |
 | `activities` | optional; a non-empty list of `Activity` | ranks only those; omitted means all |
 

@@ -100,6 +100,17 @@ describe('OpenMeteoClient', () => {
     ]);
   });
 
+  it('U-ADAPT-16 a country code is sent as countryCode for the provider to filter', async () => {
+    const urls = answering(() => Promise.resolve(Response.json({})));
+    const client = openMeteoClient(testConfig({ UPSTREAM_BASE_URL: 'http://stub:1' }));
+
+    await client.searchLocations('Springfield', { countryCode: 'US' });
+
+    expect(urls).toEqual([
+      'http://stub:1/v1/search?name=Springfield&count=5&language=en&format=json&countryCode=US',
+    ]);
+  });
+
   it('U-ADAPT-13 with UPSTREAM_BASE_URL unset each endpoint goes to its real Open-Meteo host', async () => {
     const urls = answering(() => Promise.resolve(Response.json({})));
     const client = openMeteoClient(testConfig({ UPSTREAM_BASE_URL: '' }));

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { locationFacts } from '../../test/setup/location-facts';
 import type { GeocodingResult } from './location.types';
-import { inCountry, normaliseQuery, split } from './location.util';
+import { countryCodeOf, inCountry, normaliseQuery, split } from './location.util';
 
 function hit(name: string, overrides: Partial<GeocodingResult> = {}): GeocodingResult {
   return {
@@ -23,12 +23,18 @@ describe('location helpers', () => {
     expect(normaliseQuery('Paris', undefined)).toBe('paris|');
   });
 
-  it('U-LOC-12 a country matches by name or by code, ignoring case', () => {
+  it('U-LOC-12 a country name matches ignoring case and surrounding spaces', () => {
     expect(inCountry(hit('Victoria'), ' canada ')).toBe(true);
-    expect(inCountry(hit('Victoria'), 'ca')).toBe(true);
     expect(inCountry(hit('Victoria'), 'Brazil')).toBe(false);
-    const { countryCode: _code, ...noCode } = hit('Victoria');
-    expect(inCountry(noCode, 'CA')).toBe(false);
+  });
+
+  it('U-LOC-14 exactly two letters read as an upper-case country code; anything else is a name', () => {
+    expect(countryCodeOf(' ca ')).toBe('CA');
+    expect(countryCodeOf('US')).toBe('US');
+    expect(countryCodeOf('USA')).toBeUndefined();
+    expect(countryCodeOf('Canada')).toBeUndefined();
+    expect(countryCodeOf('Ü1')).toBeUndefined();
+    expect(countryCodeOf(undefined)).toBeUndefined();
   });
 
   it('U-LOC-12 the first stored location is the match and the rest are alternatives', () => {
