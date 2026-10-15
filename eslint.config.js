@@ -78,8 +78,12 @@ export default tseslint.config(
     rules: { 'max-lines-per-function': 'off' },
   },
   {
+    // Command-line scripts outside the app: they print, read their own environment and run on Node's web globals.
     files: ['scripts/**'],
-    rules: { 'no-console': 'off' },
+    languageOptions: {
+      globals: { URL: 'readonly', fetch: 'readonly', performance: 'readonly' },
+    },
+    rules: { 'no-console': 'off', 'n/no-process-env': 'off' },
   },
   {
     files: ['**/*.{js,mjs,cjs}'],

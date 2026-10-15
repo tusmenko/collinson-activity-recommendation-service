@@ -1,0 +1,6 @@
+apiVersion: v2
+name: activity-ranking
+description: Activity Ranking Service, a GraphQL API over Open-Meteo forecasts. Skeleton for the production path; not deployed.
+type: application
+version: 0.1.0
+appVersion: '0.0.0'

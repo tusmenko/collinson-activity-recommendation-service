@@ -173,4 +173,18 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run load
+      - run: docker compose --profile demo up -d --build
+      - name: Wait for the demo service's /health
+        run: |
+          for second in $(seq 1 120); do
+            if curl -fsS localhost:3001/health; then
+              echo; echo "healthy after ${second} s"; exit 0
+            fi
+            sleep 1
+          done
+          docker compose --profile demo logs
+          exit 1
+      - name: Load (L-WARM-1, L-COLD-1)
+        run: pnpm run load
+      - if: always()
+        run: docker compose --profile demo down -v

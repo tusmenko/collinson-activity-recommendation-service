@@ -2,5 +2,5 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["src/main.ts", "scripts/*.mjs"],
   "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs"],
-  "ignoreDependencies": ["@as-integrations/express5", "autocannon", "@types/express"]
+  "ignoreDependencies": ["@as-integrations/express5", "@types/express"]
 }
