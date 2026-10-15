@@ -1,5 +1,5 @@
-import { ClockPort } from '../../../src/infra/index.js';
-import { FIXED_NOW } from '../fixed-clock.js';
+import { ClockPort } from '../../../src/infra/index';
+import { FIXED_NOW } from '../fixed-clock';
 
 // A clock the test moves forward, for window changes across local midnight.
 export class ManualClock extends ClockPort {

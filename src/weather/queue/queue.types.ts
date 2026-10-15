@@ -1,4 +1,4 @@
-import type { Coordinates, Source } from '../weather.types.js';
+import type { Coordinates, Source } from '../weather.types';
 
 export interface IngestJobData {
   readonly locationId: string;

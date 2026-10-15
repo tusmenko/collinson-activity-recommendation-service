@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-import { ConfigService } from '../../infra/index.js';
-import type { LocationFacts, MarineAvailability } from '../location.types.js';
-import { FactsRepositoryPort } from './facts.port.js';
-import { geocodeKey, locationKey, parseFacts } from './facts.util.js';
+import { ConfigService } from '../../infra/index';
+import type { LocationFacts, MarineAvailability } from '../location.types';
+import { FactsRepositoryPort } from './facts.port';
+import { geocodeKey, locationKey, parseFacts } from './facts.util';
 
 @Injectable()
 export class RedisFactsRepository extends FactsRepositoryPort {

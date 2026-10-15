@@ -3,9 +3,9 @@ import { metrics } from '@opentelemetry/api';
 import type { Counter } from '@opentelemetry/api';
 import type { Logger } from 'pino';
 
-import { AppLogger } from '../logging/app-logger.service.js';
-import { AnomalyCounter } from './anomaly-counter.port.js';
-import { ANOMALY_METRIC, METER_NAME } from './telemetry.const.js';
+import { AppLogger } from '../logging/app-logger.service';
+import { AnomalyCounter } from './anomaly-counter.port';
+import { ANOMALY_METRIC, METER_NAME } from './telemetry.const';
 
 // The OpenTelemetry counter behind ranking_anomalies_total{type} (design D-7), plus a warn log and an in-memory
 // count tests can read. The meter comes from the global provider: the SDK's once main.ts started it, a no-op otherwise.

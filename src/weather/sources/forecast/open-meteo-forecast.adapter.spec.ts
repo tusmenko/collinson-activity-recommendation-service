@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { silentLogger, testConfig } from '../../../test/setup/adapter-deps.js';
-import { FixedClock } from '../../../test/setup/fixed-clock.js';
-import { loadFixture } from '../../../test/setup/fixtures.js';
-import { OpenMeteoForecastAdapter } from './open-meteo-forecast.adapter.js';
-import { normaliseForecastPayload } from './open-meteo-forecast.util.js';
-import { normaliseMarinePayload } from './open-meteo-marine.util.js';
+import { silentLogger, testConfig } from '../../../../test/setup/adapter-deps';
+import { FixedClock } from '../../../../test/setup/fixed-clock';
+import { loadFixture } from '../../../../test/setup/fixtures';
+import { OpenMeteoForecastAdapter } from './open-meteo-forecast.adapter';
+import { normaliseForecastPayload } from './open-meteo-forecast.util';
+import { normaliseMarinePayload } from '../marine/open-meteo-marine.util';
 
 const CHAMONIX = { latitude: 45.92375, longitude: 6.86933 };
 

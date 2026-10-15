@@ -1,5 +1,5 @@
-import type { Source } from '../weather.types.js';
-import type { StoredDay } from './store.types.js';
+import type { Source } from '../weather.types';
+import type { StoredDay } from './store.types';
 
 export function dayKey(locationId: string, source: Source, date: string): string {
   return `forecast:v1:${locationId}:${source}:${date}`;

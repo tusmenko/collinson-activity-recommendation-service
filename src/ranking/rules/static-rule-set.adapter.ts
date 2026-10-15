@@ -1,8 +1,8 @@
-import { UnknownActivityError } from '../ranking.errors.js';
-import { RuleSetProvider } from './rule-set.port.js';
-import type { RuleSet } from './rule-set.schema.js';
-import { RULE_FILES, RULE_SET_SCHEMA_VERSION } from './rules.const.js';
-import { parseRuleSet } from './rules.util.js';
+import { UnknownActivityError } from '../ranking.errors';
+import { RuleSetProvider } from './rule-set.port';
+import type { RuleSet } from './rule-set.schema';
+import { RULE_FILES, RULE_SET_SCHEMA_VERSION } from './rules.const';
+import { parseRuleSet } from './rules.util';
 
 // Rule files bundled with the build, validated once at construction so a bad threshold stops startup.
 export class StaticRuleSetAdapter extends RuleSetProvider {

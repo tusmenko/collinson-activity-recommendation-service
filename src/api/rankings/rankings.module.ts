@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 
-import { LocationModule } from '../../location/index.js';
-import { RankingModule } from '../../ranking/index.js';
-import { WeatherModule } from '../../weather/index.js';
-import { ErrorsModule } from '../errors/errors.module.js';
-import { LocationRankingService } from './location-ranking.service.js';
-import { RankingsQueryService } from './rankings-query.service.js';
-import { RankingsResultMapper } from './rankings-result.mapper.js';
-import { API_RESOLVERS } from './resolvers.const.js';
+import { LocationModule } from '../../location/index';
+import { RankingModule } from '../../ranking/index';
+import { WeatherModule } from '../../weather/index';
+import { ErrorsModule } from '../errors/errors.module';
+import { LocationRankingService } from './location-ranking.service';
+import { RankingsQueryService } from './rankings-query.service';
+import { RankingsResultMapper } from './rankings-result.mapper';
+import { API_RESOLVERS } from './resolvers.const';
 
 // ErrorsModule supplies the mapper the resolvers' error filter is built with.
 @Module({

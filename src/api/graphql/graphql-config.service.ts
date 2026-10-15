@@ -4,13 +4,13 @@ import { Injectable } from '@nestjs/common';
 import type { OnModuleInit } from '@nestjs/common';
 import type { GqlOptionsFactory } from '@nestjs/graphql';
 
-import { ConfigService } from '../../infra/index.js';
-import { ClassifierRegistry } from '../../ranking/index.js';
-import { GraphqlErrorMapper } from '../errors/graphql-error.mapper.js';
-import { registerActivities } from '../models/enums.model.js';
-import { ComplexityPlugin } from './complexity.plugin.js';
-import { REQUEST_ID_HEADER, REQUEST_ID_PATTERN, SCHEMA_FILE } from './graphql.const.js';
-import type { GraphqlContext, HttpPair } from './graphql.types.js';
+import { ConfigService } from '../../infra/index';
+import { ClassifierRegistry } from '../../ranking/index';
+import { GraphqlErrorMapper } from '../errors/graphql-error.mapper';
+import { registerActivities } from '../models/enums.model';
+import { ComplexityPlugin } from './complexity.plugin';
+import { REQUEST_ID_HEADER, REQUEST_ID_PATTERN, SCHEMA_FILE } from './graphql.const';
+import type { GraphqlContext, HttpPair } from './graphql.types';
 
 // Apollo options (design D-1, D-3). The schema is built in GraphQLModule's own init, after this provider's init
 // and after the classifier modules registered (they sit deeper in the import graph), so the Activity enum is complete.

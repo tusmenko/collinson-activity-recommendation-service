@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { pino } from 'pino';
 
-import { ConfigService } from '../config/config.service.js';
-import { AppLogger } from './app-logger.service.js';
+import { ConfigService } from '../config/config.service';
+import { AppLogger } from './app-logger.service';
 
 @Global()
 @Module({

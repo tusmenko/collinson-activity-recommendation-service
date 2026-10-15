@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { rankingInput } from '../../../../test/setup/ranking-input.js';
-import { ScoreEngine } from '../../engine/score-engine.service.js';
-import { StaticRuleSetAdapter } from '../../rules/static-rule-set.adapter.js';
-import { SkiingClassifier } from './skiing.classifier.js';
+import { rankingInput } from '../../../../test/setup/ranking-input';
+import { ScoreEngine } from '../../engine/score-engine.service';
+import { StaticRuleSetAdapter } from '../../rules/static-rule-set.adapter';
+import { SkiingClassifier } from './skiing.classifier';
 
 describe('SkiingClassifier', () => {
   it('U-SKI-1 a window with no snow depth value at all is NOT_APPLICABLE and says so', async () => {

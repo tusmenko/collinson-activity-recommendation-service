@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { Queue } from 'bullmq';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Source } from '../../../src/weather/index.js';
-import { createIngestHarness } from '../../setup/ingest-harness.js';
-import type { IngestHarness } from '../../setup/ingest-harness.js';
+import type { Source } from '../../../src/weather/index';
+import { createIngestHarness } from '../../setup/ingest-harness';
+import type { IngestHarness } from '../../setup/ingest-harness';
 
 const LONDON = {
   id: 'test-london',
@@ -94,5 +95,38 @@ describe('ingest daily fair-use guard', () => {
     expect(third.kind).toBe('failed');
     expect(third.kind === 'failed' ? third.reason : '').toMatch(/fair-use/);
     expect(harness.forecast.calls).toBe(2);
+  });
+});
+
+describe('ingest queue failure paths', () => {
+  let harness: IngestHarness;
+
+  beforeAll(async () => {
+    harness = await createIngestHarness();
+  });
+
+  afterAll(async () => {
+    vi.restoreAllMocks();
+    await harness.close();
+  });
+
+  it('I-QUEUE-5 an add that rejects is a failed result with the reason, not a throw', async () => {
+    vi.spyOn(Queue.prototype, 'add').mockRejectedValueOnce('redis gone');
+
+    const result = await harness.queue.runOnce(forecastJob('test-add-fails'), 1_000);
+
+    expect(result).toEqual({ kind: 'failed', reason: 'redis gone' });
+    expect(harness.forecast.calls).toBe(0);
+  });
+
+  it('I-QUEUE-5 a queue or events error is logged at warn instead of crashing the process', () => {
+    // The queue and its events are private; the error path is reached through the emitter itself.
+    const { queue } = harness.queue as unknown as { queue: Queue };
+
+    queue.emit('error', new Error('connection lost'));
+
+    expect(harness.logs).toContainEqual(
+      expect.objectContaining({ level: 40, context: 'IngestQueue', msg: 'connection lost' }),
+    );
   });
 });

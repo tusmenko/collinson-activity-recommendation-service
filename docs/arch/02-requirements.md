@@ -4,7 +4,7 @@ Part of the [architecture process](../ACTIVITY_RANKING_ARCH_PROCESS.md). Registe
 
 ## 1a — Requirements
 
-Traceability rule: every item below names its source. "Brief" means a line of `ASSIGNMENT.md`. "Step 0" means a stakeholder concern recorded in the stakeholder map. Anything the brief does not say is derived; derived items are assumptions, carry an assumption ID, and stay open until the proxy product manager confirms them. Numbers in measures are proposals, never facts.
+Traceability rule: every item below names its source. "Brief" means a line of [ASSIGNMENT.md](../ASSIGNMENT.md). "Step 0" means a stakeholder concern recorded in the stakeholder map. Anything the brief does not say is derived; derived items are assumptions, carry an assumption ID, and stay open until the proxy product manager confirms them. Numbers in measures are proposals, never facts.
 
 ## Functional requirements from the brief
 

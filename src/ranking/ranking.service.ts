@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
-import { ConfigService } from '../infra/index.js';
-import type { LocationFacts, MarineAvailability } from '../location/index.js';
-import type { DaySignals } from '../weather/index.js';
-import { RankingAuditService } from './audit/ranking-audit.service.js';
-import { UnknownActivityError } from './ranking.errors.js';
-import type { ActivityRanking, RankingInput, RankingResult } from './ranking.types.js';
-import { failedSource, mergeDays, noSignals } from './ranking.util.js';
-import { ClassifierRegistry } from './registry/classifier-registry.service.js';
-import type { Classifier } from './registry/classifier.port.js';
-import { RuleSetProvider } from './rules/rule-set.port.js';
+import { ConfigService } from '../infra/index';
+import type { LocationFacts, MarineAvailability } from '../location/index';
+import type { DaySignals } from '../weather/index';
+import { RankingAuditService } from './audit/ranking-audit.service';
+import { UnknownActivityError } from './ranking.errors';
+import type { ActivityRanking, RankingInput, RankingResult } from './ranking.types';
+import { failedSource, mergeDays, noSignals } from './ranking.util';
+import { ClassifierRegistry } from './registry/classifier-registry.service';
+import type { Classifier } from './registry/classifier.port';
+import { RuleSetProvider } from './rules/rule-set.port';
 
 // Scores computed on read by the registered classifiers (design D-6), checked and traced (D-7).
 @Injectable()

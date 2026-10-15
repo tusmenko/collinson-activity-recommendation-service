@@ -1,4 +1,4 @@
-import type { SourceFetchOutcome } from '../weather.types.js';
+import type { SourceFetchOutcome } from '../weather.types';
 
 export type SourceFetchFailure = Extract<SourceFetchOutcome, { kind: 'failed' }>;
 

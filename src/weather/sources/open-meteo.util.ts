@@ -1,4 +1,4 @@
-import type { Series, SourceFetchFailure } from './sources.types.js';
+import type { Series, SourceFetchFailure } from './sources.types';
 
 // Shared by the forecast and marine adapters: a thrown fetch or parse error as a failed outcome.
 export function failureOf(error: unknown): SourceFetchFailure {

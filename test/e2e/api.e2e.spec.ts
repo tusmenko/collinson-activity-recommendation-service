@@ -1,12 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { FixedClock } from '../setup/fixed-clock.js';
-import { startStubUpstream } from '../stub-upstream/server.js';
-import type { StubUpstream } from '../stub-upstream/server.js';
-import { createTestApp } from './setup/create-test-app.js';
-import type { TestApp } from './setup/create-test-app.js';
-import { loadQuery, postGraphql } from './setup/graphql-client.js';
-import type { GraphqlResponse } from './setup/graphql-client.js';
+import { FixedClock } from '../setup/fixed-clock';
+import { startStubUpstream } from '../stub-upstream/server';
+import type { StubUpstream } from '../stub-upstream/server';
+import { createTestApp } from './setup/create-test-app';
+import type { TestApp } from './setup/create-test-app';
+import { loadQuery, postGraphql } from './setup/graphql-client';
+import type { GraphqlResponse } from './setup/graphql-client';
 
 // The recorded forecasts start on 2026-10-15; noon UTC puts every golden city's local day there too.
 const RECORDED_NOW = new Date('2026-10-15T12:00:00.000Z');

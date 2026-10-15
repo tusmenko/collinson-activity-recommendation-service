@@ -1,9 +1,9 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { RedisFactsRepository } from '../../../src/location/facts/redis-facts.repository.js';
-import type { LocationFacts } from '../../../src/location/index.js';
-import { testConfig } from '../../setup/adapter-deps.js';
-import { createTestRedis, flushTestKeys } from '../../setup/redis.js';
+import { RedisFactsRepository } from '../../../src/location/facts/redis-facts.repository';
+import type { LocationFacts } from '../../../src/location/index';
+import { testConfig } from '../../setup/adapter-deps';
+import { createTestRedis, flushTestKeys } from '../../setup/redis';
 
 const redis = createTestRedis();
 const repository = new RedisFactsRepository(redis, testConfig({ GEOCODE_TTL: '1h' }));

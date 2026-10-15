@@ -1,6 +1,6 @@
-import { InvalidRuleSetError } from '../ranking.errors.js';
-import { RuleSetSchema } from './rule-set.schema.js';
-import type { RuleSet } from './rule-set.schema.js';
+import { InvalidRuleSetError } from '../ranking.errors';
+import { RuleSetSchema } from './rule-set.schema';
+import type { RuleSet } from './rule-set.schema';
 
 export function parseRuleSet(activity: string, file: unknown): RuleSet {
   const parsed = RuleSetSchema.safeParse(file);

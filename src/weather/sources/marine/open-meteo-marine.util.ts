@@ -1,7 +1,7 @@
-import type { DaySignals } from '../weather.types.js';
-import { OpenMeteoMarineSchema } from './open-meteo-marine.schema.js';
-import type { OpenMeteoMarine } from './open-meteo-marine.schema.js';
-import { at } from './open-meteo.util.js';
+import type { DaySignals } from '../../weather.types';
+import { OpenMeteoMarineSchema } from './open-meteo-marine.schema';
+import type { OpenMeteoMarine } from './open-meteo-marine.schema';
+import { at } from '../open-meteo.util';
 
 // Inland nulls stay null: absence of marine data is a signal for the classifiers, not an error.
 export function toDaySignals({ daily }: OpenMeteoMarine): DaySignals[] {

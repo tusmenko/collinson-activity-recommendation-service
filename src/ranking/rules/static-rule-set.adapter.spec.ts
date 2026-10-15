@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { InvalidRuleSetError, UnknownActivityError } from '../ranking.errors.js';
-import { StaticRuleSetAdapter } from './static-rule-set.adapter.js';
+import { InvalidRuleSetError, UnknownActivityError } from '../ranking.errors';
+import { StaticRuleSetAdapter } from './static-rule-set.adapter';
 
 const VALID = {
   version: '2.1.0',

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { ScoreEngine } from './score-engine.service.js';
+import { ScoreEngine } from './score-engine.service';
 
 @Module({
   providers: [ScoreEngine],

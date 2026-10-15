@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { ConfigService } from '../../infra/index.js';
-import { IngestQueue } from '../queue/ingest.queue.js';
-import { ForecastRepositoryPort } from '../store/forecast.port.js';
-import { SOURCES } from '../weather.const.js';
-import { ForecastUnavailableError } from '../weather.errors.js';
-import type { DaySignals, Source } from '../weather.types.js';
-import type { EnsureLocation, EnsureResult, Served } from './ingest.types.js';
-import { fromRead, marineAvailabilityOf, oldestFetchedAt, skipped } from './ingest.util.js';
-import { WindowService } from './window.service.js';
+import { ConfigService } from '../../infra/index';
+import { IngestQueue } from '../queue/ingest.queue';
+import { ForecastRepositoryPort } from '../store/forecast.port';
+import { SOURCES } from '../weather.const';
+import { ForecastUnavailableError } from '../weather.errors';
+import type { DaySignals, Source } from '../weather.types';
+import type { EnsureLocation, EnsureResult, Served } from './ingest.types';
+import { fromRead, marineAvailabilityOf, oldestFetchedAt, skipped } from './ingest.util';
+import { WindowService } from './window.service';
 
 // Refresh on read (design D-4, D-8): a fresh window is served as stored; a stale or missing one
 // waits for its single-flight job under COLD_READ_BOUND_MS, then whatever the store holds is served.

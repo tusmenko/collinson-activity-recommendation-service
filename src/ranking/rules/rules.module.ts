@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { RuleSetProvider } from './rule-set.port.js';
-import { StaticRuleSetAdapter } from './static-rule-set.adapter.js';
+import { RuleSetProvider } from './rule-set.port';
+import { StaticRuleSetAdapter } from './static-rule-set.adapter';
 
 @Module({
   providers: [

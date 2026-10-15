@@ -1,14 +1,14 @@
 import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 
-import { testConfig } from '../../test/setup/adapter-deps.js';
-import { ConfigModule } from '../infra/config/config.module.js';
-import { ConfigService } from '../infra/index.js';
-import { LoggingModule } from '../infra/logging/logging.module.js';
-import { TelemetryModule } from '../infra/telemetry/telemetry.module.js';
-import { RankingModule } from './ranking.module.js';
-import { RankingService } from './ranking.service.js';
-import { ClassifierRegistry } from './registry/classifier-registry.service.js';
+import { testConfig } from '../../test/setup/adapter-deps';
+import { ConfigModule } from '../infra/config/config.module';
+import { ConfigService } from '../infra/index';
+import { LoggingModule } from '../infra/logging/logging.module';
+import { TelemetryModule } from '../infra/telemetry/telemetry.module';
+import { RankingModule } from './ranking.module';
+import { RankingService } from './ranking.service';
+import { ClassifierRegistry } from './registry/classifier-registry.service';
 
 describe('RankingModule', () => {
   it('U-RANK-2 the registry exposes the four built-in activities', async () => {

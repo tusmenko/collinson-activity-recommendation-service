@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { createTestRedis, flushTestKeys } from '../../setup/redis.js';
+import { createTestRedis, flushTestKeys } from '../../setup/redis';
 
 const redis = createTestRedis();
 

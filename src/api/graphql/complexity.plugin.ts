@@ -3,9 +3,9 @@ import { GraphQLError } from 'graphql';
 import { getComplexity } from 'graphql-query-complexity';
 import type { ComplexityEstimatorArgs } from 'graphql-query-complexity';
 
-import { ERROR_CODES } from '../api.const.js';
-import { LOCATION_FIELDS } from './graphql.const.js';
-import type { GraphqlContext } from './graphql.types.js';
+import { ERROR_CODES } from '../api.const';
+import { LOCATION_FIELDS } from './graphql.const';
+import type { GraphqlContext } from './graphql.types';
 
 // Rejects a query selecting more than QUERY_MAX_LOCATIONS locations before any resolver runs (NFR-9).
 export class ComplexityPlugin implements ApolloServerPlugin<GraphqlContext> {

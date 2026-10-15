@@ -1,8 +1,8 @@
-import type { DaySignals } from '../weather.types.js';
-import { OpenMeteoForecastSchema } from './open-meteo-forecast.schema.js';
-import type { OpenMeteoForecast } from './open-meteo-forecast.schema.js';
-import { at } from './open-meteo.util.js';
-import { CM_PER_M, SECONDS_PER_HOUR } from './sources.const.js';
+import type { DaySignals } from '../../weather.types';
+import { OpenMeteoForecastSchema } from './open-meteo-forecast.schema';
+import type { OpenMeteoForecast } from './open-meteo-forecast.schema';
+import { at } from '../open-meteo.util';
+import { CM_PER_M, SECONDS_PER_HOUR } from './forecast.const';
 
 function oneDecimal(value: number): number {
   return Math.round(value * 10) / 10;

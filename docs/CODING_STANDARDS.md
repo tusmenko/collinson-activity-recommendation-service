@@ -67,7 +67,7 @@ Examples in this document use names from this service for illustration; the auth
 
 ## TypeScript and language
 
-- `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, ESM with `.js` import suffixes.
+- `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, ESM; extensionless relative imports, resolved by SWC on emit (`.swcrc` `resolveFully`; `tsc --noEmit` with `moduleResolution: bundler` is the type check; eslint rejects a relative specifier ending in `.js` or `.ts`).
 - `@typescript-eslint/no-explicit-any`, `no-non-null-assertion`, `no-floating-promises`, `require-await`, `switch-exhaustiveness-check` as errors.
 - Discriminated unions over boolean flags for outcomes (`{ kind: 'ok' } | { kind: 'failed'; reason }`).
 - `readonly` on DTO and value-object fields; immutability by default.

@@ -1,12 +1,12 @@
 import { UseFilters } from '@nestjs/common';
 import { Args, Context, Query, Resolver } from '@nestjs/graphql';
 
-import { GraphqlErrorFilter } from '../errors/graphql-error.filter.js';
-import { ActivityEnum } from '../models/enums.model.js';
-import { RankingsResultModel } from '../models/rankings-result.model.js';
-import { ActivitiesSchema, CitySchema, CountrySchema } from './args.schema.js';
-import { RankingsQueryService } from './rankings-query.service.js';
-import { ZodArgPipe } from './zod-args.pipe.js';
+import { GraphqlErrorFilter } from '../errors/graphql-error.filter';
+import { ActivityEnum } from '../models/enums.model';
+import { RankingsResultModel } from '../models/rankings-result.model';
+import { ActivitiesSchema, CitySchema, CountrySchema } from './args.schema';
+import { RankingsQueryService } from './rankings-query.service';
+import { ZodArgPipe } from './zod-args.pipe';
 
 @Resolver(() => RankingsResultModel)
 @UseFilters(GraphqlErrorFilter)

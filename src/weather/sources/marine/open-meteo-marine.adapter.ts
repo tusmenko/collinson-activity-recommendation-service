@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
-import { AppLogger, ClockPort, ConfigService } from '../../infra/index.js';
-import type { Coordinates, Source, SourceFetchOutcome } from '../weather.types.js';
-import { OpenMeteoMarineSchema } from './open-meteo-marine.schema.js';
-import { toDaySignals } from './open-meteo-marine.util.js';
-import { failureOf } from './open-meteo.util.js';
+import { AppLogger, ClockPort, ConfigService } from '../../../infra/index';
+import type { Coordinates, Source, SourceFetchOutcome } from '../../weather.types';
+import { OpenMeteoMarineSchema } from './open-meteo-marine.schema';
+import { toDaySignals } from './open-meteo-marine.util';
+import { failureOf } from '../open-meteo.util';
 import {
   MARINE_DAILY_VARIABLES,
   MARINE_SCHEMA_VERSION,
   OPEN_METEO_MARINE_URL,
-} from './sources.const.js';
-import { MarineSourcePort } from './weather-source.port.js';
+} from './marine.const';
+import { MarineSourcePort } from '../weather-source.port';
 
 @Injectable()
 export class OpenMeteoMarineAdapter extends MarineSourcePort {

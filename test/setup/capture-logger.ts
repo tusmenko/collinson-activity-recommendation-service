@@ -1,6 +1,6 @@
 import { pino } from 'pino';
 
-import { AppLogger } from '../../src/infra/index.js';
+import { AppLogger } from '../../src/infra/index';
 
 export interface CapturedLogger {
   readonly logger: AppLogger;

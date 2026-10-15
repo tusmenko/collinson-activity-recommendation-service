@@ -1,8 +1,8 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-import type { Source, SourceStatus } from '../../weather/index.js';
-import { FetchStatusEnum, SourceEnum } from './enums.model.js';
-import { DateTimeScalar } from './scalars.model.js';
+import type { Source, SourceStatus } from '../../weather/index';
+import { FetchStatusEnum, SourceEnum } from './enums.model';
+import { DateTimeScalar } from './scalars.model';
 
 @ObjectType('SourceStatus', { description: 'How one upstream source was served for this answer.' })
 export class SourceStatusModel {

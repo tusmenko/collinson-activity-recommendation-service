@@ -23,7 +23,7 @@ Design-level artifact. Implements [NFR-6](arch/02-requirements.md#nfr-6) and the
 
 ## Coverage targets
 
-Measured by Vitest coverage (v8). Gating thresholds fail CI; targets are the aim.
+Measured by Vitest coverage (v8). Gating thresholds fail CI; targets are the aim. The gates are checked per file (`coverage.thresholds.perFile`): each file meets its module's gate, and any file outside a module meets a floor of 60 lines and 50 branches.
 
 | Module | Lines gate | Branches gate | Target | Why |
 | --- | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ Measured by Vitest coverage (v8). Gating thresholds fail CI; targets are the aim
 | `location` | 85 | 75 | 90 | Name resolution rules |
 | `api` | 80 | 70 | 85 | Resolvers, pipe, filter, complexity |
 | `infra` | 70 | 60 | 80 | Config, logging, health |
-| Overall | 80 | 75 | 88 | |
+| Per-file floor (any file) | 60 | 50 | 88 | A file with no test fails the build even when its module's average holds |
 
 ## Traceability matrix
 

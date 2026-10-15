@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { WeatherSourcePort } from '../../../src/weather/index.js';
-import type { Coordinates, Source, SourceFetchOutcome } from '../../../src/weather/index.js';
+import { WeatherSourcePort } from '../../../src/weather/index';
+import type { Coordinates, Source, SourceFetchOutcome } from '../../../src/weather/index';
 
 // A second provider: it touches only its own file and is accepted wherever the port is.
 class ConstantWeatherAdapter extends WeatherSourcePort {

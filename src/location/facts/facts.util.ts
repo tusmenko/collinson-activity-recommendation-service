@@ -1,4 +1,4 @@
-import type { LocationFacts } from '../location.types.js';
+import type { LocationFacts } from '../location.types';
 
 export function locationKey(id: string): string {
   return `location:v1:${id}`;

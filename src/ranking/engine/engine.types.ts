@@ -1,5 +1,5 @@
-import type { Factor } from '../ranking.types.js';
-import type { FactorRule } from '../rules/rule-set.schema.js';
+import type { Factor } from '../ranking.types';
+import type { FactorRule } from '../rules/rule-set.schema';
 
 // Outcome of a rule set's applicability gate; `max` is the window's highest value of the gate signal.
 export type GateResult =

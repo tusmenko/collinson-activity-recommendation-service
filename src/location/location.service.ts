@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-import { ClockPort } from '../infra/index.js';
-import { FactsRepositoryPort } from './facts/facts.port.js';
-import { GeocodingPort } from './geocoding/geocoding.port.js';
-import { GEOCODING_RESULT_COUNT } from './location.const.js';
-import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors.js';
-import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types.js';
-import { inCountry, matchFirst, normaliseQuery, split } from './location.util.js';
+import { ClockPort } from '../infra/index';
+import { FactsRepositoryPort } from './facts/facts.port';
+import { GeocodingPort } from './geocoding/geocoding.port';
+import { GEOCODING_RESULT_COUNT } from './location.const';
+import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
+import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types';
+import { inCountry, matchFirst, normaliseQuery, split } from './location.util';
 
 @Injectable()
 export class LocationService {

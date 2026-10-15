@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
-import { AppLogger, ClockPort, ConfigService } from '../../infra/index.js';
-import type { Coordinates, Source, SourceFetchOutcome } from '../weather.types.js';
-import { OpenMeteoForecastSchema } from './open-meteo-forecast.schema.js';
-import { toDaySignals } from './open-meteo-forecast.util.js';
-import { failureOf } from './open-meteo.util.js';
+import { AppLogger, ClockPort, ConfigService } from '../../../infra/index';
+import type { Coordinates, Source, SourceFetchOutcome } from '../../weather.types';
+import { OpenMeteoForecastSchema } from './open-meteo-forecast.schema';
+import { toDaySignals } from './open-meteo-forecast.util';
+import { failureOf } from '../open-meteo.util';
 import {
   FORECAST_DAILY_VARIABLES,
   FORECAST_SCHEMA_VERSION,
   OPEN_METEO_FORECAST_URL,
-} from './sources.const.js';
-import { ForecastSourcePort } from './weather-source.port.js';
+} from './forecast.const';
+import { ForecastSourcePort } from '../weather-source.port';
 
 @Injectable()
 export class OpenMeteoForecastAdapter extends ForecastSourcePort {

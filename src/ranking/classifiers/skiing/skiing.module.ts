@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import type { OnModuleInit } from '@nestjs/common';
 
-import { EngineModule } from '../../engine/engine.module.js';
-import { ClassifierRegistry } from '../../registry/classifier-registry.service.js';
-import { RegistryModule } from '../../registry/registry.module.js';
-import { SkiingClassifier } from './skiing.classifier.js';
+import { EngineModule } from '../../engine/engine.module';
+import { ClassifierRegistry } from '../../registry/classifier-registry.service';
+import { RegistryModule } from '../../registry/registry.module';
+import { SkiingClassifier } from './skiing.classifier';
 
 @Module({
   imports: [EngineModule, RegistryModule],

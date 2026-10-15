@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import type { Source } from '../../../weather/index.js';
-import { ScoreEngine } from '../../engine/score-engine.service.js';
-import type { ClassifierInput, ClassifierOutput } from '../../ranking.types.js';
-import { Classifier } from '../../registry/classifier.port.js';
+import type { Source } from '../../../weather/index';
+import { ScoreEngine } from '../../engine/score-engine.service';
+import type { ClassifierInput, ClassifierOutput } from '../../ranking.types';
+import { Classifier } from '../../registry/classifier.port';
 
 // Always applicable: rain, temperature comfort and gusts decide the day.
 @Injectable()

@@ -3,18 +3,18 @@ import { Test } from '@nestjs/testing';
 import { Redis } from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { ConfigService, InfraModule } from '../../../src/infra/index.js';
+import { ConfigService, InfraModule } from '../../../src/infra/index';
 import {
   ForecastSourcePort,
   MarineSourcePort,
   SOURCES,
   WeatherModule,
-} from '../../../src/weather/index.js';
-import type { DaySignals } from '../../../src/weather/index.js';
-import { testConfig } from '../../setup/adapter-deps.js';
-import { createTestRedis } from '../../setup/redis.js';
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+} from '../../../src/weather/index';
+import type { DaySignals } from '../../../src/weather/index';
+import { testConfig } from '../../setup/adapter-deps';
+import { createTestRedis } from '../../setup/redis';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 const DUBAI = { latitude: 25.07725, longitude: 55.30927 };
 

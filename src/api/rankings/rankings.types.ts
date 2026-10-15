@@ -1,6 +1,6 @@
-import type { LocationFacts } from '../../location/index.js';
-import type { RankingResult } from '../../ranking/index.js';
-import type { EnsureResult, Source } from '../../weather/index.js';
+import type { LocationFacts } from '../../location/index';
+import type { RankingResult } from '../../ranking/index';
+import type { EnsureResult, Source } from '../../weather/index';
 
 // One location ranked: the facts as stored after the marine fact was reconciled, the served data and the scores.
 export interface LocationRanking {

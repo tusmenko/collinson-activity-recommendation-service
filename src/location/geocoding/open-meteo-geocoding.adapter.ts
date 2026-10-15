@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
-import { AppLogger, ConfigService } from '../../infra/index.js';
-import { GEOCODING_RESULT_COUNT } from '../location.const.js';
-import type { GeocodingOutcome } from '../location.types.js';
-import { GEOCODING_SCHEMA_VERSION, OPEN_METEO_GEOCODING_URL } from './geocoding.const.js';
-import { GeocodingPort } from './geocoding.port.js';
-import { OpenMeteoGeocodingSchema } from './open-meteo-geocoding.schema.js';
-import { failureOf, toGeocodingResults } from './open-meteo-geocoding.util.js';
+import { AppLogger, ConfigService } from '../../infra/index';
+import { GEOCODING_RESULT_COUNT } from '../location.const';
+import type { GeocodingOutcome } from '../location.types';
+import { GEOCODING_SCHEMA_VERSION, OPEN_METEO_GEOCODING_URL } from './geocoding.const';
+import { GeocodingPort } from './geocoding.port';
+import { OpenMeteoGeocodingSchema } from './open-meteo-geocoding.schema';
+import { failureOf, toGeocodingResults } from './open-meteo-geocoding.util';
 
 @Injectable()
 export class OpenMeteoGeocodingAdapter extends GeocodingPort {

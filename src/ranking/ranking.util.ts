@@ -1,6 +1,6 @@
-import type { DaySignals, Source } from '../weather/index.js';
-import type { RankingInput, SourceDays } from './ranking.types.js';
-import type { Classifier } from './registry/classifier.port.js';
+import type { DaySignals, Source } from '../weather/index';
+import type { RankingInput, SourceDays } from './ranking.types';
+import type { Classifier } from './registry/classifier.port';
 
 // For a date a classifier returned outside the window; the invariants report it.
 export function noSignals(date: string): DaySignals {

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import type { LocationFacts } from '../../../location/index.js';
-import type { Source } from '../../../weather/index.js';
-import { ScoreEngine } from '../../engine/score-engine.service.js';
-import type { ClassifierInput, ClassifierOutput } from '../../ranking.types.js';
-import { Classifier } from '../../registry/classifier.port.js';
-import type { RuleSet } from '../../rules/rule-set.schema.js';
+import type { LocationFacts } from '../../../location/index';
+import type { Source } from '../../../weather/index';
+import { ScoreEngine } from '../../engine/score-engine.service';
+import type { ClassifierInput, ClassifierOutput } from '../../ranking.types';
+import { Classifier } from '../../registry/classifier.port';
+import type { RuleSet } from '../../rules/rule-set.schema';
 
 // Gated on the place's elevation (A-8, owner decision 2026-10-15), then on the window's maximum snow depth (A-50);
 // scored by snowpack, fresh snow, temperature, gusts.

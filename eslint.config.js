@@ -73,6 +73,19 @@ const NO_EXPORT_ALL = {
   message: 'Barrels list their exports by name; export * is not allowed.',
 };
 
+// Relative specifiers carry no extension; SWC adds .js on emit (coding standards, TypeScript settings).
+const NO_IMPORT_SUFFIX = [
+  'ImportDeclaration',
+  'ExportNamedDeclaration',
+  'ExportAllDeclaration',
+  'ImportExpression',
+].map((node) => ({
+  selector: `${node}[source.value=/^\\.\\.?\\/.*\\.(js|ts)$/]`,
+  message: 'Relative imports have no extension; SWC adds .js on emit.',
+}));
+
+const BASE_SYNTAX = [NO_EXPORT_ALL, ...NO_IMPORT_SUFFIX];
+
 export default tseslint.config(
   { ignores: ['dist/', 'coverage/', 'node_modules/', '.claude/'] },
   js.configs.recommended,
@@ -93,7 +106,7 @@ export default tseslint.config(
       'sonarjs/cognitive-complexity': ['error', 15],
       'no-console': 'error',
       'n/no-process-env': 'error',
-      'no-restricted-syntax': ['error', NO_EXPORT_ALL],
+      'no-restricted-syntax': ['error', ...BASE_SYNTAX],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
@@ -119,12 +132,12 @@ export default tseslint.config(
   {
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.types.ts', 'src/**/*.schema.ts', 'src/**/*.spec.ts'],
-    rules: { 'no-restricted-syntax': ['error', NO_EXPORT_ALL, ...TYPE_PLACEMENT] },
+    rules: { 'no-restricted-syntax': ['error', ...BASE_SYNTAX, ...TYPE_PLACEMENT] },
   },
   {
     files: CLASS_FILES,
     rules: {
-      'no-restricted-syntax': ['error', NO_EXPORT_ALL, ...TYPE_PLACEMENT, ...HELPER_PLACEMENT],
+      'no-restricted-syntax': ['error', ...BASE_SYNTAX, ...TYPE_PLACEMENT, ...HELPER_PLACEMENT],
     },
   },
   {

@@ -1,4 +1,4 @@
-import type { SOURCES } from './weather.const.js';
+import type { SOURCES } from './weather.const';
 
 export type Source = (typeof SOURCES)[number];
 

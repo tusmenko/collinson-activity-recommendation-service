@@ -1,6 +1,7 @@
-import type { WindowRead } from '../store/store.types.js';
-import type { DaySignals, Source } from '../weather.types.js';
-import type { MarineAvailability, Served } from './ingest.types.js';
+import type { WindowRead } from '../store/store.types';
+import type { DaySignals, Source } from '../weather.types';
+import { FairUseExceededError, IngestFailedError } from './ingest.errors';
+import type { MarineAvailability, Served } from './ingest.types';
 
 export function skipped(source: Source): Served {
   return { status: { source, status: 'SKIPPED', fetchedAt: null }, days: null, stale: false };
@@ -27,4 +28,12 @@ export function marineAvailabilityOf(days: readonly DaySignals[]): MarineAvailab
     (day) => day.waveHeight !== null || day.wavePeriod !== null || day.swellHeight !== null,
   );
   return hasWaves ? 'available' : 'absent';
+}
+
+// The ingest.run log's outcome label for a job that threw.
+export function outcomeOf(error: unknown): string {
+  if (error instanceof IngestFailedError) {
+    return error.reason;
+  }
+  return error instanceof FairUseExceededError ? 'fair-use' : 'error';
 }

@@ -1,4 +1,4 @@
-import { ClockPort } from '../../src/infra/index.js';
+import { ClockPort } from '../../src/infra/index';
 
 export const FIXED_NOW = new Date('2026-10-15T06:00:00.000Z');
 

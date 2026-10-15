@@ -1,6 +1,6 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-import { ActivityEnum } from './enums.model.js';
+import { ActivityEnum } from './enums.model';
 
 @ObjectType('ActivityReason', { description: 'Why an activity is not applicable or unavailable.' })
 export class ActivityReasonModel {

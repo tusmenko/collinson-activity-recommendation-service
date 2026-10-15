@@ -1,6 +1,6 @@
-import type { GeocodingResult } from '../location.types.js';
-import type { GeocodingFailure } from './geocoding.types.js';
-import type { OpenMeteoGeocoding } from './open-meteo-geocoding.schema.js';
+import type { GeocodingResult } from '../location.types';
+import type { GeocodingFailure } from './geocoding.types';
+import type { OpenMeteoGeocoding } from './open-meteo-geocoding.schema';
 
 export function failureOf(error: unknown): GeocodingFailure {
   const name = error instanceof Error ? error.name : '';

@@ -1,4 +1,4 @@
-import type { Coordinates, DaySignals, Source } from '../weather.types.js';
+import type { Coordinates, DaySignals, Source } from '../weather.types';
 
 export interface EnsureLocation extends Coordinates {
   readonly id: string;

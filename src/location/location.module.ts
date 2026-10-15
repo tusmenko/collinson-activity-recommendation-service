@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { FactsModule } from './facts/facts.module.js';
-import { GeocodingModule } from './geocoding/geocoding.module.js';
-import { LocationService } from './location.service.js';
+import { FactsModule } from './facts/facts.module';
+import { GeocodingModule } from './geocoding/geocoding.module';
+import { LocationService } from './location.service';
 
 // FactsModule is re-exported: the api reconciles the marine fact through FactsRepositoryPort.
 @Module({

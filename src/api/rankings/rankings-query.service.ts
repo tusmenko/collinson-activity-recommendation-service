@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-import { ClockPort } from '../../infra/index.js';
-import { LocationService } from '../../location/index.js';
-import type { LocationModel } from '../models/location.model.js';
-import type { RankingsResultModel } from '../models/rankings-result.model.js';
-import type { RankingsArgs } from './args.schema.js';
-import { LocationRankingService } from './location-ranking.service.js';
-import { RankingsResultMapper } from './rankings-result.mapper.js';
+import { ClockPort } from '../../infra/index';
+import { LocationService } from '../../location/index';
+import type { LocationModel } from '../models/location.model';
+import type { RankingsResultModel } from '../models/rankings-result.model';
+import type { RankingsArgs } from './args.schema';
+import { LocationRankingService } from './location-ranking.service';
+import { RankingsResultMapper } from './rankings-result.mapper';
 
 // The use cases behind the two ranking fields: by name (geocoded) and by a location already resolved.
 @Injectable()

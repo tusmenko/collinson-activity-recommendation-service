@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from './setup/create-test-app.js';
-import type { TestApp } from './setup/create-test-app.js';
+import { createTestApp } from './setup/create-test-app';
+import type { TestApp } from './setup/create-test-app';
 
 describe('harness e2e health over HTTP', () => {
   let testApp: TestApp;

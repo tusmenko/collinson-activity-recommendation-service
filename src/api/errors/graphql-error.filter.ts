@@ -2,8 +2,8 @@ import { Catch } from '@nestjs/common';
 import type { GqlExceptionFilter } from '@nestjs/graphql';
 import type { Logger } from 'pino';
 
-import { AppLogger } from '../../infra/index.js';
-import { GraphqlErrorMapper } from './graphql-error.mapper.js';
+import { AppLogger } from '../../infra/index';
+import { GraphqlErrorMapper } from './graphql-error.mapper';
 
 // Hands every error back to Apollo, where GraphqlErrorMapper.format gives it a code. Nest's default handler would log
 // NOT_FOUND or BAD_USER_INPUT at error level; here only unexpected errors are logged, with their stack.

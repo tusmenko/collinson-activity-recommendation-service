@@ -1,4 +1,4 @@
-import type { Coordinates, Source, SourceFetchOutcome } from '../weather.types.js';
+import type { Coordinates, Source, SourceFetchOutcome } from '../weather.types';
 
 // Never throws: every upstream problem is a `failed` outcome.
 export abstract class WeatherSourcePort {

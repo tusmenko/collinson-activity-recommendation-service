@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadEnv } from './env.schema.js';
+import { loadEnv } from './env.schema';
 
 const HOUR_MS = 3_600_000;
 

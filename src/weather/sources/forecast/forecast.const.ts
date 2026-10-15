@@ -1,10 +1,8 @@
-// Open-Meteo hosts, used unless UPSTREAM_BASE_URL points the whole provider elsewhere (design D-2).
+// Open-Meteo host, used unless UPSTREAM_BASE_URL points the whole provider elsewhere (design D-2).
 export const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com';
-export const OPEN_METEO_MARINE_URL = 'https://marine-api.open-meteo.com';
 
-// Pinned Open-Meteo payload schemas; a provider shape change is a new version and a new key prefix (R-9).
+// Pinned Open-Meteo payload schema; a provider shape change is a new version and a new key prefix (R-9).
 export const FORECAST_SCHEMA_VERSION = 'v1';
-export const MARINE_SCHEMA_VERSION = 'v1';
 
 export const FORECAST_DAILY_VARIABLES = [
   'weather_code',
@@ -20,7 +18,6 @@ export const FORECAST_DAILY_VARIABLES = [
   'sunshine_duration',
   'visibility_mean',
 ].join(',');
-export const MARINE_DAILY_VARIABLES = 'wave_height_max,wave_period_max,swell_wave_height_max';
 
 export const SECONDS_PER_HOUR = 3_600;
 export const CM_PER_M = 100;

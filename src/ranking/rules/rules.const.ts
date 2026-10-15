@@ -1,4 +1,4 @@
-import type { DaySignals } from '../../weather/index.js';
+import type { DaySignals } from '../../weather/index';
 import indoorSightseeing from '../classifiers/indoor-sightseeing/indoor-sightseeing.rules.json' with { type: 'json' };
 import outdoorSightseeing from '../classifiers/outdoor-sightseeing/outdoor-sightseeing.rules.json' with { type: 'json' };
 import skiing from '../classifiers/skiing/skiing.rules.json' with { type: 'json' };

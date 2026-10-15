@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { ThrottlerStorage } from '@nestjs/throttler';
 import { Redis } from 'ioredis';
 
-import { THROTTLE_KEY_PREFIX } from './throttling.const.js';
-import type { ThrottlerStorageRecord } from './throttling.types.js';
-import { toSeconds } from './throttling.util.js';
+import { THROTTLE_KEY_PREFIX } from './throttling.const';
+import type { ThrottlerStorageRecord } from './throttling.types';
+import { toSeconds } from './throttling.util';
 
 // Fixed-window hit counter shared by every replica; @nest-lab/throttler-storage-redis stops at Nest 11.
 @Injectable()

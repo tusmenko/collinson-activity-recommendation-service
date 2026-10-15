@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
 
-import { AppLogger, ConfigService, QueueConnection } from '../../infra/index.js';
-import { INGEST_BACKOFF_MS, INGEST_QUEUE, MAX_WAIT_LISTENERS, TIMED_OUT } from './queue.const.js';
-import type { IngestJobData, IngestJobResult } from './queue.types.js';
+import { AppLogger, ConfigService, QueueConnection } from '../../infra/index';
+import { INGEST_BACKOFF_MS, INGEST_QUEUE, MAX_WAIT_LISTENERS, TIMED_OUT } from './queue.const';
+import type { IngestJobData, IngestJobResult } from './queue.types';
 
 // Single flight per (locationId, source): a duplicate add while the job exists is a no-op, and
 // removeOnComplete lets the next stale read run it again (design D-5, spike S-3).

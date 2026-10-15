@@ -5,7 +5,7 @@ Implements [ADR-0001](adr/0001-pragmatic-option-nestjs-redis-bullmq.md). Each se
 <a id="d-1"></a>
 ## D-1 Framework and modules
 
-NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`, `.js` import suffixes). Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
+NestJS 12 on Node.js LTS, TypeScript, ESM (the Nest CLI 12 scaffold: Vitest, `type: module`), built by the Nest CLI's SWC builder with type checking; relative imports are written without an extension and SWC adds `.js` on emit. Five modules: `location` (geocoding adapter, facts repository), `weather` (forecast and marine adapters, forecast repository, ingest pipeline, queues), `ranking` (classifier registry, classifiers, rule-set provider, ranking service, events), `api` (GraphQL resolvers, error filter, throttler, complexity limit), `infra` (config, Redis client, logging, telemetry, health).
 
 Allowed imports, the single source for the dependency-cruiser configuration (generic layer rules are in the [coding standards](CODING_STANDARDS.md#layering)):
 

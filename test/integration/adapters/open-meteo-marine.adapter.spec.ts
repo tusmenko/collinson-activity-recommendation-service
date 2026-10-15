@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { OpenMeteoMarineAdapter } from '../../../src/weather/sources/open-meteo-marine.adapter.js';
-import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
-import { FixedClock } from '../../setup/fixed-clock.js';
-import type { EnvOverrides } from '../../setup/test-env.js';
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+import { OpenMeteoMarineAdapter } from '../../../src/weather/sources/marine/open-meteo-marine.adapter';
+import { silentLogger, testConfig } from '../../setup/adapter-deps';
+import { FixedClock } from '../../setup/fixed-clock';
+import type { EnvOverrides } from '../../setup/test-env';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 const LONDON = { latitude: 51.50853, longitude: -0.12574 };
 const BIARRITZ = { latitude: 43.48055, longitude: -1.55684 };

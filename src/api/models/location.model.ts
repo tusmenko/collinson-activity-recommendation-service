@@ -1,6 +1,6 @@
 import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
 
-import type { LocationFacts } from '../../location/index.js';
+import type { LocationFacts } from '../../location/index';
 
 // `rankings` is a field resolver (LocationResolver) that ranks these stored facts without geocoding again.
 @ObjectType('Location', { description: 'A geocoded place.' })

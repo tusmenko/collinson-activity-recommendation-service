@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-import { ConfigService } from '../../infra/index.js';
-import type { Source } from '../weather.types.js';
-import { ForecastRepositoryPort } from './forecast.port.js';
-import { FAIR_USE_COUNTER_TTL_MS, LAST_ERROR_TTL_MS } from './store.const.js';
-import type { LastIngestError, StoredDay, WindowRead, WindowState } from './store.types.js';
-import { counterKey, dayKey, lastErrorKey, oldest, rawKey } from './store.util.js';
+import { ConfigService } from '../../infra/index';
+import type { Source } from '../weather.types';
+import { ForecastRepositoryPort } from './forecast.port';
+import { FAIR_USE_COUNTER_TTL_MS, LAST_ERROR_TTL_MS } from './store.const';
+import type { LastIngestError, StoredDay, WindowRead, WindowState } from './store.types';
+import { counterKey, dayKey, lastErrorKey, oldest, rawKey } from './store.util';
 
 @Injectable()
 export class RedisForecastRepository extends ForecastRepositoryPort {

@@ -1,4 +1,4 @@
-import type { Classifier } from './classifier.port.js';
+import type { Classifier } from './classifier.port';
 
 // Activity id to classifier, filled by module registration (design D-6); the GraphQL enum is built from ids().
 export class ClassifierRegistry {

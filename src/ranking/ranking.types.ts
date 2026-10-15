@@ -1,7 +1,7 @@
-import type { LocationFacts } from '../location/index.js';
-import type { DaySignals, Source } from '../weather/index.js';
-import type { ACTIVITIES } from './ranking.const.js';
-import type { RuleSet } from './rules/rule-set.schema.js';
+import type { LocationFacts } from '../location/index';
+import type { DaySignals, Source } from '../weather/index';
+import type { ACTIVITIES } from './ranking.const';
+import type { RuleSet } from './rules/rule-set.schema';
 
 // The four built-in activities; classifier ids are plain strings so a fifth can register without editing this.
 /** @public */

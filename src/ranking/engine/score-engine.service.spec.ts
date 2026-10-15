@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DaySignals } from '../../weather/index.js';
-import type { RuleSet } from '../rules/rule-set.schema.js';
-import { ScoreEngine } from './score-engine.service.js';
+import type { DaySignals } from '../../weather/index';
+import type { RuleSet } from '../rules/rule-set.schema';
+import { ScoreEngine } from './score-engine.service';
 
 const EMPTY: DaySignals = {
   date: '2026-10-15',

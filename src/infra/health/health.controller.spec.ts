@@ -1,11 +1,12 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
+import type { HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
 import { Test } from '@nestjs/testing';
 import { Redis } from 'ioredis';
 import { describe, expect, it } from 'vitest';
 
-import { HealthController } from './health.controller.js';
-import { RedisHealthIndicator } from './redis-health.indicator.js';
+import { HealthController } from './health.controller';
+import { RedisHealthIndicator } from './redis-health.indicator';
 
 async function controllerWithPing(ping: () => Promise<string>): Promise<HealthController> {
   const moduleRef = await Test.createTestingModule({
@@ -38,5 +39,17 @@ describe('U-INFRA-1 health check', () => {
       details: { redis: { status: 'down', message: 'ECONNREFUSED' } },
     });
     expect(Object.keys(body).sort()).toEqual(['details', 'status']);
+  });
+
+  it('U-INFRA-1 an error other than the 503 propagates unchanged', async () => {
+    const boom = new Error('terminus bug');
+    const health = { check: () => Promise.reject(boom) } as unknown as HealthCheckService;
+    const controller = new HealthController(
+      health,
+      {} as RedisHealthIndicator,
+      {} as MemoryHealthIndicator,
+    );
+
+    await expect(controller.check()).rejects.toBe(boom);
   });
 });

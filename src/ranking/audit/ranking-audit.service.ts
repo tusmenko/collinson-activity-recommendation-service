@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
-import { AnomalyCounter, AppLogger, ConfigService } from '../../infra/index.js';
-import type { LocationFacts, MarineAvailability } from '../../location/index.js';
-import type { RankingInput, RankingResult } from '../ranking.types.js';
-import { PROVIDER } from './audit.const.js';
-import { violations } from './audit.util.js';
+import { AnomalyCounter, AppLogger, ConfigService } from '../../infra/index';
+import type { LocationFacts, MarineAvailability } from '../../location/index';
+import type { RankingInput, RankingResult } from '../ranking.types';
+import { PROVIDER } from './audit.const';
+import { violations } from './audit.util';
 
 // Traceability and anomaly detection (design D-7): in-request invariants and one structured event per ranking.
 @Injectable()

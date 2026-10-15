@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 describe('harness stub upstream', () => {
   let stub: StubUpstream;

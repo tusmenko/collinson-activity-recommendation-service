@@ -2,9 +2,9 @@ import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
 import type { HealthCheckResult } from '@nestjs/terminus';
 
-import { HEAP_LIMIT_BYTES } from './health.const.js';
-import type { HealthBody } from './health.types.js';
-import { RedisHealthIndicator } from './redis-health.indicator.js';
+import { HEAP_LIMIT_BYTES } from './health.const';
+import type { HealthBody } from './health.types';
+import { RedisHealthIndicator } from './redis-health.indicator';
 
 @Controller('health')
 export class HealthController {

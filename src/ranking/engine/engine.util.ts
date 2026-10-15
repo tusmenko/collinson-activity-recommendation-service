@@ -1,8 +1,8 @@
-import type { DaySignals } from '../../weather/index.js';
-import type { Effect, Factor } from '../ranking.types.js';
-import type { FactorRule, Range, RuleSet } from '../rules/rule-set.schema.js';
-import { FACTOR_SCORE } from './engine.const.js';
-import type { WeighedFactor } from './engine.types.js';
+import type { DaySignals } from '../../weather/index';
+import type { Effect, Factor } from '../ranking.types';
+import type { FactorRule, Range, RuleSet } from '../rules/rule-set.schema';
+import { FACTOR_SCORE } from './engine.const';
+import type { WeighedFactor } from './engine.types';
 
 function inside(value: number, range: Range): boolean {
   return (

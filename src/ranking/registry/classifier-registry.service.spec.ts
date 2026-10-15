@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { SkiingClassifier } from '../classifiers/skiing/skiing.classifier.js';
-import { SurfingClassifier } from '../classifiers/surfing/surfing.classifier.js';
-import { ScoreEngine } from '../engine/score-engine.service.js';
-import { ClassifierRegistry } from './classifier-registry.service.js';
-import type { Classifier } from './classifier.port.js';
+import { SkiingClassifier } from '../classifiers/skiing/skiing.classifier';
+import { SurfingClassifier } from '../classifiers/surfing/surfing.classifier';
+import { ScoreEngine } from '../engine/score-engine.service';
+import { ClassifierRegistry } from './classifier-registry.service';
+import type { Classifier } from './classifier.port';
 
 describe('ClassifierRegistry', () => {
   it('U-RANK-2 lists registered ids in registration order and returns each classifier', () => {

@@ -1,9 +1,9 @@
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
-import type { Env } from '../config/env.schema.js';
-import { EXPORT_INTERVAL_MS, METER_NAME } from './telemetry.const.js';
-import { metricExporter } from './telemetry.util.js';
+import type { Env } from '../config/env.schema';
+import { EXPORT_INTERVAL_MS, METER_NAME } from './telemetry.const';
+import { metricExporter } from './telemetry.util';
 
 // The OpenTelemetry SDK, metrics only. main.ts starts it before Nest so the global meter provider exists when the
 // anomaly counter is built; tests never start it and get the API's no-op meter.

@@ -1,11 +1,11 @@
 import { Args, Context, Parent, ResolveField, Resolver } from '@nestjs/graphql';
 
-import { ActivityEnum } from '../models/enums.model.js';
-import { LocationModel } from '../models/location.model.js';
-import { RankingsResultModel } from '../models/rankings-result.model.js';
-import { ActivitiesSchema } from './args.schema.js';
-import { RankingsQueryService } from './rankings-query.service.js';
-import { ZodArgPipe } from './zod-args.pipe.js';
+import { ActivityEnum } from '../models/enums.model';
+import { LocationModel } from '../models/location.model';
+import { RankingsResultModel } from '../models/rankings-result.model';
+import { ActivitiesSchema } from './args.schema';
+import { RankingsQueryService } from './rankings-query.service';
+import { ZodArgPipe } from './zod-args.pipe';
 
 @Resolver(() => LocationModel)
 export class LocationResolver {

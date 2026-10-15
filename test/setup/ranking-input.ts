@@ -1,10 +1,10 @@
-import type { LocationFacts } from '../../src/location/index.js';
-import type { RankingInput } from '../../src/ranking/index.js';
-import type { DaySignals } from '../../src/weather/index.js';
-import { normaliseForecastPayload } from '../../src/weather/sources/open-meteo-forecast.util.js';
-import { normaliseMarinePayload } from '../../src/weather/sources/open-meteo-marine.util.js';
-import { FIXED_NOW } from './fixed-clock.js';
-import { loadFixture } from './fixtures.js';
+import type { LocationFacts } from '../../src/location/index';
+import type { RankingInput } from '../../src/ranking/index';
+import type { DaySignals } from '../../src/weather/index';
+import { normaliseForecastPayload } from '../../src/weather/sources/forecast/open-meteo-forecast.util';
+import { normaliseMarinePayload } from '../../src/weather/sources/marine/open-meteo-marine.util';
+import { FIXED_NOW } from './fixed-clock';
+import { loadFixture } from './fixtures';
 
 // Recorded places; the archive entry is Chamonix 2026-01-10 to 17 and has no marine body.
 // Elevation comes from the recorded geocoding body, as it does in the app (A-8).

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { RankingAuditService } from './ranking-audit.service.js';
+import { RankingAuditService } from './ranking-audit.service';
 
 @Module({
   providers: [RankingAuditService],

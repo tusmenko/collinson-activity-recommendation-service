@@ -3,7 +3,7 @@ import { HealthIndicatorService } from '@nestjs/terminus';
 import type { HealthIndicatorResult } from '@nestjs/terminus';
 import { Redis } from 'ioredis';
 
-import { PING_TIMEOUT_MS } from './health.const.js';
+import { PING_TIMEOUT_MS } from './health.const';
 
 @Injectable()
 export class RedisHealthIndicator {

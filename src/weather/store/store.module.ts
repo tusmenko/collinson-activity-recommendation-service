@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { ForecastRepositoryPort } from './forecast.port.js';
-import { RedisForecastRepository } from './redis-forecast.repository.js';
+import { ForecastRepositoryPort } from './forecast.port';
+import { RedisForecastRepository } from './redis-forecast.repository';
 
 @Module({
   providers: [{ provide: ForecastRepositoryPort, useClass: RedisForecastRepository }],

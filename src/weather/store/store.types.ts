@@ -1,4 +1,4 @@
-import type { DaySignals } from '../weather.types.js';
+import type { DaySignals } from '../weather.types';
 
 // One day under forecast:v1:{locationId}:{source}:{date} (design D-4).
 export interface StoredDay {

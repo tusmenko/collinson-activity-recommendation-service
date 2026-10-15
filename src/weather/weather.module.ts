@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { IngestModule } from './ingest/ingest.module.js';
-import { QueueModule } from './queue/queue.module.js';
-import { SourcesModule } from './sources/sources.module.js';
-import { StoreModule } from './store/store.module.js';
+import { IngestModule } from './ingest/ingest.module';
+import { QueueModule } from './queue/queue.module';
+import { SourcesModule } from './sources/sources.module';
+import { StoreModule } from './store/store.module';
 
 // The sub-modules are re-exported: callers see the sources, the store, the queues and the ingest service.
 @Module({

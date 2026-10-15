@@ -1,6 +1,6 @@
 import type { ConnectionOptions } from 'bullmq';
 
-import { REDIS_DEFAULT_PORT } from './redis.const.js';
+import { REDIS_DEFAULT_PORT } from './redis.const';
 
 // BullMQ opens its own clients (a blocking one per worker and per QueueEvents, with
 // maxRetriesPerRequest: null), so it gets connection options rather than the shared client.

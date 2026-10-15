@@ -11,7 +11,7 @@ For the session that builds the service. The architecture phase is closed; nothi
 5. [CODING_STANDARDS.md](CODING_STANDARDS.md): limits, layering, tools.
 6. [arch/06-plan.md](arch/06-plan.md): phases, working rules, validation matrix, cut lines.
 7. [arch/registers.md](arch/registers.md): assumptions for the README; H-1 closes in phase 3.
-8. `ASSIGNMENT.md`: the brief, for the README's framing.
+8. [ASSIGNMENT.md](ASSIGNMENT.md): the brief, for the README's framing.
 
 ## Decisions in force
 

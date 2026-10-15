@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { OpenMeteoForecastAdapter } from './open-meteo-forecast.adapter.js';
-import { OpenMeteoMarineAdapter } from './open-meteo-marine.adapter.js';
-import { ForecastSourcePort, MarineSourcePort } from './weather-source.port.js';
+import { ForecastModule } from './forecast/forecast.module';
+import { MarineModule } from './marine/marine.module';
 
+// Re-exports the two source modules, so importers get both port tokens.
 @Module({
-  providers: [
-    { provide: ForecastSourcePort, useClass: OpenMeteoForecastAdapter },
-    { provide: MarineSourcePort, useClass: OpenMeteoMarineAdapter },
-  ],
-  exports: [ForecastSourcePort, MarineSourcePort],
+  imports: [ForecastModule, MarineModule],
+  exports: [ForecastModule, MarineModule],
 })
 export class SourcesModule {}

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { GeocodingPort } from './geocoding.port.js';
-import { OpenMeteoGeocodingAdapter } from './open-meteo-geocoding.adapter.js';
+import { GeocodingPort } from './geocoding.port';
+import { OpenMeteoGeocodingAdapter } from './open-meteo-geocoding.adapter';
 
 @Module({
   providers: [{ provide: GeocodingPort, useClass: OpenMeteoGeocodingAdapter }],

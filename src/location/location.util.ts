@@ -1,4 +1,4 @@
-import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types.js';
+import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types';
 
 export function normaliseQuery(city: string, country: string | undefined): string {
   return `${city.trim().toLowerCase()}|${country?.trim().toLowerCase() ?? ''}`;

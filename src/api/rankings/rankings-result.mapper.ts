@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-import type { LocationFacts } from '../../location/index.js';
-import type { ActivityRanking } from '../../ranking/index.js';
-import { locationView } from '../api.util.js';
-import type { ActivityRankingModel } from '../models/activity-ranking.model.js';
-import type { ActivityReasonModel } from '../models/activity-reason.model.js';
-import type { LocationModel } from '../models/location.model.js';
-import type { RankingsResultModel } from '../models/rankings-result.model.js';
-import type { LocationRanking } from './rankings.types.js';
+import type { LocationFacts } from '../../location/index';
+import type { ActivityRanking } from '../../ranking/index';
+import { locationView } from '../api.util';
+import type { ActivityRankingModel } from '../models/activity-ranking.model';
+import type { ActivityReasonModel } from '../models/activity-reason.model';
+import type { LocationModel } from '../models/location.model';
+import type { RankingsResultModel } from '../models/rankings-result.model';
+import type { LocationRanking } from './rankings.types';
 
 // A ranked location to the GraphQL result shape (design D-3).
 @Injectable()

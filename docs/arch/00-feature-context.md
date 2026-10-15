@@ -30,7 +30,7 @@ Two further goals confirmed by the candidate at the stage 0 gate:
 
 | Source                   | What it gives us                                                                                                            | In repo?                          |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `ASSIGNMENT.md`          | The brief: scope, activities, stack, grading order                                                                          | Yes                               |
+| [ASSIGNMENT.md](../ASSIGNMENT.md) | The brief: scope, activities, stack, grading order                                                                          | Yes                               |
 | Role context             | Public job description for the role: team shape, production stack, interview stages. Informs goal 5 only.                   | Not reproduced                    |
 | Process constraints      | TypeScript mandatory; public GitHub repo; 5 working days; live walkthrough after review                                     | Summarised under Hard constraints |
 | Open-Meteo Geocoding API | City or town name to coordinates, timezone, country; handles ambiguity by returning multiple matches                        | External                          |

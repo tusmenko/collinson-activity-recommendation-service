@@ -6,12 +6,12 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ThrottlerModule } from '@nestjs/throttler';
 import type { ThrottlerModuleOptions } from '@nestjs/throttler';
 
-import { ConfigService, RedisThrottlerStorage } from '../../infra/index.js';
-import { RankingModule } from '../../ranking/index.js';
-import { ErrorsModule } from '../errors/errors.module.js';
-import { GqlThrottlerGuard } from './gql-throttler.guard.js';
-import { GraphqlConfigService } from './graphql-config.service.js';
-import { THROTTLE_WINDOW_MS } from './graphql.const.js';
+import { ConfigService, RedisThrottlerStorage } from '../../infra/index';
+import { RankingModule } from '../../ranking/index';
+import { ErrorsModule } from '../errors/errors.module';
+import { GqlThrottlerGuard } from './gql-throttler.guard';
+import { GraphqlConfigService } from './graphql-config.service';
+import { THROTTLE_WINDOW_MS } from './graphql.const';
 
 // The GraphQL server and its inbound throttle. RankingModule is imported for the registry the Activity enum is built
 // from; it also puts the classifier modules deeper than GraphQLModule, so they register before the schema is built.

@@ -1,13 +1,18 @@
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 import type { TestProjectInlineConfiguration } from 'vitest/config';
 
-// Vite's default transform drops decorator metadata, which Nest needs for constructor injection.
-const swcPlugin = swc.vite({
-  jsc: { transform: { legacyDecorator: true, decoratorMetadata: true } },
-});
+// Vite's default transform drops decorator metadata, which Nest needs for constructor injection. The jsc options
+// come from .swcrc so tests compile like the build; baseUrl and module stay out because Vite resolves the imports.
+const { baseUrl, ...swcJsc } = (
+  JSON.parse(readFileSync(new URL('.swcrc', import.meta.url), 'utf8')) as {
+    jsc: Record<string, unknown>;
+  }
+).jsc;
+const swcPlugin = swc.vite({ swcrc: false, tsconfigFile: false, jsc: swcJsc });
 
 // graphql 16 has a `module` field but no `exports`: Vite would pick index.mjs for source files while Node
 // loads index.js for Nest and Apollo, and two copies break every `instanceof GraphQLScalarType` / `GraphQLError`.
@@ -52,9 +57,12 @@ export default defineConfig({
         'src/**/*.types.ts',
         'src/**/*.const.ts',
       ],
+      // Every threshold applies to each file: the global entry is the floor for any file, the feature entries
+      // hold each file of their feature to the feature gate (test plan, coverage targets).
       thresholds: {
-        lines: 80,
-        branches: 75,
+        perFile: true,
+        lines: 60,
+        branches: 50,
         'src/infra/**': { lines: 70, branches: 60 },
         'src/ranking/**': { lines: 90, branches: 85 },
         'src/weather/**': { lines: 85, branches: 80 },

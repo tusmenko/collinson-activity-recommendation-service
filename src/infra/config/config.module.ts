@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 
-import { ConfigService } from './config.service.js';
-import { loadProcessEnv } from './env.schema.js';
+import { ConfigService } from './config.service';
+import { loadProcessEnv } from './env.schema';
 
 @Global()
 @Module({

@@ -1,4 +1,4 @@
-import type { ActivityRanking } from '../ranking.types.js';
+import type { ActivityRanking } from '../ranking.types';
 
 function outOfRange(score: number | null): boolean {
   return score !== null && (score < 0 || score > 100);

@@ -1,4 +1,4 @@
-import type { LocationFacts } from '../location/index.js';
+import type { LocationFacts } from '../location/index';
 
 // No forecast to serve for a resolved location; carries it so the client can show where (D-8).
 export class UpstreamUnavailableError extends Error {

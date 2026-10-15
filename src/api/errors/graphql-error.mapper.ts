@@ -4,14 +4,14 @@ import { ThrottlerException } from '@nestjs/throttler';
 import { GraphQLError } from 'graphql';
 import type { GraphQLFormattedError } from 'graphql';
 
-import { GeocodingUnavailableError, LocationNotFoundError } from '../../location/index.js';
-import { UnknownActivityError } from '../../ranking/index.js';
-import { ForecastUnavailableError } from '../../weather/index.js';
-import { ERROR_CODES } from '../api.const.js';
-import { UpstreamUnavailableError } from '../api.errors.js';
-import { locationView } from '../api.util.js';
-import { GEOCODING_RETRY_AFTER_SECONDS } from './errors.const.js';
-import type { MappedError } from './errors.types.js';
+import { GeocodingUnavailableError, LocationNotFoundError } from '../../location/index';
+import { UnknownActivityError } from '../../ranking/index';
+import { ForecastUnavailableError } from '../../weather/index';
+import { ERROR_CODES } from '../api.const';
+import { UpstreamUnavailableError } from '../api.errors';
+import { locationView } from '../api.util';
+import { GEOCODING_RETRY_AFTER_SECONDS } from './errors.const';
+import type { MappedError } from './errors.types';
 
 // Thrown errors to the client error codes of design D-3.
 @Injectable()

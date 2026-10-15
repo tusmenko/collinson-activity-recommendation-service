@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-import { FactsRepositoryPort } from '../../location/index.js';
-import type { LocationFacts } from '../../location/index.js';
-import { ClassifierRegistry, RankingService, UnknownActivityError } from '../../ranking/index.js';
-import { ForecastUnavailableError, IngestService, SOURCES } from '../../weather/index.js';
-import type { EnsureResult, Source } from '../../weather/index.js';
-import { UpstreamUnavailableError } from '../api.errors.js';
-import type { ActivitySelection, LocationRanking, ServedMarine } from './rankings.types.js';
+import { FactsRepositoryPort } from '../../location/index';
+import type { LocationFacts } from '../../location/index';
+import { ClassifierRegistry, RankingService, UnknownActivityError } from '../../ranking/index';
+import { ForecastUnavailableError, IngestService, SOURCES } from '../../weather/index';
+import type { EnsureResult, Source } from '../../weather/index';
+import { UpstreamUnavailableError } from '../api.errors';
+import type { ActivitySelection, LocationRanking, ServedMarine } from './rankings.types';
 
 // Ranks one stored location (design D-9): sources the requested classifiers need, refresh on read,
 // the marine fact reconciled with what was served (D-7), then the classifiers.

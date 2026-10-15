@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { rankingInput } from '../../test/setup/ranking-input.js';
-import type { Place } from '../../test/setup/ranking-input.js';
-import { rankingHarness } from '../../test/setup/ranking-service.js';
-import type { RankingHarness } from '../../test/setup/ranking-service.js';
-import type { DaySignals } from '../weather/index.js';
-import { UnknownActivityError } from './ranking.errors.js';
-import type { ClassifierOutput, DayScore } from './ranking.types.js';
-import type { Classifier } from './registry/classifier.port.js';
-import type { RuleSetProvider } from './rules/rule-set.port.js';
-import { StaticRuleSetAdapter } from './rules/static-rule-set.adapter.js';
+import { rankingInput } from '../../test/setup/ranking-input';
+import type { Place } from '../../test/setup/ranking-input';
+import { rankingHarness } from '../../test/setup/ranking-service';
+import type { RankingHarness } from '../../test/setup/ranking-service';
+import type { DaySignals } from '../weather/index';
+import { UnknownActivityError } from './ranking.errors';
+import type { ClassifierOutput, DayScore } from './ranking.types';
+import type { Classifier } from './registry/classifier.port';
+import type { RuleSetProvider } from './rules/rule-set.port';
+import { StaticRuleSetAdapter } from './rules/static-rule-set.adapter';
 
 const BUILT_IN = ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING'];
 const PLACES: readonly Place[] = [

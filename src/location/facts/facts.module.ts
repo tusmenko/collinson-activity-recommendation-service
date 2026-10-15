@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { FactsRepositoryPort } from './facts.port.js';
-import { RedisFactsRepository } from './redis-facts.repository.js';
+import { FactsRepositoryPort } from './facts.port';
+import { RedisFactsRepository } from './redis-facts.repository';
 
 @Module({
   providers: [{ provide: FactsRepositoryPort, useClass: RedisFactsRepository }],

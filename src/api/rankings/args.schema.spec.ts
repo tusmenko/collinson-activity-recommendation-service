@@ -2,8 +2,8 @@ import type { ArgumentMetadata } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
-import { ActivitiesSchema, CitySchema, CountrySchema } from './args.schema.js';
-import { ZodArgPipe } from './zod-args.pipe.js';
+import { ActivitiesSchema, CitySchema, CountrySchema } from './args.schema';
+import { ZodArgPipe } from './zod-args.pipe';
 
 const CITY: ArgumentMetadata = { type: 'custom', data: 'city' };
 

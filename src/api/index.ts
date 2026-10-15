@@ -1,1 +1,1 @@
-export { ApiModule } from './api.module.js';
+export { ApiModule } from './api.module';

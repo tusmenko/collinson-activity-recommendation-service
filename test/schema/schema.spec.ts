@@ -1,9 +1,9 @@
 import { GRAPHQL_SDL_FILE_HEADER } from '@nestjs/graphql';
 import { describe, expect, it } from 'vitest';
 
-import { ClassifierRegistry } from '../../src/ranking/index.js';
-import type { Classifier } from '../../src/ranking/index.js';
-import { buildSchema, enumValues } from './build-schema.js';
+import { ClassifierRegistry } from '../../src/ranking/index';
+import type { Classifier } from '../../src/ranking/index';
+import { buildSchema, enumValues } from './build-schema';
 
 const BUILT_IN = ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING'];
 

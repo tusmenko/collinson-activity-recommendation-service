@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import type { DaySignals } from '../../weather/index.js';
-import type { DayScore } from '../ranking.types.js';
-import type { RuleSet } from '../rules/rule-set.schema.js';
-import type { GateResult } from './engine.types.js';
-import { bound, weigh } from './engine.util.js';
+import type { DaySignals } from '../../weather/index';
+import type { DayScore } from '../ranking.types';
+import type { RuleSet } from '../rules/rule-set.schema';
+import type { GateResult } from './engine.types';
+import { bound, weigh } from './engine.util';
 
 // Pure threshold scoring shared by every rule-based classifier (design D-6, D-6.1).
 @Injectable()

@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { SourceFetchOutcome } from '../../../src/weather/index.js';
-import { OpenMeteoForecastAdapter } from '../../../src/weather/sources/open-meteo-forecast.adapter.js';
-import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
-import { FIXED_NOW, FixedClock } from '../../setup/fixed-clock.js';
-import type { EnvOverrides } from '../../setup/test-env.js';
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+import type { SourceFetchOutcome } from '../../../src/weather/index';
+import { OpenMeteoForecastAdapter } from '../../../src/weather/sources/forecast/open-meteo-forecast.adapter';
+import { silentLogger, testConfig } from '../../setup/adapter-deps';
+import { FIXED_NOW, FixedClock } from '../../setup/fixed-clock';
+import type { EnvOverrides } from '../../setup/test-env';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 const CHAMONIX = { latitude: 45.92375, longitude: 6.86933 };
 const HINTERTUX = { latitude: 47.11667, longitude: 11.68333 };

@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { OpenMeteoGeocodingAdapter } from '../../../src/location/geocoding/open-meteo-geocoding.adapter.js';
-import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
-import type { EnvOverrides } from '../../setup/test-env.js';
-import { startStubUpstream } from '../../stub-upstream/server.js';
-import type { StubUpstream } from '../../stub-upstream/server.js';
+import { OpenMeteoGeocodingAdapter } from '../../../src/location/geocoding/open-meteo-geocoding.adapter';
+import { silentLogger, testConfig } from '../../setup/adapter-deps';
+import type { EnvOverrides } from '../../setup/test-env';
+import { startStubUpstream } from '../../stub-upstream/server';
+import type { StubUpstream } from '../../stub-upstream/server';
 
 describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
   let stub: StubUpstream;

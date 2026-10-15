@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { ForecastUnavailableError } from '../../../src/weather/index.js';
-import type { EnsureResult, Source, SourceStatus } from '../../../src/weather/index.js';
-import { FIXED_NOW } from '../../setup/fixed-clock.js';
-import { createIngestHarness } from '../../setup/ingest-harness.js';
-import type { IngestHarness, TestLocation } from '../../setup/ingest-harness.js';
+import { ForecastUnavailableError } from '../../../src/weather/index';
+import type { EnsureResult, Source, SourceStatus } from '../../../src/weather/index';
+import { FIXED_NOW } from '../../setup/fixed-clock';
+import { createIngestHarness } from '../../setup/ingest-harness';
+import type { IngestHarness, TestLocation } from '../../setup/ingest-harness';
 
 const LONDON: TestLocation = {
   id: 'test-london',

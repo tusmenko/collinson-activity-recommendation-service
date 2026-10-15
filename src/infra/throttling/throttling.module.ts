@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
-import { RedisThrottlerStorage } from './redis-throttler-storage.adapter.js';
+import { RedisThrottlerStorage } from './redis-throttler-storage.adapter';
 
 @Global()
 @Module({
