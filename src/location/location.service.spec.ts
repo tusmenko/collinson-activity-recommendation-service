@@ -87,14 +87,14 @@ describe('LocationService.resolve', () => {
     expect(facts.locations.size).toBe(5);
   });
 
-  it('U-LOC-2 prefers the exact name: victoria gives Victoria, Canada with Vitória among the alternatives', async () => {
+  it('U-LOC-2 keeps the upstream order: victoria gives Vitória, Brazil with Victoria, Canada next', async () => {
     const { service } = setup();
 
     const resolved = await service.resolve('victoria');
 
-    expect(resolved.location).toMatchObject({ name: 'Victoria', country: 'Canada' });
+    expect(resolved.location).toMatchObject({ name: 'Vitória', country: 'Brazil' });
     expect(resolved.alternatives.map((place) => [place.name, place.country])).toEqual([
-      ['Vitória', 'Brazil'],
+      ['Victoria', 'Canada'],
       ['Victoria', 'HK'],
       ['Las Tunas', 'Cuba'],
       ['Victoria', 'United States'],

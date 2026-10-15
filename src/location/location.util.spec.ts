@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { locationFacts } from '../../test/setup/location-facts';
 import type { GeocodingResult } from './location.types';
-import { inCountry, matchFirst, normaliseQuery, split } from './location.util';
+import { inCountry, normaliseQuery, split } from './location.util';
 
 function hit(name: string, overrides: Partial<GeocodingResult> = {}): GeocodingResult {
   return {
@@ -29,14 +29,6 @@ describe('location helpers', () => {
     expect(inCountry(hit('Victoria'), 'Brazil')).toBe(false);
     const { countryCode: _code, ...noCode } = hit('Victoria');
     expect(inCountry(noCode, 'CA')).toBe(false);
-  });
-
-  it('U-LOC-2 the first exact-name hit moves to the front; accents stay significant', () => {
-    const fuzzy = hit('Vitória', { id: 'br' });
-    const exact = hit('Victoria', { id: 'ca' });
-
-    expect(matchFirst([fuzzy, exact], ' victoria ').map(({ id }) => id)).toEqual(['ca', 'br']);
-    expect(matchFirst([fuzzy, exact], 'Vitoria').map(({ id }) => id)).toEqual(['br', 'ca']);
   });
 
   it('U-LOC-12 the first stored location is the match and the rest are alternatives', () => {

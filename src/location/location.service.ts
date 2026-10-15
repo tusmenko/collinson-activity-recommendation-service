@@ -6,7 +6,7 @@ import { GeocodingPort } from './geocoding/geocoding.port';
 import { GEOCODING_RESULT_COUNT } from './location.const';
 import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
 import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types';
-import { inCountry, matchFirst, normaliseQuery, split } from './location.util';
+import { inCountry, normaliseQuery, split } from './location.util';
 
 @Injectable()
 export class LocationService {
@@ -30,7 +30,7 @@ export class LocationService {
       country === undefined
         ? outcome.results
         : outcome.results.filter((result) => inCountry(result, country));
-    const ordered = matchFirst(candidates, city).slice(0, GEOCODING_RESULT_COUNT);
+    const ordered = candidates.slice(0, GEOCODING_RESULT_COUNT);
     const resolved = split(await this.store(ordered));
     if (resolved === null) {
       throw new LocationNotFoundError(city);
