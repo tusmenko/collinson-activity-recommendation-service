@@ -3,7 +3,14 @@ import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
 
 import { AppLogger, ConfigService, QueueConnection } from '../../infra/index';
-import { INGEST_BACKOFF_MS, INGEST_QUEUE, MAX_WAIT_LISTENERS, TIMED_OUT } from './queue.const';
+import {
+  INGEST_BACKOFF_MS,
+  INGEST_QUEUE,
+  MAX_WAIT_LISTENERS,
+  QUEUE_NOT_READY,
+  QUEUE_READY_TIMEOUT_MS,
+  TIMED_OUT,
+} from './queue.const';
 import type { IngestJobData, IngestJobResult } from './queue.types';
 
 // Single flight per (locationId, source): a duplicate add while the job exists is a no-op, and
@@ -16,7 +23,7 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
   constructor(
     queueConnection: QueueConnection,
     private readonly config: ConfigService,
-    logger: AppLogger,
+    private readonly logger: AppLogger,
   ) {
     const options = { connection: queueConnection.connection, prefix: queueConnection.prefix };
     this.queue = new Queue<IngestJobData>(INGEST_QUEUE, options);
@@ -31,8 +38,11 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
     this.events.on('error', onError);
   }
 
+  // Bounded: unbounded, a Redis that is away at boot kept the process from ever listening, health included.
   async onModuleInit(): Promise<void> {
-    await this.events.waitUntilReady();
+    if (!(await this.readyWithin(QUEUE_READY_TIMEOUT_MS))) {
+      this.logger.warn(QUEUE_NOT_READY, 'IngestQueue');
+    }
   }
 
   async runOnce(data: IngestJobData, boundMs: number): Promise<IngestJobResult> {
@@ -54,6 +64,25 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
 
   async obliterate(): Promise<void> {
     await this.queue.obliterate({ force: true });
+  }
+
+  // A rejection counts as not ready; the timer is cleared whichever side wins, so nothing dangles.
+  private async readyWithin(ms: number): Promise<boolean> {
+    let timer: NodeJS.Timeout | undefined;
+    const timedOut = new Promise<false>((resolve) => {
+      timer = setTimeout(() => {
+        resolve(false);
+      }, ms);
+    });
+    const ready = this.events.waitUntilReady().then(
+      () => true,
+      () => false,
+    );
+    try {
+      return await Promise.race([ready, timedOut]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async onModuleDestroy(): Promise<void> {
