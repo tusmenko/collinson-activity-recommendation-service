@@ -19,12 +19,12 @@ docker compose up --build
 In a second terminal, check health and ask for Biarritz with the default query (the selection of [test/schema/queries/default.graphql](test/schema/queries/default.graphql)):
 
 ```sh
-curl localhost:4510/health
-curl -s localhost:4510/graphql -H 'content-type: application/json' \
+curl http://localhost:4510/health
+curl -s http://localhost:4510/graphql -H 'content-type: application/json' \
   -d '{"query":"query($city:String!){activityRankings(city:$city){location{id name region country latitude longitude timezone} rankings{activity status days{date score}} meta{fetchedAt stale partial sources{source status fetchedAt} alternatives{id name region country}}}}","variables":{"city":"Biarritz"}}'
 ```
 
-The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL runs at <http://localhost:4510/graphql> in a browser, with introspection on.
+The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL runs at <http://localhost:4510/graphql> in a browser, with introspection on. The service speaks plain HTTP only; an `https://` URL fails before it reaches the container, so keep the `http://` prefix (browsers sometimes upgrade `localhost` to HTTPS on their own).
 
 To run without calling Open-Meteo, start the `demo` profile. It adds `api-demo` on port 4511, wired to a stub upstream that serves recorded fixtures (recorded 2026-10-15, dates shifted so the first day is today) for Biarritz, Chamonix, Dubai, Hintertux, London and Springfield:
 
@@ -35,7 +35,7 @@ docker compose --profile demo up --build
 Add `details` and `meta.reasons` to the selection to see why. This asks London for surfing and outdoor sightseeing only; each day now carries its factors (signal, value, unit, effect and the threshold's note), and `reasons` names the cause of any non-applicable status:
 
 ```sh
-curl -s localhost:4511/graphql -H 'content-type: application/json' \
+curl -s http://localhost:4511/graphql -H 'content-type: application/json' \
   -d '{"query":"{activityRankings(city:\"London\",activities:[SURFING,OUTDOOR_SIGHTSEEING]){rankings{activity status days{date score details{factors{signal value unit effect note}}}} meta{reasons{activity reason}}}}"}'
 ```
 
