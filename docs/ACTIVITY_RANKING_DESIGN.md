@@ -170,7 +170,7 @@ Arguments of `Query.activityRankings`:
 | `region` | optional; same rules as `city` | a first-level area (state, province); sent as `name=<city>, <region>`, which Open-Meteo matches exactly against a country or admin1 |
 | `activities` | optional; a non-empty list of `Activity` | ranks only those; omitted means all |
 
-The geocode cache key is the normalised city, country and region (`geocode:v1:{city}|{country}[|{region}]`, [D-4](#d-4)).
+The geocode cache key is the normalised city, country and region (`geocode:v1:{city}|{country}[|{region}]`, [D-4](#d-4)): each part NFD-decomposed with combining marks stripped, inner whitespace collapsed, trimmed and lower-cased, because Open-Meteo matches names ignoring case and accents (`Las Américas` and `las  americas` are one entry). The geocoding request still sends the original trimmed strings.
 
 Rules:
 

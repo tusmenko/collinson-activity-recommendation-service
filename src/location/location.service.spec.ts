@@ -216,6 +216,17 @@ describe('LocationService.resolve', () => {
     expect([...facts.geocodes.keys()]).toEqual(['springfield||illinois']);
   });
 
+  it('U-LOC-15 spellings that differ in accents and spaces share one cache entry; the provider gets the original', async () => {
+    const { service, search } = setup({ kind: 'ok', results: fixtureResults('London') });
+
+    const first = await service.resolve(' Las Américas ');
+    const second = await service.resolve('las  americas');
+
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search).toHaveBeenCalledWith('Las Américas', {});
+    expect(second).toEqual(first);
+  });
+
   it('U-LOC-7 a failed geocoding call throws GeocodingUnavailableError with the reason', async () => {
     const { service, facts } = setup({ kind: 'failed', reason: 'timeout', detail: 'aborted' });
 

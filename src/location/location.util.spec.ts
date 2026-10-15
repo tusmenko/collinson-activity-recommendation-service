@@ -23,6 +23,14 @@ describe('location helpers', () => {
     expect(normaliseQuery('Paris', undefined)).toBe('paris|');
   });
 
+  it('U-LOC-15 the cache key ignores accents, case and runs of spaces in every part', () => {
+    expect(normaliseQuery('Las Américas', undefined)).toBe(
+      normaliseQuery(' las  americas ', undefined),
+    );
+    expect(normaliseQuery('São  Paulo', 'Brasil', 'São Paulo')).toBe('sao paulo|brasil|sao paulo');
+    expect(normaliseQuery('Zürich', 'CH', ' Zürich ')).toBe('zurich|ch|zurich');
+  });
+
   it('U-LOC-12 a country name matches ignoring case and surrounding spaces', () => {
     expect(inCountry(hit('Victoria'), ' canada ')).toBe(true);
     expect(inCountry(hit('Victoria'), 'Brazil')).toBe(false);

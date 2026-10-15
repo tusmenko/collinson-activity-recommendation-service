@@ -79,6 +79,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
 | [DF-1](arch/02-requirements.md#df-1) ambiguity, region | U-API-15 `region` is optional and follows the city's charset and length rules; U-ADAPT-15 the client sends `name=<city>, <region>`; U-LOC-13 the service passes the region to the geocoder and keys the cache on it; E-API-17 `activityRankings(city: "Springfield", region: "Illinois")` resolves Illinois first | unit, end-to-end | review |
 | [DF-1](arch/02-requirements.md#df-1) ambiguity, country code | U-ADAPT-16 the client sends `countryCode`; U-LOC-14 exactly two letters go upstream as an upper-case code and the answer is not filtered again, a longer value is a name filtered here; E-API-15 asserts `countryCode=FR` reached the stub | unit, end-to-end | review |
+| [NFR-1](arch/02-requirements.md#nfr-1) timeliness, geocode key | U-LOC-15 `Las Américas` and `las  americas` give one cache key in every part (city, country, region) and one provider call, which carries the original spelling | unit | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 
 ## Golden set and fixtures
