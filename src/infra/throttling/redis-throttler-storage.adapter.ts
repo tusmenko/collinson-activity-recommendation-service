@@ -26,16 +26,22 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
       .pttl(hitsKey)
       .pttl(blockKey)
       .exec();
-    const [hits, , hitsTtl, blockTtl] = (replies ?? []).map(([, value]) => Number(value));
-    const totalHits = hits ?? 0;
-    let blockMs = blockTtl ?? -1;
+    // MULTI without WATCH is never aborted: one integer reply per command, so the PTTL of a key just
+    // incremented and given an expiry is always a number.
+    const [totalHits, , hitsTtl, blockTtl] = (replies ?? []).map(([, value]) => Number(value)) as [
+      number,
+      number,
+      number,
+      number,
+    ];
+    let blockMs = blockTtl;
     if (blockMs <= 0 && totalHits > limit) {
       await this.redis.set(blockKey, '1', 'PX', blockDuration, 'NX');
       blockMs = blockDuration;
     }
     return {
       totalHits,
-      timeToExpire: toSeconds(hitsTtl ?? ttl),
+      timeToExpire: toSeconds(hitsTtl),
       isBlocked: blockMs > 0,
       timeToBlockExpire: toSeconds(blockMs),
     };
