@@ -71,6 +71,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [NFR-13](arch/02-requirements.md#nfr-13) traceability, review C4 | I-INGEST-13 a malformed payload increments `ranking_anomalies_total{type="upstream_drift"}` once per attempt | integration | review |
 | [DF-5](arch/02-requirements.md#df-5) data age, review C7 | I-INGEST-14 stored days carry the adapter's `fetchedAt`, not the processor's clock | integration | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C6 | I-QUEUE-6 with the queue's event stream never ready (Redis away at boot), `onModuleInit` returns after `QUEUE_READY_TIMEOUT_MS` with a warning and no timer left; a rejected wait warns the same way | integration | review |
+| [FR-3](arch/02-requirements.md#fr-3) four activities, review C8 | S-SCHEMA-3 both `activities` arguments document that omitting means all and an empty list is rejected | schema | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 

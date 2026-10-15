@@ -4,6 +4,7 @@ import { ActivityEnum } from '../models/enums.model';
 import { LocationModel } from '../models/location.model';
 import { RankingsResultModel } from '../models/rankings-result.model';
 import { ActivitiesSchema } from './args.schema';
+import { ACTIVITIES_ARG_DESCRIPTION } from './rankings.const';
 import { RankingsQueryService } from './rankings-query.service';
 import { ZodArgPipe } from './zod-args.pipe';
 
@@ -21,7 +22,7 @@ export class LocationResolver {
     @Parent() location: LocationModel,
     @Args(
       'activities',
-      { type: () => [ActivityEnum], nullable: true },
+      { type: () => [ActivityEnum], nullable: true, description: ACTIVITIES_ARG_DESCRIPTION },
       new ZodArgPipe(ActivitiesSchema),
     )
     activities: string[] | undefined,
