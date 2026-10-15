@@ -40,14 +40,20 @@ export function weigh(day: DaySignals, rule: FactorRule): WeighedFactor {
   return { factor, rule, score };
 }
 
-// A disqualifying factor (poor and heavy enough) caps the day; the floor then lifts it.
+function anyHeavy(weighed: readonly WeighedFactor[], score: number, minWeight: number): boolean {
+  return weighed.some((entry) => entry.score === score && entry.rule.weight >= minWeight);
+}
+
+// Order (D-6): the weighted mean; then a disqualifying factor (poor and heavy enough) caps the day; otherwise a
+// compelling one (good and heavy enough) lifts it to the boost minimum, so a boost never overrides a cap; the
+// floor applies last.
 export function bound(mean: number, weighed: readonly WeighedFactor[], rules: RuleSet): number {
-  const { poorCap, floor } = rules;
-  const disqualified =
-    poorCap !== undefined &&
-    weighed.some(
-      ({ rule, score }) => score === FACTOR_SCORE.poor && rule.weight >= poorCap.minWeight,
-    );
-  const capped = disqualified ? Math.min(mean, poorCap.max) : mean;
-  return floor === undefined ? capped : Math.max(floor, capped);
+  const { poorCap, goodBoost, floor } = rules;
+  let day = mean;
+  if (poorCap !== undefined && anyHeavy(weighed, FACTOR_SCORE.poor, poorCap.minWeight)) {
+    day = Math.min(day, poorCap.max);
+  } else if (goodBoost !== undefined && anyHeavy(weighed, FACTOR_SCORE.good, goodBoost.minWeight)) {
+    day = Math.max(day, goodBoost.min);
+  }
+  return floor === undefined ? day : Math.max(floor, day);
 }
