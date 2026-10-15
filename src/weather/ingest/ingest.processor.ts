@@ -8,10 +8,16 @@ import {
   AnomalyCounter,
   AppLogger,
   ClockPort,
+  closeWithin,
   ConfigService,
   QueueConnection,
 } from '../../infra/index';
-import { INGEST_CONCURRENCY, INGEST_QUEUE } from '../queue/queue.const';
+import {
+  INGEST_CONCURRENCY,
+  INGEST_QUEUE,
+  QUEUE_CLOSE_FORCED,
+  QUEUE_CLOSE_TIMEOUT_MS,
+} from '../queue/queue.const';
 import type { IngestJobData } from '../queue/queue.types';
 import { ForecastSourcePort, MarineSourcePort } from '../sources/weather-source.port';
 import type { WeatherSourcePort } from '../sources/weather-source.port';
@@ -62,8 +68,14 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  // Bounded like the queue's: a worker whose Redis is away would otherwise hold SIGTERM forever.
   async onModuleDestroy(): Promise<void> {
-    await this.worker?.close();
+    if (this.worker === undefined) {
+      return;
+    }
+    if ((await closeWithin(this.worker, QUEUE_CLOSE_TIMEOUT_MS)) === 'forced') {
+      this.logger.warn({ event: 'ingest.worker_close_forced' }, QUEUE_CLOSE_FORCED);
+    }
   }
 
   private async process(job: Job<IngestJobData>): Promise<void> {

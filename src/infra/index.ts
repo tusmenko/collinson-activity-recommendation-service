@@ -18,5 +18,6 @@ export type {
 } from './open-meteo/open-meteo.schema';
 export type { Coordinates } from './open-meteo/open-meteo.types';
 export { QueueConnection } from './redis/queue-connection.service';
+export { closeWithin, resolvesWithin } from './redis/redis.util';
 export { RedisThrottlerStorage } from './throttling/redis-throttler-storage.adapter';
 export { TelemetryService } from './telemetry/telemetry.service';

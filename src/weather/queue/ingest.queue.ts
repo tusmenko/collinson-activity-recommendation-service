@@ -2,11 +2,19 @@ import { Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
 
-import { AppLogger, ConfigService, QueueConnection } from '../../infra/index';
+import {
+  AppLogger,
+  closeWithin,
+  ConfigService,
+  QueueConnection,
+  resolvesWithin,
+} from '../../infra/index';
 import {
   INGEST_BACKOFF_MS,
   INGEST_QUEUE,
   MAX_WAIT_LISTENERS,
+  QUEUE_CLOSE_FORCED,
+  QUEUE_CLOSE_TIMEOUT_MS,
   QUEUE_NOT_READY,
   QUEUE_READY_TIMEOUT_MS,
   TIMED_OUT,
@@ -40,7 +48,7 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
 
   // Bounded: unbounded, a Redis that is away at boot kept the process from ever listening, health included.
   async onModuleInit(): Promise<void> {
-    if (!(await this.readyWithin(QUEUE_READY_TIMEOUT_MS))) {
+    if (!(await resolvesWithin(this.events.waitUntilReady(), QUEUE_READY_TIMEOUT_MS))) {
       this.logger.warn(QUEUE_NOT_READY, 'IngestQueue');
     }
   }
@@ -66,27 +74,14 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
     await this.queue.obliterate({ force: true });
   }
 
-  // A rejection counts as not ready; the timer is cleared whichever side wins, so nothing dangles.
-  private async readyWithin(ms: number): Promise<boolean> {
-    let timer: NodeJS.Timeout | undefined;
-    const timedOut = new Promise<false>((resolve) => {
-      timer = setTimeout(() => {
-        resolve(false);
-      }, ms);
-    });
-    const ready = this.events.waitUntilReady().then(
-      () => true,
-      () => false,
-    );
-    try {
-      return await Promise.race([ready, timedOut]);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
+  // Bounded too: with Redis away, QueueEvents.close() never settles and SIGTERM would never exit.
   async onModuleDestroy(): Promise<void> {
-    await this.events.close();
-    await this.queue.close();
+    const outcomes = await Promise.all([
+      closeWithin(this.events, QUEUE_CLOSE_TIMEOUT_MS),
+      closeWithin(this.queue, QUEUE_CLOSE_TIMEOUT_MS),
+    ]);
+    if (outcomes.includes('forced')) {
+      this.logger.warn(QUEUE_CLOSE_FORCED, 'IngestQueue');
+    }
   }
 }

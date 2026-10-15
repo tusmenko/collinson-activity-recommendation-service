@@ -256,6 +256,7 @@ Each ranking request emits one structured event: request id, location id, provid
 | Store missing marine only, upstream failing | Serve; surfing `UNAVAILABLE`; `partial: true`; `sources` shows `MARINE: FAILED` |
 | Payload fails schema validation | Treated as a failed source; anomaly event; raw payload kept |
 | Geocoding fails | `UPSTREAM_UNAVAILABLE` |
+| Redis unreachable at boot or shutdown | Boot waits at most 5 s for the queue's event stream, then listens with readiness down; shutdown gives each queue, worker and Redis connection at most 5 s to close and drops one that never became ready, so SIGTERM always exits |
 | No geocoding match | `NOT_FOUND` naming the input; no forecast call |
 
 <a id="d-9"></a>
