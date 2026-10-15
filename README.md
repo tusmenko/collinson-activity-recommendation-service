@@ -49,7 +49,7 @@ Every variable and its default is in [.env.example](.env.example); the service r
 
 ## Assumptions
 
-Where a product manager would normally decide, the assumption taken is listed here; the [register](docs/arch/registers.md) has the full set with rationale and status.
+Where a product manager would normally decide, the assumption taken is listed here; the register's [product assumptions](docs/arch/registers.md#product-assumptions) have the full set with rationale and status.
 
 - "Next 7 days" is today plus six days, in the place's own timezone.
 - Scores are rule-based from weather and geo data alone, 0 to 100 per activity per day, with documented thresholds calibrated on five known cities; no machine learning, no points-of-interest data. Ordering is left to the consumer; there is no rank field.
@@ -78,7 +78,7 @@ Image to ECR from CI; the Helm chart in [deploy/helm/activity-ranking](deploy/he
 
 ## How this was built
 
-Architecture first, through the gated process in [docs/ACTIVITY_RANKING_ARCH_PROCESS.md](docs/ACTIVITY_RANKING_ARCH_PROCESS.md), ending in [ADR-0001](docs/adr/0001-pragmatic-option-nestjs-redis-bullmq.md) and the [test plan](docs/ACTIVITY_RANKING_TEST_PLAN.md); then six test-first phases as pull requests #1 to #6, and an owner review pass. The decisions taken along the way are in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
+Architecture first, through the gated process in [docs/ACTIVITY_RANKING_ARCH_PROCESS.md](docs/ACTIVITY_RANKING_ARCH_PROCESS.md), ending in the [ADR log](docs/adr/README.md) and the [test plan](docs/ACTIVITY_RANKING_TEST_PLAN.md); then six test-first phases as pull requests #1 to #6, and an owner review pass. The implementation decisions taken along the way are in [D-12](docs/ACTIVITY_RANKING_DESIGN.md#d-12) of the design document; open questions and the progress log are in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
 
 ## Attribution
 

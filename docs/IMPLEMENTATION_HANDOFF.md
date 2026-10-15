@@ -5,8 +5,8 @@ For the session that builds the service. The architecture phase is closed; nothi
 ## Read in this order
 
 1. [ACTIVITY_RANKING_ARCH_PROCESS.md](ACTIVITY_RANKING_ARCH_PROCESS.md): index and status.
-2. [adr/0001-pragmatic-option-nestjs-redis-bullmq.md](adr/0001-pragmatic-option-nestjs-redis-bullmq.md): the decision and its change log.
-3. [ACTIVITY_RANKING_DESIGN.md](ACTIVITY_RANKING_DESIGN.md): D-1 to D-11; D-2 is the environment contract, D-6.1 the thresholds.
+2. [The ADR log](adr/README.md): ADR-0001, the option chosen and its change log, and ADR-0002 to ADR-0009, one record per decision inside it.
+3. [ACTIVITY_RANKING_DESIGN.md](ACTIVITY_RANKING_DESIGN.md): D-1 to D-12; D-2 is the environment contract, D-6.1 the thresholds, D-12 the implementation decisions.
 4. [ACTIVITY_RANKING_TEST_PLAN.md](ACTIVITY_RANKING_TEST_PLAN.md): test ids per requirement, coverage gates, fixtures.
 5. [CODING_STANDARDS.md](CODING_STANDARDS.md): limits, layering, tools.
 6. [arch/06-plan.md](arch/06-plan.md): phases, working rules, validation matrix, cut lines.
