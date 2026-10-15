@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 
 import { ConfigService } from '../config/config.service.js';
 import { AppLogger } from '../logging/app-logger.service.js';
+import { QueueConnection } from './queue-connection.service.js';
 
 @Global()
 @Module({
@@ -20,8 +21,14 @@ import { AppLogger } from '../logging/app-logger.service.js';
       },
       inject: [ConfigService, AppLogger],
     },
+    {
+      provide: QueueConnection,
+      useFactory: (config: ConfigService): QueueConnection =>
+        new QueueConnection(config.get('REDIS_URL')),
+      inject: [ConfigService],
+    },
   ],
-  exports: [Redis],
+  exports: [Redis, QueueConnection],
 })
 export class RedisModule implements OnApplicationShutdown {
   constructor(private readonly redis: Redis) {}

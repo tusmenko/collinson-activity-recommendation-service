@@ -29,8 +29,8 @@ Every scenario from Step 1 maps to a test, an asserted measure and a gate. The m
 | --- | --- | --- | --- | --- | --- |
 | [QAS-1](02-requirements.md#qas-1) warm read | 4 | end-to-end, stubbed adapters | zero adapter calls; under 300 ms in-process | CI | open |
 | [QAS-2](02-requirements.md#qas-2) cold read | 2, 4 | end-to-end | at most three adapter calls; completes under `COLD_READ_BOUND_MS` | CI | open |
-| [QAS-3](02-requirements.md#qas-3), [QAS-11](02-requirements.md#qas-11) upstream failure | 2 | integration | stored data served with `stale: true`; empty store gives `UPSTREAM_UNAVAILABLE` under 4.5 s; marine-only failure gives `partial: true` | CI | open |
-| [QAS-4](02-requirements.md#qas-4) stale read | 2 | integration | one refetch, fresh served, `stale: false` | CI | open |
+| [QAS-3](02-requirements.md#qas-3), [QAS-11](02-requirements.md#qas-11) upstream failure | 2 | integration | stored data served with `stale: true`; empty store gives `UPSTREAM_UNAVAILABLE` under 4.5 s; marine-only failure gives `partial: true` | CI | done, phase 2 |
+| [QAS-4](02-requirements.md#qas-4) stale read | 2 | integration | one refetch, fresh served, `stale: false` | CI | done, phase 2 |
 | [QAS-5](02-requirements.md#qas-5), [QAS-6](02-requirements.md#qas-6) names | 1, 4 | unit and end-to-end | Missouri first with four alternatives; `NOT_FOUND` with no forecast call | CI | open |
 | [QAS-7](02-requirements.md#qas-7) extensibility | 3, 4 | unit and schema snapshot | a fake activity registers, the enum regenerates, no other file changes | CI | open |
 | [QAS-8](02-requirements.md#qas-8) operability | 0 | CI job | `docker compose up` on the built image answers `/health` within 120 s | CI | done, phase 0 |

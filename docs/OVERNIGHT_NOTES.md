@@ -17,6 +17,7 @@ Written during the unattended implementation run on the night of 2026-10-15 to 2
 | <a id="on-2"></a>ON-2 | Agent worklogs under `.claude/worklogs/` stay untracked. | They are raw working notes; the committed documents and commit history are the "how you worked" evidence. The owner can choose to commit them. |
 | <a id="on-3"></a>ON-3 | pnpm is the package manager (owner's instruction at 01:15 on 2026-10-15); the handoff and plan said npm. `pnpm-lock.yaml` is committed, CI installs with `--frozen-lockfile`, the Dockerfile enables pnpm through corepack. | Owner's instruction; nothing in the design depends on the package manager. The docs that say "npm" are left as written; this note is the record. |
 | <a id="on-4"></a>ON-4 | Each phase is one pull request, squash-merged to `main` by the session once GitHub Actions is green and the session has reviewed the diff. | Owner's instruction at 01:25 on 2026-10-15; matches the plan's "one pull request per phase merged on green CI". |
+| <a id="on-6"></a>ON-6 | `OUTBOUND_LIMIT_WINDOW_MS` (default 60000) is an extra environment knob so the limiter test (I-QUEUE-2) can shrink the window; production keeps the default. The processor runs with concurrency 16 so forecast and marine jobs overlap; a fair-use breach is not retried (`UnrecoverableError`); a payload that fails validation is kept under `forecast:raw` and the day keys are left untouched. | Each is the smallest choice that keeps D-5 testable and honest; none changes the API. |
 | <a id="on-5"></a>ON-5 | Fixtures were recorded live once at 01:11 on 2026-10-15 with the exact requests the adapters make (eight days, hourly `snow_depth`), replacing the seven-day spike recordings from `/tmp/s6`. | The spike files lacked `snow_depth` and the eighth day; re-recording once costs 21 calls and gives fixtures that match the adapter contract byte for byte. |
 
 ## Progress log
@@ -25,3 +26,5 @@ Written during the unattended implementation run on the night of 2026-10-15 to 2
 | --- | --- | --- |
 | 2026-10-15 01:34 | 0 | PR #1 merged on green CI (nine jobs, 14 to 38 s each); compose health green in 31 s locally and 38 s in CI. |
 | 2026-10-15 01:55 | 1 | Location and adapters built: 79 tests (22 unit, 56 integration, 1 e2e); location 98.9 % lines, weather 100 % lines. Deviations recorded in the commit body. |
+| 2026-10-15 02:05 | 1 | PR #2 merged on green CI. Phases 2 and 3 started in parallel (phase 3 depends only on `DaySignals` and the fixtures). |
+| 2026-10-15 02:25 | 2 | Store, queue, ingest and degradation built: 106 tests (26 unit, 79 integration in 10 s, 1 e2e); weather 98.3 % lines. I-QUEUE-2 measured 3029 ms for 20 limited jobs. Plain `bullmq` providers instead of `@nestjs/bullmq`; `OUTBOUND_LIMIT_WINDOW_MS` added as a test knob (ON-6). |

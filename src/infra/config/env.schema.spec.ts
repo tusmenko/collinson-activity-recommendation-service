@@ -16,6 +16,7 @@ describe('U-INFRA-2 environment schema', () => {
       FRESHNESS_TTL: 6 * HOUR_MS,
       RETENTION_TTL: 24 * HOUR_MS,
       GEOCODE_TTL: 30 * 24 * HOUR_MS,
+      OUTBOUND_LIMIT_WINDOW_MS: 60_000,
       QUEUE_PROCESSORS_ENABLED: true,
       LOG_LEVEL: 'info',
       OTEL_EXPORTER: 'console',

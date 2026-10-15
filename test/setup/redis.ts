@@ -24,3 +24,17 @@ export async function flushTestKeys(redis: Redis): Promise<void> {
     }
   } while (cursor !== '0');
 }
+
+// BullMQ refuses ioredis key prefixes, so queue tests isolate with their own BullMQ prefix and clean it here.
+export async function flushQueueKeys(bullPrefix: string): Promise<void> {
+  const redis = new Redis(TEST_REDIS_URL);
+  let cursor = '0';
+  do {
+    const [next, keys] = await redis.scan(cursor, 'MATCH', `${bullPrefix}:*`, 'COUNT', 100);
+    cursor = next;
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } while (cursor !== '0');
+  await redis.quit();
+}
