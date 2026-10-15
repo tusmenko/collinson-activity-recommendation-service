@@ -106,6 +106,12 @@ describe('golden set: sightseeing', () => {
     });
   });
 
+  it('U-INDOOR-1 Dubai heat (tmax above 32 °C) lifts indoor to at least 60 on every day', async () => {
+    const indoor = await ranking('dubai', 'INDOOR_SIGHTSEEING');
+
+    expect(scores(indoor).every((score) => score !== null && score >= 60)).toBe(true);
+  });
+
   it('U-RANK-7 Springfield day 1 (84 mm) puts indoor above outdoor', async () => {
     const { indoor, outdoor } = await pair('springfield');
 

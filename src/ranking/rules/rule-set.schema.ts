@@ -41,6 +41,15 @@ export const RuleSetSchema = z
       })
       .strict()
       .optional(),
+    // A factor this heavy inside its good band lifts the day to at least `min`, unless poorCap capped it.
+    goodBoost: z
+      .object({
+        min: z.number().min(0).max(100),
+        minWeight: z.number().positive(),
+        note: z.string().min(1),
+      })
+      .strict()
+      .optional(),
     // Place applicability (ScoreEngine.placeGate, run by every classifier before the gate): below `minElevation`
     // metres, or with no known elevation, the activity is not applicable.
     applicability: z
