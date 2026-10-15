@@ -1,44 +1,27 @@
 import { Module } from '@nestjs/common';
 
-import type { Classifier } from './classifier.port.js';
-import { ClassifierRegistry } from './classifier-registry.service.js';
-import { IndoorSightseeingClassifier } from './indoor-sightseeing/indoor-sightseeing.classifier.js';
-import { OutdoorSightseeingClassifier } from './outdoor-sightseeing/outdoor-sightseeing.classifier.js';
-import { RankingAuditService } from './ranking-audit.service.js';
+import { AuditModule } from './audit/audit.module.js';
+import { IndoorSightseeingModule } from './classifiers/indoor-sightseeing/indoor-sightseeing.module.js';
+import { OutdoorSightseeingModule } from './classifiers/outdoor-sightseeing/outdoor-sightseeing.module.js';
+import { SkiingModule } from './classifiers/skiing/skiing.module.js';
+import { SurfingModule } from './classifiers/surfing/surfing.module.js';
 import { RankingService } from './ranking.service.js';
-import { RuleSetProvider } from './rule-set.port.js';
-import { ScoreEngine } from './score-engine.service.js';
-import { SkiingClassifier } from './skiing/skiing.classifier.js';
-import { StaticRuleSetAdapter } from './static-rule-set.adapter.js';
-import { SurfingClassifier } from './surfing/surfing.classifier.js';
+import { RegistryModule } from './registry/registry.module.js';
+import { RulesModule } from './rules/rules.module.js';
 
-// Adding an activity is one folder (classifier and rules) plus one entry here and one in the rule-set adapter (QAS-7).
-const CLASSIFIERS = [
-  SkiingClassifier,
-  SurfingClassifier,
-  OutdoorSightseeingClassifier,
-  IndoorSightseeingClassifier,
-];
-
+// Adding an activity is one folder under classifiers/ (module, classifier, rules) plus one import here and its
+// rule file in RULE_FILES (QAS-7). Each classifier module registers itself on init, in this import order.
 @Module({
-  providers: [
-    ScoreEngine,
-    ...CLASSIFIERS,
-    {
-      provide: ClassifierRegistry,
-      useFactory: (...classifiers: Classifier[]): ClassifierRegistry => {
-        const registry = new ClassifierRegistry();
-        for (const classifier of classifiers) {
-          registry.register(classifier);
-        }
-        return registry;
-      },
-      inject: CLASSIFIERS,
-    },
-    { provide: RuleSetProvider, useFactory: (): RuleSetProvider => new StaticRuleSetAdapter() },
-    RankingAuditService,
-    RankingService,
+  imports: [
+    RegistryModule,
+    RulesModule,
+    AuditModule,
+    SkiingModule,
+    SurfingModule,
+    OutdoorSightseeingModule,
+    IndoorSightseeingModule,
   ],
-  exports: [RankingService, ClassifierRegistry],
+  providers: [RankingService],
+  exports: [RankingService, RegistryModule],
 })
 export class RankingModule {}

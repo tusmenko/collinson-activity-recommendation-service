@@ -1,45 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
-import { AppLogger, ConfigService } from '../infra/index.js';
+import { AppLogger, ConfigService } from '../../infra/index.js';
+import { GEOCODING_RESULT_COUNT } from '../location.const.js';
+import type { GeocodingOutcome } from '../location.types.js';
+import { GEOCODING_SCHEMA_VERSION, OPEN_METEO_GEOCODING_URL } from './geocoding.const.js';
 import { GeocodingPort } from './geocoding.port.js';
-import {
-  GEOCODING_RESULT_COUNT,
-  GEOCODING_SCHEMA_VERSION,
-  OPEN_METEO_GEOCODING_URL,
-} from './location.const.js';
-import type { GeocodingOutcome, GeocodingResult } from './location.types.js';
 import { OpenMeteoGeocodingSchema } from './open-meteo-geocoding.schema.js';
-import type { OpenMeteoGeocoding } from './open-meteo-geocoding.schema.js';
-
-type Failed = Extract<GeocodingOutcome, { kind: 'failed' }>;
-
-function failureOf(error: unknown): Failed {
-  const name = error instanceof Error ? error.name : '';
-  const detail = error instanceof Error ? error.message : String(error);
-  if (name === 'TimeoutError' || name === 'AbortError') {
-    return { kind: 'failed', reason: 'timeout', detail };
-  }
-  if (error instanceof SyntaxError) {
-    return { kind: 'failed', reason: 'malformed', detail };
-  }
-  return { kind: 'failed', reason: 'network', detail };
-}
-
-// Optional fields are omitted rather than set to undefined (exactOptionalPropertyTypes).
-export function toGeocodingResults(payload: OpenMeteoGeocoding): GeocodingResult[] {
-  return (payload.results ?? []).map((hit) => ({
-    id: String(hit.id),
-    name: hit.name,
-    country: hit.country ?? hit.country_code ?? '',
-    ...(hit.country_code === undefined ? {} : { countryCode: hit.country_code }),
-    ...(hit.admin1 === undefined ? {} : { admin1: hit.admin1 }),
-    latitude: hit.latitude,
-    longitude: hit.longitude,
-    ...(hit.elevation === undefined ? {} : { elevation: hit.elevation }),
-    timezone: hit.timezone,
-  }));
-}
+import { failureOf, toGeocodingResults } from './open-meteo-geocoding.util.js';
 
 @Injectable()
 export class OpenMeteoGeocodingAdapter extends GeocodingPort {

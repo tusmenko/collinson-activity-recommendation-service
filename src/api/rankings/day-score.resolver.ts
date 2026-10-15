@@ -1,7 +1,7 @@
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
 
-import { DayDetailsModel } from './models/day-details.model.js';
-import { DayScoreModel } from './models/day-score.model.js';
+import { DayDetailsModel } from '../models/day-details.model.js';
+import { DayScoreModel } from '../models/day-score.model.js';
 
 @Resolver(() => DayScoreModel)
 export class DayScoreResolver {

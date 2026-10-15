@@ -17,7 +17,7 @@ location   → infra
 infra      → nothing in the application
 ```
 
-File postfixes follow the standards' layout table; this service adds `*.classifier.ts` with a sibling `*.rules.json` per activity.
+File postfixes follow the standards' layout table; this service adds `*.classifier.ts` with a sibling `*.rules.json` per activity. Each module is a folder of sub-module folders (for example `weather/sources`, `weather/store`, `weather/queue`, `weather/ingest`), shaped as the [coding standards](CODING_STANDARDS.md#nestjs-shape) describe.
 
 | Piece | Role |
 | --- | --- |

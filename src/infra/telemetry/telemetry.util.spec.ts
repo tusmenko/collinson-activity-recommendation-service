@@ -2,7 +2,7 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { ConsoleMetricExporter } from '@opentelemetry/sdk-metrics';
 import { describe, expect, it } from 'vitest';
 
-import { metricExporter } from './telemetry.service.js';
+import { metricExporter } from './telemetry.util.js';
 
 // Only the exporter choice is tested; starting the SDK in a test would register a global provider.
 describe('U-EVENT-2 metric export', () => {

@@ -1,13 +1,13 @@
 import { OtelAnomalyCounter } from '../../src/infra/telemetry/otel-anomaly-counter.service.js';
-import type { Classifier, RuleSetProvider } from '../../src/ranking/index.js';
+import { RankingAuditService } from '../../src/ranking/audit/ranking-audit.service.js';
+import { IndoorSightseeingClassifier } from '../../src/ranking/classifiers/indoor-sightseeing/indoor-sightseeing.classifier.js';
+import { OutdoorSightseeingClassifier } from '../../src/ranking/classifiers/outdoor-sightseeing/outdoor-sightseeing.classifier.js';
+import { SkiingClassifier } from '../../src/ranking/classifiers/skiing/skiing.classifier.js';
+import { SurfingClassifier } from '../../src/ranking/classifiers/surfing/surfing.classifier.js';
+import { ScoreEngine } from '../../src/ranking/engine/score-engine.service.js';
 import { ClassifierRegistry, RankingService } from '../../src/ranking/index.js';
-import { IndoorSightseeingClassifier } from '../../src/ranking/indoor-sightseeing/indoor-sightseeing.classifier.js';
-import { OutdoorSightseeingClassifier } from '../../src/ranking/outdoor-sightseeing/outdoor-sightseeing.classifier.js';
-import { RankingAuditService } from '../../src/ranking/ranking-audit.service.js';
-import { ScoreEngine } from '../../src/ranking/score-engine.service.js';
-import { SkiingClassifier } from '../../src/ranking/skiing/skiing.classifier.js';
-import { StaticRuleSetAdapter } from '../../src/ranking/static-rule-set.adapter.js';
-import { SurfingClassifier } from '../../src/ranking/surfing/surfing.classifier.js';
+import type { Classifier, RuleSetProvider } from '../../src/ranking/index.js';
+import { StaticRuleSetAdapter } from '../../src/ranking/rules/static-rule-set.adapter.js';
 import { testConfig } from './adapter-deps.js';
 import { captureLogger } from './capture-logger.js';
 

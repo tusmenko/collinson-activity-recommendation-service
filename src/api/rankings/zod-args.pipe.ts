@@ -2,7 +2,7 @@ import type { ArgumentMetadata, PipeTransform } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 import type { z } from 'zod';
 
-import { ERROR_CODES } from './api.const.js';
+import { ERROR_CODES } from '../api.const.js';
 
 // Validates one GraphQL argument with a Zod schema; a failure is BAD_USER_INPUT with the issues (design D-1).
 export class ZodArgPipe<Output> implements PipeTransform<unknown, Output> {

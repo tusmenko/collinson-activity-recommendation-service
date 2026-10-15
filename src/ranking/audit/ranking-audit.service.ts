@@ -1,40 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { Logger } from 'pino';
 
-import { AnomalyCounter, AppLogger, ConfigService } from '../infra/index.js';
-import type { LocationFacts, MarineAvailability } from '../location/index.js';
-import { PROVIDER } from './ranking.const.js';
-import type { ActivityRanking, RankingInput, RankingResult } from './ranking.types.js';
-
-function outOfRange(score: number | null): boolean {
-  return score !== null && (score < 0 || score > 100);
-}
-
-function inDateOrder(ranking: ActivityRanking): boolean {
-  return ranking.days.every(
-    (day, index) => index === 0 || (ranking.days[index - 1]?.date ?? '') < day.date,
-  );
-}
-
-// Invariant names double as the `type` label of ranking_anomalies_total.
-function violations(ranking: ActivityRanking, windowDays: number): string[] {
-  const found: string[] = [];
-  if (ranking.days.some((day) => outOfRange(day.score))) {
-    found.push('score_out_of_range');
-  }
-  if (ranking.status !== 'APPLICABLE') {
-    return ranking.days.some((day) => day.score !== null)
-      ? [...found, 'score_without_applicability']
-      : found;
-  }
-  if (ranking.days.length !== windowDays || !inDateOrder(ranking)) {
-    found.push('window_mismatch');
-  }
-  if (ranking.days.some((day) => day.score === null)) {
-    found.push('missing_score');
-  }
-  return found;
-}
+import { AnomalyCounter, AppLogger, ConfigService } from '../../infra/index.js';
+import type { LocationFacts, MarineAvailability } from '../../location/index.js';
+import type { RankingInput, RankingResult } from '../ranking.types.js';
+import { PROVIDER } from './audit.const.js';
+import { violations } from './audit.util.js';
 
 // Traceability and anomaly detection (design D-7): in-request invariants and one structured event per ranking.
 @Injectable()

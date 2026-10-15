@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { OpenMeteoGeocodingAdapter } from '../../../src/location/open-meteo-geocoding.adapter.js';
+import { OpenMeteoGeocodingAdapter } from '../../../src/location/geocoding/open-meteo-geocoding.adapter.js';
 import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
 import type { EnvOverrides } from '../../setup/test-env.js';
 import { startStubUpstream } from '../../stub-upstream/server.js';

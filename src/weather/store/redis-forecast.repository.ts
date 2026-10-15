@@ -1,31 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-import { ConfigService } from '../infra/index.js';
-import { FAIR_USE_COUNTER_TTL_MS, LAST_ERROR_TTL_MS } from './weather.const.js';
+import { ConfigService } from '../../infra/index.js';
+import type { Source } from '../weather.types.js';
 import { ForecastRepositoryPort } from './forecast.port.js';
-import type {
-  LastIngestError,
-  Source,
-  StoredDay,
-  WindowRead,
-  WindowState,
-} from './weather.types.js';
-
-const dayKey = (locationId: string, source: Source, date: string): string =>
-  `forecast:v1:${locationId}:${source}:${date}`;
-const rawKey = (locationId: string, source: Source): string =>
-  `forecast:raw:${locationId}:${source}`;
-const lastErrorKey = (locationId: string): string => `ingest:last-error:${locationId}`;
-const counterKey = (date: string): string => `fairuse:day:${date}`;
-
-// ISO 8601 strings in UTC compare correctly as text.
-function oldest(days: readonly StoredDay[]): string | null {
-  return days.reduce<string | null>(
-    (min, day) => (min === null || day.fetchedAt < min ? day.fetchedAt : min),
-    null,
-  );
-}
+import { FAIR_USE_COUNTER_TTL_MS, LAST_ERROR_TTL_MS } from './store.const.js';
+import type { LastIngestError, StoredDay, WindowRead, WindowState } from './store.types.js';
+import { counterKey, dayKey, lastErrorKey, oldest, rawKey } from './store.util.js';
 
 @Injectable()
 export class RedisForecastRepository extends ForecastRepositoryPort {

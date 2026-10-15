@@ -3,8 +3,8 @@ import { Test } from '@nestjs/testing';
 import { isEnumType, lexicographicSortSchema, printSchema } from 'graphql';
 import type { GraphQLSchema } from 'graphql';
 
-import { API_RESOLVERS } from '../../src/api/resolvers.const.js';
 import { registerActivities } from '../../src/api/models/enums.model.js';
+import { API_RESOLVERS } from '../../src/api/rankings/resolvers.const.js';
 import type { ClassifierRegistry } from '../../src/ranking/index.js';
 
 export interface BuiltSchema {

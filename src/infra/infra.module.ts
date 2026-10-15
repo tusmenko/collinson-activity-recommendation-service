@@ -6,8 +6,17 @@ import { HealthModule } from './health/health.module.js';
 import { LoggingModule } from './logging/logging.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { TelemetryModule } from './telemetry/telemetry.module.js';
+import { ThrottlingModule } from './throttling/throttling.module.js';
 
 @Module({
-  imports: [ConfigModule, ClockModule, LoggingModule, TelemetryModule, RedisModule, HealthModule],
+  imports: [
+    ConfigModule,
+    ClockModule,
+    LoggingModule,
+    TelemetryModule,
+    RedisModule,
+    ThrottlingModule,
+    HealthModule,
+  ],
 })
 export class InfraModule {}

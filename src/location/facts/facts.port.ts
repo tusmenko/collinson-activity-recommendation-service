@@ -1,4 +1,4 @@
-import type { LocationFacts, MarineAvailability } from './location.types.js';
+import type { LocationFacts, MarineAvailability } from '../location.types.js';
 
 // Location facts (no TTL) and geocode results (GEOCODE_TTL), design D-4.
 export abstract class FactsRepositoryPort {

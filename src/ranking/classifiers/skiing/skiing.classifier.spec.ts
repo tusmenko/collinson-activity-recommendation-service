@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { rankingInput } from '../../../test/setup/ranking-input.js';
-import { ScoreEngine } from '../score-engine.service.js';
-import { StaticRuleSetAdapter } from '../static-rule-set.adapter.js';
+import { rankingInput } from '../../../../test/setup/ranking-input.js';
+import { ScoreEngine } from '../../engine/score-engine.service.js';
+import { StaticRuleSetAdapter } from '../../rules/static-rule-set.adapter.js';
 import { SkiingClassifier } from './skiing.classifier.js';
 
 describe('SkiingClassifier', () => {

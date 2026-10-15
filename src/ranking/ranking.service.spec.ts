@@ -5,11 +5,11 @@ import type { Place } from '../../test/setup/ranking-input.js';
 import { rankingHarness } from '../../test/setup/ranking-service.js';
 import type { RankingHarness } from '../../test/setup/ranking-service.js';
 import type { DaySignals } from '../weather/index.js';
-import type { Classifier } from './classifier.port.js';
 import { UnknownActivityError } from './ranking.errors.js';
 import type { ClassifierOutput, DayScore } from './ranking.types.js';
-import type { RuleSetProvider } from './rule-set.port.js';
-import { StaticRuleSetAdapter } from './static-rule-set.adapter.js';
+import type { Classifier } from './registry/classifier.port.js';
+import type { RuleSetProvider } from './rules/rule-set.port.js';
+import { StaticRuleSetAdapter } from './rules/static-rule-set.adapter.js';
 
 const BUILT_IN = ['SKIING', 'SURFING', 'OUTDOOR_SIGHTSEEING', 'INDOOR_SIGHTSEEING'];
 const PLACES: readonly Place[] = [

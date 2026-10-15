@@ -1,17 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 
-import { ConfigService } from '../infra/index.js';
+import { ConfigService } from '../../infra/index.js';
+import type { LocationFacts, MarineAvailability } from '../location.types.js';
 import { FactsRepositoryPort } from './facts.port.js';
-import type { LocationFacts, MarineAvailability } from './location.types.js';
-
-const locationKey = (id: string): string => `location:v1:${id}`;
-const geocodeKey = (normalisedQuery: string): string => `geocode:v1:${normalisedQuery}`;
-
-// Values are written only by this repository, so they are trusted on read.
-function parseFacts(value: string | null): LocationFacts | null {
-  return value === null ? null : (JSON.parse(value) as LocationFacts);
-}
+import { geocodeKey, locationKey, parseFacts } from './facts.util.js';
 
 @Injectable()
 export class RedisFactsRepository extends FactsRepositoryPort {

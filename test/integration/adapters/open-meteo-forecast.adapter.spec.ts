@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { SourceFetchOutcome } from '../../../src/weather/index.js';
-import { OpenMeteoForecastAdapter } from '../../../src/weather/open-meteo-forecast.adapter.js';
+import { OpenMeteoForecastAdapter } from '../../../src/weather/sources/open-meteo-forecast.adapter.js';
 import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
 import { FIXED_NOW, FixedClock } from '../../setup/fixed-clock.js';
 import type { EnvOverrides } from '../../setup/test-env.js';

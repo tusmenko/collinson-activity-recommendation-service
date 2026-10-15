@@ -4,7 +4,7 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import type { GqlContextType } from '@nestjs/graphql';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
-import type { GraphqlContext } from './api.types.js';
+import type { GraphqlContext } from './graphql.types.js';
 
 // The inbound limit per client IP (NFR-12) on GraphQL operations; /health stays unthrottled for probes.
 @Injectable()

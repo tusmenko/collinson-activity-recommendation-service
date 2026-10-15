@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { SCORABLE_SIGNALS } from './ranking.const.js';
+import { SCORABLE_SIGNALS } from './rules.const.js';
 
 // A band on one signal; an absent bound is open. Strict and inclusive bounds are both needed: D-6.1 says "< 40" and "≥ 30".
 const RangeSchema = z

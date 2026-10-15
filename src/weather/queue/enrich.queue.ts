@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import type { OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 
-import { AppLogger, QueueConnection } from '../infra/index.js';
-import { ENRICH_QUEUE } from './weather.const.js';
+import { AppLogger, QueueConnection } from '../../infra/index.js';
+import { ENRICH_QUEUE } from './queue.const.js';
 
 // Registered without a processor (design D-5): the landing point for enrichment jobs that write
 // location facts with their own version; nothing enqueues to it in the exercise.

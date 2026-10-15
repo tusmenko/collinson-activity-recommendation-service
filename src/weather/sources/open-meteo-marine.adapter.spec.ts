@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { silentLogger, testConfig } from '../../test/setup/adapter-deps.js';
-import { FixedClock } from '../../test/setup/fixed-clock.js';
+import { silentLogger, testConfig } from '../../../test/setup/adapter-deps.js';
+import { FixedClock } from '../../../test/setup/fixed-clock.js';
 import { OpenMeteoMarineAdapter } from './open-meteo-marine.adapter.js';
 
 const BIARRITZ = { latitude: 43.48055, longitude: -1.55684 };

@@ -1,4 +1,5 @@
-import type { LastIngestError, Source, StoredDay, WindowRead } from './weather.types.js';
+import type { Source } from '../weather.types.js';
+import type { LastIngestError, StoredDay, WindowRead } from './store.types.js';
 
 // The forecast cache and the ingest operational keys (design D-4).
 export abstract class ForecastRepositoryPort {

@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { ClockPort, ConfigService } from '../infra/index.js';
-
-const DAY_MS = 86_400_000;
+import { ClockPort, ConfigService } from '../../infra/index.js';
+import { DAY_MS } from './ingest.const.js';
 
 // The served window: WINDOW_DAYS local dates starting at today in the location's timezone (FR-2).
 @Injectable()

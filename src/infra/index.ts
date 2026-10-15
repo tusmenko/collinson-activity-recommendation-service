@@ -5,5 +5,5 @@ export { ConfigService } from './config/config.service.js';
 export { loadProcessEnv } from './config/env.schema.js';
 export { InfraModule } from './infra.module.js';
 export { QueueConnection } from './redis/queue-connection.service.js';
-export { RedisThrottlerStorage } from './redis/redis-throttler-storage.adapter.js';
+export { RedisThrottlerStorage } from './throttling/redis-throttler-storage.adapter.js';
 export { TelemetryService } from './telemetry/telemetry.service.js';

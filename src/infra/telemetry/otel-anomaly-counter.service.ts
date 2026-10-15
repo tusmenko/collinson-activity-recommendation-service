@@ -5,9 +5,7 @@ import type { Logger } from 'pino';
 
 import { AppLogger } from '../logging/app-logger.service.js';
 import { AnomalyCounter } from './anomaly-counter.port.js';
-import { METER_NAME } from './telemetry.const.js';
-
-const METRIC = 'ranking_anomalies_total';
+import { ANOMALY_METRIC, METER_NAME } from './telemetry.const.js';
 
 // The OpenTelemetry counter behind ranking_anomalies_total{type} (design D-7), plus a warn log and an in-memory
 // count tests can read. The meter comes from the global provider: the SDK's once main.ts started it, a no-op otherwise.
@@ -22,14 +20,14 @@ export class OtelAnomalyCounter extends AnomalyCounter {
     this.logger = logger.pino.child({ component: 'AnomalyCounter' });
     this.counter = metrics
       .getMeter(METER_NAME)
-      .createCounter(METRIC, { description: 'Ranking invariant violations, by type' });
+      .createCounter(ANOMALY_METRIC, { description: 'Ranking invariant violations, by type' });
   }
 
   increment(type: string): void {
     const value = this.count(type) + 1;
     this.counts.set(type, value);
     this.counter.add(1, { type });
-    this.logger.warn({ metric: METRIC, type, value }, 'anomaly counted');
+    this.logger.warn({ metric: ANOMALY_METRIC, type, value }, 'anomaly counted');
   }
 
   count(type: string): number {

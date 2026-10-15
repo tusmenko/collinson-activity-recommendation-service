@@ -10,7 +10,6 @@ import {
   InfraModule,
   QueueConnection,
 } from '../../src/infra/index.js';
-import { IngestQueue } from '../../src/weather/ingest.queue.js';
 import {
   ForecastRepositoryPort,
   ForecastSourcePort,
@@ -20,6 +19,7 @@ import {
   WindowService,
 } from '../../src/weather/index.js';
 import type { Source } from '../../src/weather/index.js';
+import { IngestQueue } from '../../src/weather/queue/ingest.queue.js';
 import { testConfig } from './adapter-deps.js';
 import { captureLogger } from './capture-logger.js';
 import { FakeWeatherSource, templateDay } from './fakes/fake-weather-source.js';

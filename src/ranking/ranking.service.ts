@@ -2,67 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 import { ConfigService } from '../infra/index.js';
 import type { LocationFacts, MarineAvailability } from '../location/index.js';
-import type { DaySignals, Source } from '../weather/index.js';
-import type { Classifier } from './classifier.port.js';
-import { ClassifierRegistry } from './classifier-registry.service.js';
-import { RankingAuditService } from './ranking-audit.service.js';
+import type { DaySignals } from '../weather/index.js';
+import { RankingAuditService } from './audit/ranking-audit.service.js';
 import { UnknownActivityError } from './ranking.errors.js';
 import type { ActivityRanking, RankingInput, RankingResult } from './ranking.types.js';
-import { RuleSetProvider } from './rule-set.port.js';
-
-type SourceDays = RankingInput['days'];
-
-// For a date a classifier returned outside the window; the invariants report it.
-function noSignals(date: string): DaySignals {
-  return {
-    date,
-    tempMax: null,
-    tempMin: null,
-    precipitation: null,
-    precipitationProbability: null,
-    snowfall: null,
-    snowDepth: null,
-    windMax: null,
-    windGusts: null,
-    cloudCover: null,
-    uvIndex: null,
-    sunshineHours: null,
-    visibility: null,
-    weatherCode: null,
-    waveHeight: null,
-    wavePeriod: null,
-    swellHeight: null,
-  };
-}
-
-function withMarine(day: DaySignals, marine: DaySignals | undefined): DaySignals {
-  return {
-    ...day,
-    waveHeight: marine?.waveHeight ?? null,
-    wavePeriod: marine?.wavePeriod ?? null,
-    swellHeight: marine?.swellHeight ?? null,
-  };
-}
-
-// One DaySignals per date: forecast fields from FORECAST, wave fields from MARINE, first WINDOW_DAYS dates.
-function mergeDays(days: SourceDays, windowDays: number): DaySignals[] {
-  const marine = new Map((days.MARINE ?? []).map((day) => [day.date, day]));
-  const forecast = days.FORECAST ?? [];
-  const base = forecast.length > 0 ? forecast : (days.MARINE ?? []);
-  return [...base]
-    .sort((left, right) => left.date.localeCompare(right.date))
-    .slice(0, windowDays)
-    .map((day) => withMarine(day, marine.get(day.date)));
-}
-
-// A source that failed and left nothing stored; a failed refetch over stored days still ranks.
-function failedSource(classifier: Classifier, input: RankingInput): Source | undefined {
-  return classifier.requires.find(
-    (source) =>
-      (input.days[source]?.length ?? 0) === 0 &&
-      input.sources.some((report) => report.source === source && report.status === 'FAILED'),
-  );
-}
+import { failedSource, mergeDays, noSignals } from './ranking.util.js';
+import { ClassifierRegistry } from './registry/classifier-registry.service.js';
+import type { Classifier } from './registry/classifier.port.js';
+import { RuleSetProvider } from './rules/rule-set.port.js';
 
 // Scores computed on read by the registered classifiers (design D-6), checked and traced (D-7).
 @Injectable()

@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { RedisFactsRepository } from '../../../src/location/facts/redis-facts.repository.js';
 import type { LocationFacts } from '../../../src/location/index.js';
-import { RedisFactsRepository } from '../../../src/location/redis-facts.repository.js';
 import { testConfig } from '../../setup/adapter-deps.js';
 import { createTestRedis, flushTestKeys } from '../../setup/redis.js';
 

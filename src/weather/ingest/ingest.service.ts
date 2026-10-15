@@ -1,54 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { ConfigService } from '../infra/index.js';
-import { ForecastRepositoryPort } from './forecast.port.js';
-import { IngestQueue } from './ingest.queue.js';
-import { SOURCES } from './weather.const.js';
-import { ForecastUnavailableError } from './weather.errors.js';
-import type {
-  DaySignals,
-  EnsureLocation,
-  EnsureResult,
-  MarineAvailability,
-  Source,
-  SourceStatus,
-  WindowRead,
-} from './weather.types.js';
+import { ConfigService } from '../../infra/index.js';
+import { IngestQueue } from '../queue/ingest.queue.js';
+import { ForecastRepositoryPort } from '../store/forecast.port.js';
+import { SOURCES } from '../weather.const.js';
+import { ForecastUnavailableError } from '../weather.errors.js';
+import type { DaySignals, Source } from '../weather.types.js';
+import type { EnsureLocation, EnsureResult, Served } from './ingest.types.js';
+import { fromRead, marineAvailabilityOf, oldestFetchedAt, skipped } from './ingest.util.js';
 import { WindowService } from './window.service.js';
-
-interface Served {
-  readonly status: SourceStatus;
-  // null when the source has nothing to serve.
-  readonly days: readonly DaySignals[] | null;
-  readonly stale: boolean;
-}
-
-function skipped(source: Source): Served {
-  return { status: { source, status: 'SKIPPED', fetchedAt: null }, days: null, stale: false };
-}
-
-function fromRead(source: Source, read: WindowRead, refreshFailed: boolean): Served {
-  return {
-    status: { source, status: refreshFailed ? 'FAILED' : 'OK', fetchedAt: read.fetchedAt },
-    days: read.days.map((day) => day.signals),
-    stale: refreshFailed,
-  };
-}
-
-function oldestFetchedAt(served: readonly Served[]): string | null {
-  const stamps = served.flatMap(({ status }) =>
-    status.fetchedAt === null ? [] : [status.fetchedAt],
-  );
-  return stamps.length === 0 ? null : stamps.reduce((min, stamp) => (stamp < min ? stamp : min));
-}
-
-// Inland points answer with every wave value null: absence of marine data, not a failure (D-7).
-function marineAvailabilityOf(days: readonly DaySignals[]): MarineAvailability {
-  const hasWaves = days.some(
-    (day) => day.waveHeight !== null || day.wavePeriod !== null || day.swellHeight !== null,
-  );
-  return hasWaves ? 'available' : 'absent';
-}
 
 // Refresh on read (design D-4, D-8): a fresh window is served as stored; a stale or missing one
 // waits for its single-flight job under COLD_READ_BOUND_MS, then whatever the store holds is served.

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { RedisForecastRepository } from '../../../src/weather/redis-forecast.repository.js';
+import { RedisForecastRepository } from '../../../src/weather/store/redis-forecast.repository.js';
 import { testConfig } from '../../setup/adapter-deps.js';
 import { templateDay } from '../../setup/fakes/fake-weather-source.js';
 import { createTestRedis, flushTestKeys } from '../../setup/redis.js';

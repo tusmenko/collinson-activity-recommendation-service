@@ -1,0 +1,14 @@
+import type { Factor } from '../ranking.types.js';
+import type { FactorRule } from '../rules/rule-set.schema.js';
+
+// Outcome of a rule set's applicability gate; `max` is the window's highest value of the gate signal.
+export type GateResult =
+  | { readonly open: true }
+  | { readonly open: false; readonly min: number; readonly max: number | null };
+
+// A factor with the rule that produced it and its 0/50/100 score; null when the signal has no value.
+export interface WeighedFactor {
+  readonly factor: Factor;
+  readonly rule: FactorRule;
+  readonly score: number | null;
+}

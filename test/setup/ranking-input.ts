@@ -1,8 +1,8 @@
 import type { LocationFacts } from '../../src/location/index.js';
 import type { RankingInput } from '../../src/ranking/index.js';
 import type { DaySignals } from '../../src/weather/index.js';
-import { normaliseForecastPayload } from '../../src/weather/open-meteo-forecast.adapter.js';
-import { normaliseMarinePayload } from '../../src/weather/open-meteo-marine.adapter.js';
+import { normaliseForecastPayload } from '../../src/weather/sources/open-meteo-forecast.util.js';
+import { normaliseMarinePayload } from '../../src/weather/sources/open-meteo-marine.util.js';
 import { FIXED_NOW } from './fixed-clock.js';
 import { loadFixture } from './fixtures.js';
 

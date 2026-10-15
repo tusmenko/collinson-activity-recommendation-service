@@ -5,15 +5,68 @@ import n from 'eslint-plugin-n';
 import sonarjs from 'eslint-plugin-sonarjs';
 import tseslint from 'typescript-eslint';
 
-// Exported type declarations live only in *.types.ts and *.schema.ts (coding standards, file layout).
+// Type declarations, exported or not, live only in *.types.ts and *.schema.ts (coding standards, file layout).
 const TYPE_PLACEMENT = [
-  'ExportNamedDeclaration > TSInterfaceDeclaration',
-  'ExportNamedDeclaration > TSTypeAliasDeclaration',
-  'ExportNamedDeclaration > TSEnumDeclaration',
+  'TSInterfaceDeclaration',
+  'TSTypeAliasDeclaration',
+  'TSEnumDeclaration',
 ].map((selector) => ({
   selector,
-  message: 'Exported types belong in a *.types.ts or *.schema.ts file.',
+  message: 'Types belong in a *.types.ts or *.schema.ts file.',
 }));
+
+// Files holding one Nest, BullMQ or GraphQL class carry no module-level functions (coding standards, file layout).
+const CLASS_FILES = [
+  'service',
+  'adapter',
+  'repository',
+  'resolver',
+  'processor',
+  'classifier',
+  'queue',
+  'controller',
+  'guard',
+  'filter',
+  'mapper',
+  'plugin',
+  'pipe',
+  'indicator',
+].map((postfix) => `src/**/*.${postfix}.ts`);
+
+const HELPER_PLACEMENT = [
+  'Program > FunctionDeclaration',
+  'Program > ExportNamedDeclaration > FunctionDeclaration',
+  'Program > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
+  'Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
+].map((selector) => ({ selector, message: 'helpers go to *.util.ts or a private method' }));
+
+// Every file under src/ is named by a postfix from the layout table; index.ts and main.ts are the exceptions.
+const POSTFIXES = [
+  'module',
+  'service',
+  'resolver',
+  'controller',
+  'adapter',
+  'repository',
+  'port',
+  'types',
+  'const',
+  'schema',
+  'errors',
+  'util',
+  'classifier',
+  'queue',
+  'processor',
+  'guard',
+  'filter',
+  'mapper',
+  'plugin',
+  'pipe',
+  'indicator',
+  'model',
+  'fixture',
+  'spec',
+].join('|');
 
 const NO_EXPORT_ALL = {
   selector: 'ExportAllDeclaration',
@@ -21,7 +74,7 @@ const NO_EXPORT_ALL = {
 };
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'node_modules/'] },
+  { ignores: ['dist/', 'coverage/', 'node_modules/', '.claude/'] },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
@@ -57,12 +110,22 @@ export default tseslint.config(
         { ignoreMiddleExtensions: true },
       ],
       'check-file/folder-naming-convention': ['error', { '{src,test,scripts}/**/': 'KEBAB_CASE' }],
+      'check-file/filename-blocklist': [
+        'error',
+        { [`src/**/!(index|main|*.@(${POSTFIXES})).ts`]: `*.@(${POSTFIXES}).ts` },
+      ],
     },
   },
   {
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.types.ts', 'src/**/*.schema.ts', 'src/**/*.spec.ts'],
     rules: { 'no-restricted-syntax': ['error', NO_EXPORT_ALL, ...TYPE_PLACEMENT] },
+  },
+  {
+    files: CLASS_FILES,
+    rules: {
+      'no-restricted-syntax': ['error', NO_EXPORT_ALL, ...TYPE_PLACEMENT, ...HELPER_PLACEMENT],
+    },
   },
   {
     // The layout table gives these postfixes plural contents: a module's error classes, a port's DI tokens.

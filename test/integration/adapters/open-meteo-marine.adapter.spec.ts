@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { OpenMeteoMarineAdapter } from '../../../src/weather/open-meteo-marine.adapter.js';
+import { OpenMeteoMarineAdapter } from '../../../src/weather/sources/open-meteo-marine.adapter.js';
 import { silentLogger, testConfig } from '../../setup/adapter-deps.js';
 import { FixedClock } from '../../setup/fixed-clock.js';
 import type { EnvOverrides } from '../../setup/test-env.js';

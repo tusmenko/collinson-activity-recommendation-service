@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import type { Source } from '../../weather/index.js';
-import { Classifier } from '../classifier.port.js';
-import type { ClassifierInput, ClassifierOutput } from '../ranking.types.js';
-import { ScoreEngine } from '../score-engine.service.js';
+import type { Source } from '../../../weather/index.js';
+import { ScoreEngine } from '../../engine/score-engine.service.js';
+import type { ClassifierInput, ClassifierOutput } from '../../ranking.types.js';
+import { Classifier } from '../../registry/classifier.port.js';
 
 // Not applicable where the marine model has no data (A-9); a lagoon with data scores low instead.
 @Injectable()

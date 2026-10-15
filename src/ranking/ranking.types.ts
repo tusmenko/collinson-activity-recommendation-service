@@ -1,7 +1,7 @@
 import type { LocationFacts } from '../location/index.js';
 import type { DaySignals, Source } from '../weather/index.js';
 import type { ACTIVITIES } from './ranking.const.js';
-import type { RuleSet } from './rule-set.schema.js';
+import type { RuleSet } from './rules/rule-set.schema.js';
 
 // The four built-in activities; classifier ids are plain strings so a fifth can register without editing this.
 /** @public */
@@ -27,11 +27,6 @@ export interface DayScore {
   readonly score: number | null;
   readonly factors: readonly Factor[];
 }
-
-// Outcome of a rule set's applicability gate; `max` is the window's highest value of the gate signal.
-export type GateResult =
-  | { readonly open: true }
-  | { readonly open: false; readonly min: number; readonly max: number | null };
 
 // Design D-6.
 export interface ClassifierInput {
@@ -85,3 +80,6 @@ export interface RankingResult {
   readonly rankings: readonly ActivityRanking[];
   readonly ruleSetVersion: string;
 }
+
+// The served days per source, as RankingInput carries them.
+export type SourceDays = RankingInput['days'];

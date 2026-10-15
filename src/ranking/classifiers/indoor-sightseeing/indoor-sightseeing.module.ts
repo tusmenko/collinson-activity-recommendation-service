@@ -1,0 +1,22 @@
+import { Module } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
+
+import { EngineModule } from '../../engine/engine.module.js';
+import { ClassifierRegistry } from '../../registry/classifier-registry.service.js';
+import { RegistryModule } from '../../registry/registry.module.js';
+import { IndoorSightseeingClassifier } from './indoor-sightseeing.classifier.js';
+
+@Module({
+  imports: [EngineModule, RegistryModule],
+  providers: [IndoorSightseeingClassifier],
+})
+export class IndoorSightseeingModule implements OnModuleInit {
+  constructor(
+    private readonly registry: ClassifierRegistry,
+    private readonly classifier: IndoorSightseeingClassifier,
+  ) {}
+
+  onModuleInit(): void {
+    this.registry.register(this.classifier);
+  }
+}

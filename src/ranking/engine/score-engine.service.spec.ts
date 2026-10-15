@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DaySignals } from '../weather/index.js';
-import type { RuleSet } from './rule-set.schema.js';
+import type { DaySignals } from '../../weather/index.js';
+import type { RuleSet } from '../rules/rule-set.schema.js';
 import { ScoreEngine } from './score-engine.service.js';
 
 const EMPTY: DaySignals = {

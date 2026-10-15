@@ -1,7 +1,7 @@
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
 
-import { ActivityReasonModel } from './models/activity-reason.model.js';
-import { MetaModel } from './models/meta.model.js';
+import { ActivityReasonModel } from '../models/activity-reason.model.js';
+import { MetaModel } from '../models/meta.model.js';
 
 @Resolver(() => MetaModel)
 export class MetaResolver {

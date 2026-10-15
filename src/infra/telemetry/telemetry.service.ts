@@ -1,18 +1,9 @@
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
-import { ConsoleMetricExporter, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import type { PushMetricExporter } from '@opentelemetry/sdk-metrics';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 
 import type { Env } from '../config/env.schema.js';
-import { METER_NAME } from './telemetry.const.js';
-
-// One export a minute keeps the console exporter from crowding the JSON log stream.
-const EXPORT_INTERVAL_MS = 60_000;
-
-// The OTLP exporter reads OTEL_EXPORTER_OTLP_ENDPOINT through the SDK's own environment handling.
-export function metricExporter(kind: Env['OTEL_EXPORTER']): PushMetricExporter {
-  return kind === 'otlp' ? new OTLPMetricExporter() : new ConsoleMetricExporter();
-}
+import { EXPORT_INTERVAL_MS, METER_NAME } from './telemetry.const.js';
+import { metricExporter } from './telemetry.util.js';
 
 // The OpenTelemetry SDK, metrics only. main.ts starts it before Nest so the global meter provider exists when the
 // anomaly counter is built; tests never start it and get the API's no-op meter.

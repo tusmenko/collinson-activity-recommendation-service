@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FIXED_NOW, FixedClock } from '../../test/setup/fixed-clock.js';
 import { loadFixture } from '../../test/setup/fixtures.js';
-import { FactsRepositoryPort } from './facts.port.js';
+import { FactsRepositoryPort } from './facts/facts.port.js';
+import { OpenMeteoGeocodingSchema } from './geocoding/open-meteo-geocoding.schema.js';
+import { toGeocodingResults } from './geocoding/open-meteo-geocoding.util.js';
 import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors.js';
 import { LocationService } from './location.service.js';
 import type {
@@ -11,8 +13,6 @@ import type {
   LocationFacts,
   MarineAvailability,
 } from './location.types.js';
-import { toGeocodingResults } from './open-meteo-geocoding.adapter.js';
-import { OpenMeteoGeocodingSchema } from './open-meteo-geocoding.schema.js';
 
 function fixtureResults(name: string): GeocodingResult[] {
   const payload = OpenMeteoGeocodingSchema.parse(

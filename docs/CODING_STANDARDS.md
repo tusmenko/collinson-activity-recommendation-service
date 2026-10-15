@@ -43,7 +43,7 @@ Rules enforced by dependency-cruiser: no cycles; imports only in the direction a
 
 ## File layout
 
-One concern per file, named by postfix. Lint enforces the names (`eslint-plugin-check-file`) and the placement of exported type declarations (`no-restricted-syntax` per glob); the rest is review.
+One concern per file, named by postfix. Lint enforces the names (`eslint-plugin-check-file`: kebab case, and only the postfixes below under `src/`), the placement of every type declaration, and the absence of module-level helpers in class files (`no-restricted-syntax` per glob); the rest is review.
 
 | Postfix | Holds | Notes |
 | --- | --- | --- |
@@ -52,11 +52,13 @@ One concern per file, named by postfix. Lint enforces the names (`eslint-plugin-
 | `*.resolver.ts`, `*.controller.ts` | transport | no logic beyond validation and one service call |
 | `*.adapter.ts`, `*.repository.ts` | ports and adapters implementations | the only importers of their client library |
 | `*.port.ts` | abstract classes or interfaces that adapters and repositories implement; the DI tokens | tokens as abstract classes, no string tokens |
-| `*.types.ts` | exported interfaces, type aliases, enums | exported type declarations are not allowed in other files |
-| `*.const.ts` | exported constants and lookup tables | no logic |
+| `*.types.ts` | interfaces, type aliases, enums | type declarations, exported or not, are not allowed in other files except `*.schema.ts` |
+| `*.const.ts` | exported constants and lookup tables | no logic; module-level data of a class file lives here |
+| `*.util.ts` | pure helpers of a folder | no Nest, no client libraries, no services (dependency-cruiser); class files hold no module-level functions, a helper is a private method or lives here |
 | `*.schema.ts` | Zod schemas and the types inferred from them | the inferred type is exported from here, not duplicated in `*.types.ts` |
 | `*.errors.ts` | typed error classes of the module | |
 | `*.classifier.ts`, `*.rules.json` | one classifier and its thresholds | project-specific postfix, declared in the design |
+| `*.queue.ts`, `*.processor.ts`, `*.guard.ts`, `*.filter.ts`, `*.mapper.ts`, `*.plugin.ts`, `*.pipe.ts`, `*.indicator.ts`, `*.model.ts` | one framework class each: BullMQ queue or worker, Nest guard, filter, mapper, pipe, Terminus indicator, Apollo plugin, GraphQL object type | class files: no module-level functions |
 | `*.spec.ts` | unit tests, colocated | name starts with the test id |
 | `*.fixture.ts`, `test/fixtures/**` | test data | data only |
 | `index.ts` | the module's public barrel | one per module folder, exports only what other modules may use; no nested barrels; no `export *` |
@@ -75,6 +77,7 @@ Examples in this document use names from this service for illustration; the auth
 ## NestJS shape
 
 - One module per folder, named in the design document; files follow the layout table above.
+- A feature module is a folder of sub-module folders; every folder has its `*.module.ts`, which registers that folder's providers and exports what sibling folders need; the feature module imports its sub-modules and re-exports what other features use. The feature barrel is the only cross-feature import; no nested barrels, so folders inside a feature import each other by relative path.
 - Injection by abstract-class tokens declared in `*.port.ts` for anything with more than one implementation; concrete classes elsewhere.
 - Providers are stateless except explicit caches; request-scoped providers are not used.
 - GraphQL code-first; the schema file is generated and committed; resolvers contain no logic beyond argument validation and one service call.
@@ -101,9 +104,9 @@ Examples in this document use names from this service for illustration; the auth
 | Tool | Runs | Gate |
 | --- | --- | --- |
 | prettier | pre-commit (lint-staged), CI | formatting |
-| eslint: typescript-eslint strict-type-checked and stylistic, core `max-*` and `complexity`, sonarjs cognitive complexity, `check-file` naming, `no-restricted-syntax` for type placement, `no-process-env`, `no-console` | pre-commit (staged), CI (all) | errors fail |
+| eslint: typescript-eslint strict-type-checked and stylistic, core `max-*` and `complexity`, sonarjs cognitive complexity, `check-file` naming and postfixes, `no-restricted-syntax` for type placement and helper placement, `no-process-env`, `no-console` | pre-commit (staged), CI (all) | errors fail |
 | `tsc --noEmit` strict | pre-commit, CI | errors fail |
-| dependency-cruiser | CI | layer or cycle violation fails |
+| dependency-cruiser | CI | layer, barrel, nested-barrel, pure-util or cycle violation fails |
 | knip | CI | unused exports and dependencies fail |
 | commitlint | commit-msg | convention |
 | Vitest with coverage gates | pre-push (unit, integration), CI (all) | thresholds fail |

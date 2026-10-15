@@ -1,6 +1,6 @@
 import type { ConnectionOptions } from 'bullmq';
 
-const DEFAULT_PORT = 6379;
+import { REDIS_DEFAULT_PORT } from './redis.const.js';
 
 // BullMQ opens its own clients (a blocking one per worker and per QueueEvents, with
 // maxRetriesPerRequest: null), so it gets connection options rather than the shared client.
@@ -15,7 +15,7 @@ export class QueueConnection {
     const url = new URL(redisUrl);
     this.connection = {
       host: url.hostname,
-      port: url.port === '' ? DEFAULT_PORT : Number(url.port),
+      port: url.port === '' ? REDIS_DEFAULT_PORT : Number(url.port),
       db: Number(url.pathname.slice(1)),
       ...(url.username === '' ? {} : { username: decodeURIComponent(url.username) }),
       ...(url.password === '' ? {} : { password: decodeURIComponent(url.password) }),

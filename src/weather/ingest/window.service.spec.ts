@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { testConfig } from '../../test/setup/adapter-deps.js';
-import { FixedClock } from '../../test/setup/fixed-clock.js';
+import { testConfig } from '../../../test/setup/adapter-deps.js';
+import { FixedClock } from '../../../test/setup/fixed-clock.js';
 import { WindowService } from './window.service.js';
 
 // 12:00Z: already the 16th in Auckland (UTC+13), still the 15th in Chicago (UTC-5).

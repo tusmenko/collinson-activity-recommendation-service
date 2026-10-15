@@ -4,20 +4,15 @@ import { UnrecoverableError, Worker } from 'bullmq';
 import type { Job } from 'bullmq';
 import type { Logger } from 'pino';
 
-import { AppLogger, ClockPort, ConfigService, QueueConnection } from '../infra/index.js';
-import { ForecastRepositoryPort } from './forecast.port.js';
-import { INGEST_CONCURRENCY, INGEST_QUEUE } from './weather.const.js';
-import { FairUseExceededError, IngestFailedError } from './weather.errors.js';
-import { ForecastSourcePort, MarineSourcePort } from './weather-source.port.js';
-import type { WeatherSourcePort } from './weather-source.port.js';
-import type { IngestJobData, Source, SourceFetchOutcome } from './weather.types.js';
-
-function outcomeOf(error: unknown): string {
-  if (error instanceof IngestFailedError) {
-    return error.reason;
-  }
-  return error instanceof FairUseExceededError ? 'fair-use' : 'error';
-}
+import { AppLogger, ClockPort, ConfigService, QueueConnection } from '../../infra/index.js';
+import { ForecastSourcePort, MarineSourcePort } from '../sources/weather-source.port.js';
+import type { WeatherSourcePort } from '../sources/weather-source.port.js';
+import { ForecastRepositoryPort } from '../store/forecast.port.js';
+import type { Source, SourceFetchOutcome } from '../weather.types.js';
+import { INGEST_CONCURRENCY, INGEST_QUEUE } from './queue.const.js';
+import { FairUseExceededError, IngestFailedError } from './queue.errors.js';
+import type { IngestJobData } from './queue.types.js';
+import { outcomeOf } from './queue.util.js';
 
 // Extract, transform, load for one (locationId, source): fetch FETCH_DAYS, store per-day keys (D-5).
 @Injectable()

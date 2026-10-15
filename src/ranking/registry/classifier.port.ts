@@ -1,5 +1,5 @@
-import type { Source } from '../weather/index.js';
-import type { ClassifierInput, ClassifierOutput } from './ranking.types.js';
+import type { Source } from '../../weather/index.js';
+import type { ClassifierInput, ClassifierOutput } from '../ranking.types.js';
 
 // Design D-6. Async so a model-backed classifier fits the same contract (NFR-8).
 export abstract class Classifier {

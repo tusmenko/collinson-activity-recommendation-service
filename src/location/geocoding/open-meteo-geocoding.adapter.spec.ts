@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { silentLogger, testConfig } from '../../test/setup/adapter-deps.js';
+import { silentLogger, testConfig } from '../../../test/setup/adapter-deps.js';
 import { OpenMeteoGeocodingAdapter } from './open-meteo-geocoding.adapter.js';
 
 describe('OpenMeteoGeocodingAdapter base URL', () => {

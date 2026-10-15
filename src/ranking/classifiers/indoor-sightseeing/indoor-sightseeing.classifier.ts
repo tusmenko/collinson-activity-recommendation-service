@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import type { Source } from '../../weather/index.js';
-import { Classifier } from '../classifier.port.js';
-import type { ClassifierInput, ClassifierOutput } from '../ranking.types.js';
-import { ScoreEngine } from '../score-engine.service.js';
+import type { Source } from '../../../weather/index.js';
+import { ScoreEngine } from '../../engine/score-engine.service.js';
+import type { ClassifierInput, ClassifierOutput } from '../../ranking.types.js';
+import { Classifier } from '../../registry/classifier.port.js';
 
 // Always applicable and never poor (A-13): bad weather outside raises it, the rule set's floor holds it up.
 @Injectable()
