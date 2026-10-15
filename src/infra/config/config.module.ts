@@ -1,14 +1,14 @@
 import { Global, Module } from '@nestjs/common';
 
 import { ConfigService } from './config.service.js';
-import { loadEnv } from './env.schema.js';
+import { loadProcessEnv } from './env.schema.js';
 
 @Global()
 @Module({
   providers: [
     {
       provide: ConfigService,
-      useFactory: (): ConfigService => new ConfigService(loadEnv(process.env)),
+      useFactory: (): ConfigService => new ConfigService(loadProcessEnv()),
     },
   ],
   exports: [ConfigService],

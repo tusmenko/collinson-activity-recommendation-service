@@ -1,4 +1,4 @@
-import { LogAnomalyCounter } from '../../src/infra/telemetry/log-anomaly-counter.service.js';
+import { OtelAnomalyCounter } from '../../src/infra/telemetry/otel-anomaly-counter.service.js';
 import type { Classifier, RuleSetProvider } from '../../src/ranking/index.js';
 import { ClassifierRegistry, RankingService } from '../../src/ranking/index.js';
 import { IndoorSightseeingClassifier } from '../../src/ranking/indoor-sightseeing/indoor-sightseeing.classifier.js';
@@ -13,7 +13,7 @@ import { captureLogger } from './capture-logger.js';
 
 export interface RankingHarness {
   readonly service: RankingService;
-  readonly counter: LogAnomalyCounter;
+  readonly counter: OtelAnomalyCounter;
   readonly lines: () => Record<string, unknown>[];
 }
 
@@ -36,7 +36,7 @@ export function rankingHarness(
   const captured = captureLogger();
   const { logger } = captured;
   const lines = (): Record<string, unknown>[] => captured.lines;
-  const counter = new LogAnomalyCounter(logger);
+  const counter = new OtelAnomalyCounter(logger);
   const config = testConfig();
   const audit = new RankingAuditService(counter, logger, config);
   return { service: new RankingService(registry, rules, audit, config), counter, lines };

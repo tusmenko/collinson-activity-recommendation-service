@@ -36,7 +36,7 @@ Every scenario from Step 1 maps to a test, an asserted measure and a gate. The m
 | [QAS-8](02-requirements.md#qas-8) operability | 0 | CI job | `docker compose up` on the built image answers `/health` within 120 s | CI | done, phase 0 |
 | [QAS-9](02-requirements.md#qas-9) testability | 0 | CI itself | every level runs; the job asserts its own duration under 5 min; zero live upstream calls | CI | done, phase 0 |
 | [QAS-10](02-requirements.md#qas-10) explainability | 4 | end-to-end | details absent by default, present when selected; every ranking event complete | CI | done, phase 4 |
-| Load ([NFR-3](02-requirements.md#nfr-3), [NFR-6](02-requirements.md#nfr-6)) | 5 | autocannon against the composed service and the stub upstream | warm p95 under 300 ms, zero 5xx, thresholds fail the job | CI on `main` and nightly; k6 with the same thresholds on the production path | open |
+| Load ([NFR-3](02-requirements.md#nfr-3), [NFR-6](02-requirements.md#nfr-6)) | 5 | autocannon against the composed service and the stub upstream | warm p95 under 300 ms, zero 5xx, thresholds fail the job | CI on `main` and nightly; k6 with the same thresholds on the production path | done, phase 5 |
 
 ### Hooks and gates
 

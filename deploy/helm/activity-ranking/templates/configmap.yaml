@@ -1,0 +1,35 @@
+{{- /* Every key of .env.example with its default (design D-2); REDIS_URL from values; values.env overrides any key. */ -}}
+{{- $defaults := dict
+  "NODE_ENV" "production"
+  "PORT" "3000"
+  "UPSTREAM_GEOCODING_URL" "https://geocoding-api.open-meteo.com"
+  "UPSTREAM_FORECAST_URL" "https://api.open-meteo.com"
+  "UPSTREAM_MARINE_URL" "https://marine-api.open-meteo.com"
+  "WINDOW_DAYS" "7"
+  "FETCH_DAYS" "8"
+  "FRESHNESS_TTL" "6h"
+  "RETENTION_TTL" "24h"
+  "UPSTREAM_TIMEOUT_MS" "2000"
+  "UPSTREAM_RETRIES" "1"
+  "COLD_READ_BOUND_MS" "4500"
+  "OUTBOUND_PER_MINUTE" "500"
+  "OUTBOUND_LIMIT_WINDOW_MS" "60000"
+  "OUTBOUND_PER_DAY" "9000"
+  "INBOUND_PER_MINUTE" "60"
+  "QUERY_MAX_LOCATIONS" "5"
+  "GEOCODE_TTL" "30d"
+  "QUEUE_PROCESSORS_ENABLED" "true"
+  "LOG_LEVEL" "info"
+  "OTEL_EXPORTER" "console"
+-}}
+{{- $config := mergeOverwrite $defaults (dict "REDIS_URL" .Values.redisUrl) .Values.env -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "activity-ranking.fullname" . }}
+  labels:
+    {{- include "activity-ranking.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := $config }}
+  {{ $key }}: {{ $value | toString | quote }}
+  {{- end }}

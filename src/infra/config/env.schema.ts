@@ -81,3 +81,8 @@ export function loadEnv(source: NodeJS.ProcessEnv): Env {
   );
   throw new Error(`Invalid environment: ${problems.join('; ')}`);
 }
+
+// The one reader of process.env: the config module, and main.ts before Nest exists.
+export function loadProcessEnv(): Env {
+  return loadEnv(process.env);
+}

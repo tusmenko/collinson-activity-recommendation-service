@@ -1,0 +1,33 @@
+# Skeleton values for the production path (EKS, ElastiCache); the chart is linted in CI, not deployed.
+
+image:
+  # The ECR repository on the production path.
+  repository: activity-ranking-service
+  # Defaults to the chart's appVersion.
+  tag: ''
+  pullPolicy: IfNotPresent
+
+# Ignored while autoscaling is enabled.
+replicaCount: 2
+
+# ElastiCache (Redis OSS) endpoint for the store and the queues.
+redisUrl: redis://redis:6379
+
+# Overrides for any key of .env.example, for example LOG_LEVEL: debug or OTEL_EXPORTER: otlp.
+env: {}
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
