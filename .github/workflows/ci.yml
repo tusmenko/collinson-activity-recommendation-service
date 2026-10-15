@@ -27,10 +27,12 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run depcruise
       - run: pnpm run knip
+      - name: Dependency audit (production, high and above)
+        run: pnpm audit --prod --audit-level high
 
   unit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -43,7 +45,7 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     services:
       redis:
         image: redis:7-alpine
@@ -65,7 +67,7 @@ jobs:
 
   schema:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -78,7 +80,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     services:
       redis:
         image: redis:7-alpine
