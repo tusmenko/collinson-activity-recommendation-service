@@ -58,6 +58,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | `QUEUE_PROCESSORS_ENABLED` | `true` | Run queue processors in this process |
 | `LOG_LEVEL` | `info` | pino level |
 | `OTEL_EXPORTER` | `console` | `console` or `otlp` |
+| `NODE_ENV` | `production` | `development` writes `schema.gql` on start and includes stack traces in error responses; `test`; `production` ([ON-8](OVERNIGHT_NOTES.md#on-8)) |
 
 <a id="d-3"></a>
 ## D-3 GraphQL schema

@@ -5,6 +5,7 @@ import { Redis } from 'ioredis';
 import { ConfigService } from '../config/config.service.js';
 import { AppLogger } from '../logging/app-logger.service.js';
 import { QueueConnection } from './queue-connection.service.js';
+import { RedisThrottlerStorage } from './redis-throttler-storage.adapter.js';
 
 @Global()
 @Module({
@@ -27,8 +28,9 @@ import { QueueConnection } from './queue-connection.service.js';
         new QueueConnection(config.get('REDIS_URL')),
       inject: [ConfigService],
     },
+    RedisThrottlerStorage,
   ],
-  exports: [Redis, QueueConnection],
+  exports: [Redis, QueueConnection, RedisThrottlerStorage],
 })
 export class RedisModule implements OnApplicationShutdown {
   constructor(private readonly redis: Redis) {}

@@ -47,6 +47,16 @@ describe('harness stub upstream', () => {
     expect(response.status).toBe(400);
   });
 
+  it('harness setBehaviour sets a route default until cleared with ok', async () => {
+    stub.setBehaviour('/v1/marine', 'http500');
+    const failed = await fetch(`${stub.url}/v1/marine?latitude=43.5&longitude=-1.5`);
+    const other = await fetch(`${stub.url}/v1/search?name=London`);
+    stub.setBehaviour('/v1/marine', 'ok');
+    const cleared = await fetch(`${stub.url}/v1/marine?latitude=43.5&longitude=-1.5`);
+
+    expect([failed.status, other.status, cleared.status]).toEqual([500, 200, 200]);
+  });
+
   it('harness behaviour selected by a /stub/<behaviour> path prefix', async () => {
     const response = await fetch(`${stub.url}/stub/http500/v1/search?name=London`);
 

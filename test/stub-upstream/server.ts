@@ -23,8 +23,15 @@ const MALFORMED_DAILY_FIELD: Readonly<Partial<Record<string, string>>> = {
   '/v1/marine': 'wave_height_max',
 };
 
-type Behaviour = (typeof BEHAVIOURS)[number];
+export type Behaviour = (typeof BEHAVIOURS)[number];
 type Json = Record<string, unknown>;
+type RouteBehaviours = Map<string, Behaviour>;
+
+interface StubState {
+  readonly options: StubOptions;
+  readonly requests: string[];
+  readonly routes: RouteBehaviours;
+}
 type Route = (url: URL) => Promise<Json | undefined>;
 
 export interface StubOptions {
@@ -36,6 +43,8 @@ export interface StubUpstream {
   readonly url: string;
   // Path and query of every request received, in order.
   readonly requests: readonly string[];
+  // Default behaviour for one route path such as `/v1/marine`, used when the request selects none; `ok` clears it.
+  setBehaviour(route: string, behaviour: Behaviour): void;
   close(): Promise<void>;
 }
 
@@ -193,16 +202,16 @@ function applyBehaviour(behaviour: Behaviour, pathname: string, body: Json): Jso
   }
 }
 
-// Precedence: header, then path prefix, then the `stub` query parameter.
-function select(request: IncomingMessage, url: URL): Selected {
+// Precedence: header, then path prefix, then the `stub` query parameter, then the route default.
+function select(request: IncomingMessage, url: URL, routes: RouteBehaviours): Selected {
   const header = request.headers['x-stub-behaviour'];
   const [, prefixed, rest] = BEHAVIOUR_PREFIX.exec(url.pathname) ?? [];
+  const pathname = rest ?? url.pathname;
   const requested =
-    (typeof header === 'string' ? header : (prefixed ?? url.searchParams.get('stub'))) ?? 'ok';
-  return {
-    behaviour: BEHAVIOURS.find((behaviour) => behaviour === requested),
-    pathname: rest ?? url.pathname,
-  };
+    (typeof header === 'string' ? header : (prefixed ?? url.searchParams.get('stub'))) ??
+    routes.get(pathname) ??
+    'ok';
+  return { behaviour: BEHAVIOURS.find((behaviour) => behaviour === requested), pathname };
 }
 
 function send(response: ServerResponse, status: number, body: Json): void {
@@ -214,10 +223,10 @@ async function respond(
   request: IncomingMessage,
   response: ServerResponse,
   signal: AbortSignal,
-  options: StubOptions,
+  { options, routes }: StubState,
 ): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://stub.local');
-  const { behaviour, pathname } = select(request, url);
+  const { behaviour, pathname } = select(request, url, routes);
   if (behaviour === undefined) {
     send(response, 400, { error: true, reason: 'unknown stub behaviour' });
     return;
@@ -238,15 +247,15 @@ async function respond(
   send(response, 200, applyBehaviour(behaviour, pathname, dated));
 }
 
-function handler(options: StubOptions, requests: string[]) {
+function handler(state: StubState) {
   return (request: IncomingMessage, response: ServerResponse): void => {
-    requests.push(request.url ?? '/');
+    state.requests.push(request.url ?? '/');
     // Aborts a held `timeout` response when the client gives up or the server closes.
     const controller = new AbortController();
     response.on('close', () => {
       controller.abort();
     });
-    respond(request, response, controller.signal, options).catch((error: unknown) => {
+    respond(request, response, controller.signal, state).catch((error: unknown) => {
       if (!controller.signal.aborted) {
         send(response, 500, {
           error: true,
@@ -262,12 +271,20 @@ export async function startStubUpstream(
   options: StubOptions = {},
 ): Promise<StubUpstream> {
   const requests: string[] = [];
-  const server = createServer(handler(options, requests));
+  const routes: RouteBehaviours = new Map();
+  const server = createServer(handler({ options, requests, routes }));
   await new Promise<void>((resolve) => server.listen(port, resolve));
   const { port: boundPort } = server.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${String(boundPort)}`,
     requests,
+    setBehaviour: (route, behaviour) => {
+      if (behaviour === 'ok') {
+        routes.delete(route);
+      } else {
+        routes.set(route, behaviour);
+      }
+    },
     close: () =>
       new Promise<void>((resolve, reject) => {
         server.close((error) => {

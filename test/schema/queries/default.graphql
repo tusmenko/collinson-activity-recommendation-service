@@ -1,0 +1,38 @@
+# The brief's answer: a location, and per activity a status and dated scores, plus the data's age.
+query ActivityRankings($city: String!, $country: String) {
+  activityRankings(city: $city, country: $country) {
+    location {
+      id
+      name
+      region
+      country
+      latitude
+      longitude
+      timezone
+    }
+    rankings {
+      activity
+      status
+      days {
+        date
+        score
+      }
+    }
+    meta {
+      fetchedAt
+      stale
+      partial
+      sources {
+        source
+        status
+        fetchedAt
+      }
+      alternatives {
+        id
+        name
+        region
+        country
+      }
+    }
+  }
+}

@@ -25,6 +25,8 @@ const httpUrl = z.url({ protocol: /^https?$/ });
 
 const EnvSchema = z
   .object({
+    // development writes schema.gql and returns stack traces; anything else behaves as production.
+    NODE_ENV: z.enum(['development', 'test', 'production']).prefault('production'),
     PORT: z.coerce.number().int().min(0).max(65_535).prefault('3000'),
     REDIS_URL: z.url({ protocol: /^rediss?$/ }).prefault('redis://redis:6379'),
     UPSTREAM_GEOCODING_URL: httpUrl.prefault('https://geocoding-api.open-meteo.com'),
