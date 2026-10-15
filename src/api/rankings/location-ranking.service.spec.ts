@@ -16,6 +16,7 @@ const RESULT: RankingResult = { rankings: [], ruleSetVersion: 'v1' };
 
 function ensured(overrides: Partial<EnsureResult> = {}): EnsureResult {
   return {
+    dates: ['2026-10-15'],
     fetchedAt: '2026-10-15T06:00:00.000Z',
     stale: false,
     partial: false,
@@ -57,6 +58,7 @@ describe('LocationRankingService', () => {
     expect(rank).toHaveBeenCalledWith({
       location: paris,
       activities: ['SKIING'],
+      dates: ['2026-10-15'],
       days: { FORECAST: [] },
       sources: [],
       fetchedAt: '2026-10-15T06:00:00.000Z',

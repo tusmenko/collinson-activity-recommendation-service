@@ -57,6 +57,8 @@ export interface RankingInput {
   readonly location: LocationFacts;
   // Classifier ids; empty means every registered activity.
   readonly activities: readonly string[];
+  // The window's local dates, WINDOW_DAYS of them; every ranking has one day per date.
+  readonly dates: readonly string[];
   readonly days: Readonly<Partial<Record<Source, readonly DaySignals[]>>>;
   readonly sources: readonly SourceReport[];
   readonly fetchedAt: string | null;

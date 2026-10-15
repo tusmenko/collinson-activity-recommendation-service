@@ -30,6 +30,7 @@ export class LocationRankingService {
     const result = await this.ranking.rank({
       location: current,
       activities: selection.activities,
+      dates: ensured.dates,
       days: ensured.days,
       sources: ensured.sources,
       fetchedAt: ensured.fetchedAt,

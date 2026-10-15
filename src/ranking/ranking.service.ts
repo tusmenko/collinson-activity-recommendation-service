@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { ConfigService } from '../infra/index';
 import type { LocationFacts, MarineAvailability } from '../location/index';
 import type { DaySignals } from '../weather/index';
 import { RankingAuditService } from './audit/ranking-audit.service';
 import { UnknownActivityError } from './ranking.errors';
 import type { ActivityRanking, RankingInput, RankingResult } from './ranking.types';
-import { failedSource, mergeDays, noSignals } from './ranking.util';
+import { failedSource, mergeDays, noSignals, unservedDates } from './ranking.util';
 import { ClassifierRegistry } from './registry/classifier-registry.service';
 import type { Classifier } from './registry/classifier.port';
 import { RuleSetProvider } from './rules/rule-set.port';
@@ -14,20 +13,15 @@ import { RuleSetProvider } from './rules/rule-set.port';
 // Scores computed on read by the registered classifiers (design D-6), checked and traced (D-7).
 @Injectable()
 export class RankingService {
-  private readonly windowDays: number;
-
   constructor(
     private readonly registry: ClassifierRegistry,
     private readonly rules: RuleSetProvider,
     private readonly audit: RankingAuditService,
-    config: ConfigService,
-  ) {
-    this.windowDays = config.get('WINDOW_DAYS');
-  }
+  ) {}
 
   async rank(input: RankingInput): Promise<RankingResult> {
     const classifiers = this.classifiersFor(input.activities);
-    const days = mergeDays(input.days, this.windowDays);
+    const days = mergeDays(input.days, input.dates);
     const rankings = await Promise.all(
       classifiers.map((classifier) => this.rankOne(classifier, days, input)),
     );
@@ -85,13 +79,15 @@ export class RankingService {
       rules: this.rules.get(activity),
     });
     const signalsByDate = new Map(days.map((day) => [day.date, day]));
+    // A date with no served signals is never scored, whatever the classifier made of its nulls.
+    const unserved = unservedDates(input.days, input.dates);
     return {
       activity,
       status: output.status,
       reason: output.reason ?? null,
       classifierVersion,
       days: output.days.map((day) => ({
-        ...day,
+        ...(unserved.has(day.date) ? { ...day, score: null, factors: [] } : day),
         signals: signalsByDate.get(day.date) ?? noSignals(day.date),
       })),
     };

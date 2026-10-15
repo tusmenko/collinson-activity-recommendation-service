@@ -9,6 +9,7 @@ import { RankingsResultMapper } from './rankings-result.mapper';
 import type { LocationRanking } from './rankings.types';
 
 const ENSURED: EnsureResult = {
+  dates: [],
   fetchedAt: '2026-10-15T05:00:00.000Z',
   stale: true,
   partial: true,

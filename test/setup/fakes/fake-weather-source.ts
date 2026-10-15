@@ -12,7 +12,8 @@ type Template = 'forecast' | 'marine' | 'marineInland';
 type FailureReason = Extract<SourceFetchOutcome, { kind: 'failed' }>['reason'];
 
 export type FakeStep =
-  | { readonly kind: 'ok'; readonly template?: Template }
+  // `days` answers with fewer days than asked, like a provider cutting its horizon short.
+  | { readonly kind: 'ok'; readonly template?: Template; readonly days?: number }
   // `raw` stands for a body that arrived but failed validation.
   | { readonly kind: 'fail'; readonly reason: FailureReason; readonly raw?: unknown }
   // Never answers until the test calls release(), like an upstream that stops responding.
@@ -78,7 +79,7 @@ export class FakeWeatherSource extends WeatherSourcePort {
     const step = this.steps.shift() ?? this.fallback;
     switch (step.kind) {
       case 'ok':
-        return Promise.resolve(this.ok(step.template ?? this.defaultTemplate(), days));
+        return Promise.resolve(this.ok(step.template ?? this.defaultTemplate(), step.days ?? days));
       case 'fail':
         return Promise.resolve({
           kind: 'failed',
