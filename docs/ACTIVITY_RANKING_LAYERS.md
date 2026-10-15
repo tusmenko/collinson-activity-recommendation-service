@@ -28,7 +28,7 @@ flowchart TB
     P3["Classifier, RuleSetProvider<br/>AnomalyCounter, ClockPort"]
   end
   subgraph OUT["Outbound adapters"]
-    OM["Open-Meteo geocoding,<br/>forecast, marine adapters<br/><i>location/geocoding, weather/sources</i>"]
+    OM["Open-Meteo geocoding,<br/>forecast, marine adapters over OpenMeteoClient<br/><i>location/geocoding, weather/sources, infra/open-meteo</i>"]
     REDIS["Redis facts and forecast repositories,<br/>throttler storage<br/><i>location/facts, weather/store, infra/throttling</i>"]
     BULL["BullMQ ingest and enrich queues,<br/>ingest processor<br/><i>weather/queue, weather/ingest</i>"]
     MISC["Static rule-set adapter (JSON),<br/>OTel anomaly counter, system clock<br/><i>ranking/rules, infra/telemetry, infra/clock</i>"]
@@ -124,10 +124,11 @@ src/
     logging/    pino AppLogger                     redis/      connections for ioredis and BullMQ
     telemetry/  OTel SDK, AnomalyCounter port+impl throttling/ Redis throttler storage
     health/     /health/live and /health/ready controller, Redis indicator
-    open-meteo/ OpenMeteoClient: hosts, timeout, status, JSON, schema check, one log line per call
+    open-meteo/ OpenMeteoClient: searchLocations, forecast, marine; hosts, parameters, pinned payload schemas,
+                timeout, status, JSON, one log line per call
   location/     slice: place resolution
     location.service.ts (application), location.types.ts, location.util.ts
-    geocoding/  GeocodingPort, Open-Meteo geocoding adapter + schema   (outbound adapter)
+    geocoding/  GeocodingPort, Open-Meteo geocoding adapter             (outbound adapter)
     facts/      FactsRepositoryPort, Redis facts repository             (outbound adapter)
   weather/      slice: forecast data
     weather.types.ts (DaySignals), weather.const.ts, weather.util.ts
@@ -175,7 +176,7 @@ Touch points count existing files edited; new files are listed separately. Compl
 | Scenario | New files | Existing files touched | What stays untouched | Complexity | Score |
 | --- | --- | --- | --- | --- | --- |
 | Add a fifth classifier (for example cycling on wind and rain) | one folder `ranking/classifiers/cycling/` with classifier, rules JSON, spec | 1: the entry in the classifier list in `ranking.module.ts` (plus the schema snapshot, which regenerates) | ingest, store, API resolvers and models (the `Activity` enum is built from the registry), existing classifiers and their tests | low: thresholds and a note per factor; the engine does the scoring | 5 |
-| Add another geo or weather provider (for example a second forecast model, or a second geocoder) | one folder `weather/sources/<provider>/` (or `location/geocoding/<provider>/`) with module, adapter, pinned payload schema, normaliser, spec; recorded fixtures and a stub route for tests | 3: the port binding in `sources.module.ts` (or `geocoding.module.ts`), a `WEATHER_PROVIDER` or `GEOCODING_PROVIDER` key in `env.schema.ts`, `.env.example` | store (keys and `DaySignals` are provider-neutral), ingest, classifiers, API; raw payloads keep their provider schema version | medium: mapping the provider's variables and units onto `DaySignals`, recording fixtures, deciding the selection rule (env switch now; per-location routing later) | 4 |
+| Add another geo or weather provider (for example a second forecast model, or a second geocoder) | a provider client `infra/<provider>/` (`*.client.ts` with its typed endpoints and pinned payload schemas) plus one folder `weather/sources/<provider>/` (or `location/geocoding/<provider>/`) with module, adapter, normaliser, spec; recorded fixtures and a stub route for tests; the ports are unchanged | 3: the port binding in `sources.module.ts` (or `geocoding.module.ts`), a `WEATHER_PROVIDER` or `GEOCODING_PROVIDER` key in `env.schema.ts`, `.env.example` | store (keys and `DaySignals` are provider-neutral), ingest, classifiers, API; raw payloads keep their provider schema version | medium: mapping the provider's variables and units onto `DaySignals`, recording fixtures, deciding the selection rule (env switch now; per-location routing later) | 4 |
 | Scale horizontally (several API instances, separate workers) | none: `worker-deployment.yaml` and `docker-compose.scale.yml` exist | 1: `values.yaml` (`worker.enabled: true`, replica counts) | application code: the process is stateless; Redis holds facts, forecast, geocode, throttle and fair-use counters; BullMQ job ids give cluster-wide single-flight and the queue limiter is shared through Redis; `QUEUE_PROCESSORS_ENABLED=false` on API pods moves processors to the worker Deployment unchanged | low: deployment wiring; Redis becomes the component to make highly available (ElastiCache); liveness (`/health/live`) and readiness (`/health/ready`) are separate, so a Redis outage takes pods out of rotation without restarting them | 5 |
 
 Overall maintainability: 4 of 5. Strong points: ports everywhere an external system is touched, provider-neutral store, scoring on read, lint-enforced layering, per-file test coverage. Weak point: slice names answer "which data" rather than "which layer", which is what section 3.1 addresses.

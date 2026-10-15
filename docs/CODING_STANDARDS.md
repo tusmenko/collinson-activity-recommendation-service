@@ -6,7 +6,7 @@ Good defaults for a NestJS service, enforced by tools in phase 0 rather than by 
 
 | Principle | What it means here | Enforced by |
 | --- | --- | --- |
-| Single responsibility | One provider does one thing and one file holds one concern. Transport only translates and delegates; application services hold use-case logic and never touch a protocol or a store; repositories and adapters are the only code that imports a client library or knows a provider's payload shape; domain logic is pure | dependency-cruiser layer rules; `max-classes-per-file: 1`; file-layout lint; review |
+| Single responsibility | One provider does one thing and one file holds one concern. Transport only translates and delegates; application services hold use-case logic and never touch a protocol or a store; repositories, adapters and provider clients are the only code that imports a client library or knows a provider's payload shape; domain logic is pure | dependency-cruiser layer rules; `max-classes-per-file: 1`; file-layout lint; review |
 | Keep it simple | No abstraction before the third concrete use; no generic helpers or utility barrels; no configuration for things that do not vary | review; knip reports unused exports |
 | Don't repeat yourself, within a module | Duplication inside a module is removed; duplication across modules is allowed until the third copy, then lifted into the module that owns the concept | review |
 | Explicit over clever | Explicit return types on exported functions; no `any`; no non-null assertions; no implicit index access | typescript-eslint strict-type-checked; `tsc --strict` |
@@ -36,7 +36,7 @@ Generic rule; the concrete modules of this service and their allowed imports are
 | Transport | Resolvers, controllers, pipes, filters | application services and their public types |
 | Application | Use-case services, orchestration | domain, ports (abstract classes or interfaces), infrastructure utilities |
 | Domain | Pure logic: classifiers, rules, invariants, value types | nothing outside its own module except shared types |
-| Ports and adapters | Adapters to external providers, repositories to stores | the port it implements, infrastructure utilities, the client library it wraps |
+| Ports and adapters | Adapters to external providers, repositories to stores; a provider client (`*.client.ts`, in `infra`) owns the provider's endpoints and payload schemas; adapters translate | the port it implements, infrastructure utilities, the client library it wraps |
 | Infrastructure | Config, logging, telemetry, health, clients | nothing from the application |
 
 Rules enforced by dependency-cruiser: no cycles; imports only in the direction above; a client library (HTTP client, `ioredis`, queue client) is imported only by the adapters or repositories that wrap it; cross-module imports go through the module's public barrel only.

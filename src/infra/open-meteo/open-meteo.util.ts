@@ -1,7 +1,7 @@
-import type { UpstreamFailure } from './open-meteo.types';
+import type { OpenMeteoFailure } from './open-meteo.types';
 
 // A thrown fetch or JSON parse error as a failed outcome.
-export function failureOf(error: unknown): UpstreamFailure {
+export function failureOf(error: unknown): OpenMeteoFailure {
   const name = error instanceof Error ? error.name : '';
   const detail = error instanceof Error ? error.message : String(error);
   if (name === 'TimeoutError' || name === 'AbortError') {

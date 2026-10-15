@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FIXED_NOW, FixedClock } from '../../test/setup/fixed-clock';
 import { loadFixture } from '../../test/setup/fixtures';
+import { GeocodingPayloadSchema } from '../infra/index';
 import { FactsRepositoryPort } from './facts/facts.port';
-import { OpenMeteoGeocodingSchema } from './geocoding/open-meteo-geocoding.schema';
 import { toGeocodingResults } from './geocoding/open-meteo-geocoding.util';
 import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
 import { LocationService } from './location.service';
@@ -15,7 +15,7 @@ import type {
 } from './location.types';
 
 function fixtureResults(name: string): GeocodingResult[] {
-  const payload = OpenMeteoGeocodingSchema.parse(
+  const payload = GeocodingPayloadSchema.parse(
     loadFixture(`open-meteo/v1/geocoding/${name.toLowerCase()}.json`),
   );
   return toGeocodingResults(payload);

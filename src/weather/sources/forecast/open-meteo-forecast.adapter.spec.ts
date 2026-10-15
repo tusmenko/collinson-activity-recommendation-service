@@ -1,18 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { openMeteoClient, testConfig } from '../../../../test/setup/adapter-deps';
-import { FixedClock } from '../../../../test/setup/fixed-clock';
+import { openMeteoClient } from '../../../../test/setup/adapter-deps';
 import { loadFixture } from '../../../../test/setup/fixtures';
 import { OpenMeteoForecastAdapter } from './open-meteo-forecast.adapter';
-import { normaliseForecastPayload } from './open-meteo-forecast.util';
-import { normaliseMarinePayload } from '../marine/open-meteo-marine.util';
 
 const CHAMONIX = { latitude: 45.92375, longitude: 6.86933 };
 
 // Unit level: fetch is replaced, so no socket opens; the stub-upstream specs cover the wire.
 function adapterAnswering(body: string): OpenMeteoForecastAdapter {
   vi.stubGlobal('fetch', () => Promise.resolve(new Response(body, { status: 200 })));
-  return new OpenMeteoForecastAdapter(openMeteoClient(testConfig()), new FixedClock());
+  return new OpenMeteoForecastAdapter(openMeteoClient());
 }
 
 describe('OpenMeteoForecastAdapter normalisation', () => {
@@ -42,26 +39,5 @@ describe('OpenMeteoForecastAdapter normalisation', () => {
     const outcome = await adapterAnswering('<html>busy</html>').fetchDays(CHAMONIX, 8);
 
     expect(outcome).toMatchObject({ kind: 'failed', reason: 'malformed' });
-  });
-
-  it('U-ADAPT-13 with UPSTREAM_BASE_URL unset the forecast goes to the real Open-Meteo host', async () => {
-    const urls: string[] = [];
-    vi.stubGlobal('fetch', (url: URL) => {
-      urls.push(url.href);
-      return Promise.resolve(new Response('{}'));
-    });
-    const config = testConfig({ UPSTREAM_BASE_URL: '' });
-
-    await new OpenMeteoForecastAdapter(openMeteoClient(config), new FixedClock()).fetchDays(
-      CHAMONIX,
-      8,
-    );
-
-    expect(urls[0]).toMatch(/^https:\/\/api\.open-meteo\.com\/v1\/forecast\?/);
-  });
-
-  it('U-ADAPT-2 the pure normalisation returns null for a payload that fails the schema', () => {
-    expect(normaliseForecastPayload({ daily: {} })).toBeNull();
-    expect(normaliseMarinePayload({ daily: {} })).toBeNull();
   });
 });

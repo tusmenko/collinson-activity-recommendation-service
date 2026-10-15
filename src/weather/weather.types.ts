@@ -1,11 +1,9 @@
 import type { SOURCES } from './weather.const';
 
-export type Source = (typeof SOURCES)[number];
+// Declared once, by the provider client in infra; the weather feature names it as its own.
+export type { Coordinates } from '../infra/index';
 
-export interface Coordinates {
-  readonly latitude: number;
-  readonly longitude: number;
-}
+export type Source = (typeof SOURCES)[number];
 
 // One local day of provider-neutral signals (design D-3); null means the source has no value.
 export interface DaySignals {

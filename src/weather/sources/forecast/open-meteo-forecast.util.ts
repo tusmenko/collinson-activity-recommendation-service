@@ -1,6 +1,5 @@
+import type { ForecastPayload } from '../../../infra/index';
 import type { DaySignals } from '../../weather.types';
-import { OpenMeteoForecastSchema } from './open-meteo-forecast.schema';
-import type { OpenMeteoForecast } from './open-meteo-forecast.schema';
 import { at } from '../open-meteo.util';
 import { CM_PER_M, SECONDS_PER_HOUR } from './forecast.const';
 
@@ -9,7 +8,7 @@ function oneDecimal(value: number): number {
 }
 
 // Hourly snow depth (m) reduced to a daily maximum (cm) keyed by local date.
-function dailySnowDepthCm(hourly: OpenMeteoForecast['hourly']): Map<string, number> {
+function dailySnowDepthCm(hourly: ForecastPayload['hourly']): Map<string, number> {
   const maxima = new Map<string, number>();
   hourly.time.forEach((stamp, index) => {
     const depth = hourly.snow_depth[index];
@@ -21,7 +20,7 @@ function dailySnowDepthCm(hourly: OpenMeteoForecast['hourly']): Map<string, numb
   return new Map([...maxima].map(([date, metres]) => [date, oneDecimal(metres * CM_PER_M)]));
 }
 
-export function toDaySignals(payload: OpenMeteoForecast): DaySignals[] {
+export function toDaySignals(payload: ForecastPayload): DaySignals[] {
   const { daily } = payload;
   const snowDepth = dailySnowDepthCm(payload.hourly);
   return daily.time.map((date, index) => {
@@ -47,10 +46,4 @@ export function toDaySignals(payload: OpenMeteoForecast): DaySignals[] {
       swellHeight: null,
     };
   });
-}
-
-// The adapter's normalisation without the fetch, for golden tests over recorded bodies; null when the shape is wrong.
-export function normaliseForecastPayload(payload: unknown): DaySignals[] | null {
-  const parsed = OpenMeteoForecastSchema.safeParse(payload);
-  return parsed.success ? toDaySignals(parsed.data) : null;
 }

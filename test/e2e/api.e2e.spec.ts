@@ -319,7 +319,7 @@ describe('E-API api end to end over HTTP', () => {
   });
 
   // The alternatives tab is validated by S-SCHEMA-1 only: the stub records one Springfield forecast, so ranking the
-  // other alternatives fails here and, the fields being non-null, nulls the answer; against Open-Meteo it answers.
+  // other alternatives here reports an error on each of their rankings paths (E-API-15); against Open-Meteo it answers.
   it('E-API-14 the default and details tabs answer without errors with their variables', async () => {
     const page = await (
       await fetch(`${testApp.url}/graphql`, { headers: { accept: 'text/html' } })

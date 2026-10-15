@@ -11,7 +11,9 @@ import { ZodArgPipe } from './zod-args.pipe';
 export class LocationResolver {
   constructor(private readonly rankings: RankingsQueryService) {}
 
+  // Nullable: a failure ranking one place (an alternative's forecast fetch) is an error on this path, not the answer.
   @ResolveField('rankings', () => RankingsResultModel, {
+    nullable: true,
     description:
       'Rankings for this place, for example an alternative; counts toward the location limit.',
   })

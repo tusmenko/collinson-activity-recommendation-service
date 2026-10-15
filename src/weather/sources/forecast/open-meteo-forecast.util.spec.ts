@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import type { OpenMeteoForecast } from './open-meteo-forecast.schema';
-import { normaliseForecastPayload, toDaySignals } from './open-meteo-forecast.util';
+import type { ForecastPayload } from '../../../infra/index';
+import { toDaySignals } from './open-meteo-forecast.util';
 
 function payload(
-  daily: Partial<OpenMeteoForecast['daily']>,
-  hourly: OpenMeteoForecast['hourly'],
-): OpenMeteoForecast {
+  daily: Partial<ForecastPayload['daily']>,
+  hourly: ForecastPayload['hourly'],
+): ForecastPayload {
   const none = [null];
   return {
     latitude: 45.9,
@@ -78,12 +78,5 @@ describe('forecast normalisation', () => {
     );
 
     expect(day?.sunshineHours).toBeNull();
-  });
-
-  it('U-ADAPT-2 the pure normalisation accepts a valid body and returns null for an invalid one', () => {
-    const valid = payload({}, { time: [], snow_depth: [] });
-
-    expect(normaliseForecastPayload(valid)).toEqual(toDaySignals(valid));
-    expect(normaliseForecastPayload({ ...valid, daily: { time: ['2026-10-15'] } })).toBeNull();
   });
 });

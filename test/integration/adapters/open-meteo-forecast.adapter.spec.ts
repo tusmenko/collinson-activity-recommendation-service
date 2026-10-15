@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SourceFetchOutcome } from '../../../src/weather/index';
 import { OpenMeteoForecastAdapter } from '../../../src/weather/sources/forecast/open-meteo-forecast.adapter';
 import { openMeteoClient, testConfig } from '../../setup/adapter-deps';
-import { FIXED_NOW, FixedClock } from '../../setup/fixed-clock';
+import { FIXED_NOW } from '../../setup/fixed-clock';
 import type { EnvOverrides } from '../../setup/test-env';
 import { startStubUpstream } from '../../stub-upstream/server';
 import type { StubUpstream } from '../../stub-upstream/server';
@@ -28,7 +28,7 @@ describe('OpenMeteoForecastAdapter against the stub upstream', () => {
       UPSTREAM_BASE_URL: `${stub.url}/stub/${behaviour}`,
       ...overrides,
     });
-    return new OpenMeteoForecastAdapter(openMeteoClient(config), new FixedClock());
+    return new OpenMeteoForecastAdapter(openMeteoClient(config));
   }
 
   function okDays(outcome: SourceFetchOutcome) {
@@ -61,24 +61,6 @@ describe('OpenMeteoForecastAdapter against the stub upstream', () => {
     expect(days.every((day) => day.snowfall === 0)).toBe(true);
     expect(days[0]).toMatchObject({ sunshineHours: 10.5, visibility: 41761.67, snowDepth: 0 });
     expect(days[0]).toMatchObject({ waveHeight: null, wavePeriod: null, swellHeight: null });
-  });
-
-  it('U-ADAPT-1 sends the recorded request shape', async () => {
-    await adapter().fetchDays(CHAMONIX, FETCH_DAYS);
-
-    const request = new URL(stub.requests.at(-1) ?? '', stub.url);
-    expect(request.pathname).toBe('/stub/ok/v1/forecast');
-    expect(Object.fromEntries(request.searchParams)).toEqual({
-      latitude: '45.92375',
-      longitude: '6.86933',
-      daily:
-        'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum,' +
-        'precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,cloud_cover_mean,' +
-        'uv_index_max,sunshine_duration,visibility_mean',
-      hourly: 'snow_depth',
-      forecast_days: '8',
-      timezone: 'auto',
-    });
   });
 
   it('U-ADAPT-2 a payload missing a daily field is a failed source with the raw body, not a throw', async () => {
@@ -121,7 +103,7 @@ describe('OpenMeteoForecastAdapter against the stub upstream', () => {
 
   it('U-ADAPT-9 a refused connection yields reason network', async () => {
     const config = testConfig();
-    const unreachable = new OpenMeteoForecastAdapter(openMeteoClient(config), new FixedClock());
+    const unreachable = new OpenMeteoForecastAdapter(openMeteoClient(config));
 
     const outcome = await unreachable.fetchDays(CHAMONIX, FETCH_DAYS);
 

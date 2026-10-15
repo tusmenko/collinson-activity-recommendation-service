@@ -1,8 +1,11 @@
+import type { ZodType } from 'zod';
+
+import { ForecastPayloadSchema, MarinePayloadSchema } from '../../src/infra/index';
 import type { LocationFacts } from '../../src/location/index';
 import type { RankingInput } from '../../src/ranking/index';
 import type { DaySignals } from '../../src/weather/index';
-import { normaliseForecastPayload } from '../../src/weather/sources/forecast/open-meteo-forecast.util';
-import { normaliseMarinePayload } from '../../src/weather/sources/marine/open-meteo-marine.util';
+import { toDaySignals as forecastDays } from '../../src/weather/sources/forecast/open-meteo-forecast.util';
+import { toDaySignals as marineDays } from '../../src/weather/sources/marine/open-meteo-marine.util';
 import { FIXED_NOW } from './fixed-clock';
 import { loadFixture } from './fixtures';
 
@@ -28,15 +31,13 @@ const PLACES = {
 
 export type Place = keyof typeof PLACES;
 
-function normalised(
+// The recorded body through the client's pinned schema and the adapter's translation; throws on a schema mismatch.
+function normalised<Payload>(
   path: string,
-  normalise: (payload: unknown) => DaySignals[] | null,
+  schema: ZodType<Payload>,
+  toDays: (payload: Payload) => DaySignals[],
 ): DaySignals[] {
-  const days = normalise(loadFixture(`open-meteo/v1/${path}.json`));
-  if (days === null) {
-    throw new Error(`Fixture ${path} does not match the adapter schema`);
-  }
-  return days;
+  return toDays(schema.parse(loadFixture(`open-meteo/v1/${path}.json`)));
 }
 
 function facts(place: Place): LocationFacts {
@@ -69,8 +70,8 @@ export function rankingInput(place: Place, overrides: Partial<RankingInput> = {}
     location: facts(place),
     activities: [],
     days: {
-      FORECAST: normalised(forecast, normaliseForecastPayload),
-      ...(marine === null ? {} : { MARINE: normalised(marine, normaliseMarinePayload) }),
+      FORECAST: normalised(forecast, ForecastPayloadSchema, forecastDays),
+      ...(marine === null ? {} : { MARINE: normalised(marine, MarinePayloadSchema, marineDays) }),
     },
     sources: [
       { source: 'FORECAST', status: 'OK', fetchedAt },

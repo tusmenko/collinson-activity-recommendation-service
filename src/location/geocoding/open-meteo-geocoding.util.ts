@@ -1,8 +1,8 @@
+import type { GeocodingPayload } from '../../infra/index';
 import type { GeocodingResult } from '../location.types';
-import type { OpenMeteoGeocoding } from './open-meteo-geocoding.schema';
 
 // Optional fields are omitted rather than set to undefined (exactOptionalPropertyTypes).
-export function toGeocodingResults(payload: OpenMeteoGeocoding): GeocodingResult[] {
+export function toGeocodingResults(payload: GeocodingPayload): GeocodingResult[] {
   return (payload.results ?? []).map((hit) => ({
     id: String(hit.id),
     name: hit.name,

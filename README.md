@@ -148,6 +148,7 @@ From the [assumptions register](docs/arch/registers.md#assumptions-register); ea
 - A-26: open on localhost, no user data.
 - A-29: the schema evolves additively, with deprecations for breaking changes.
 - A-30: only the latest forecast is kept; classifier outputs are logged as events with versions.
+- [ON-10](docs/OVERNIGHT_NOTES.md#on-10): partial results beat an all-or-nothing answer: a failure ranking one alternative nulls only its `Location.rankings` and is reported in `errors` with the path; a consumer that needs every alternative checks `errors`.
 - A-31: place names only, no identity, no client addresses in logs; the HTTP access line carries only method and URL.
 - A-33: the forecast store can be rebuilt from upstream; losing it means refetching.
 - A-34: one key per location, source and date, expired by Redis; the key is provider-neutral.

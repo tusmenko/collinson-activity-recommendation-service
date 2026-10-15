@@ -51,19 +51,6 @@ describe('OpenMeteoGeocodingAdapter against the stub upstream', () => {
     expect(results[2]).toMatchObject({ name: 'Victoria', country: 'HK', countryCode: 'HK' });
   });
 
-  it('U-ADAPT-8 sends the recorded request shape', async () => {
-    await adapter().search('Springfield');
-
-    const request = new URL(stub.requests.at(-1) ?? '', stub.url);
-    expect(request.pathname).toBe('/stub/ok/v1/search');
-    expect(Object.fromEntries(request.searchParams)).toEqual({
-      name: 'Springfield',
-      count: '5',
-      language: 'en',
-      format: 'json',
-    });
-  });
-
   it('U-ADAPT-8 an unknown name answers ok with no results', async () => {
     const outcome = await adapter().search('Xyzzyqq');
 

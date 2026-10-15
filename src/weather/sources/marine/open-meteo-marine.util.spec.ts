@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import type { OpenMeteoMarine } from './open-meteo-marine.schema';
-import { normaliseMarinePayload, toDaySignals } from './open-meteo-marine.util';
+import type { MarinePayload } from '../../../infra/index';
+import { toDaySignals } from './open-meteo-marine.util';
 
-const BODY: OpenMeteoMarine = {
+const BODY: MarinePayload = {
   latitude: 43.5,
   longitude: -1.6,
   timezone: 'Europe/Paris',
@@ -36,10 +36,5 @@ describe('marine normalisation', () => {
     const [, second] = toDaySignals(BODY);
 
     expect(second).toMatchObject({ waveHeight: null, wavePeriod: null, swellHeight: null });
-  });
-
-  it('U-ADAPT-2 the pure normalisation accepts a valid body and returns null for an invalid one', () => {
-    expect(normaliseMarinePayload(BODY)).toEqual(toDaySignals(BODY));
-    expect(normaliseMarinePayload({ ...BODY, daily: { time: ['2026-10-15'] } })).toBeNull();
   });
 });
