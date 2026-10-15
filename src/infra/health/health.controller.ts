@@ -14,9 +14,16 @@ export class HealthController {
     private readonly memory: MemoryHealthIndicator,
   ) {}
 
-  @Get()
+  // Liveness: the event loop answers. No dependency is checked, so a Redis outage never restarts the pod.
+  @Get('live')
+  live(): HealthBody {
+    return { status: 'ok', details: {} };
+  }
+
+  // Readiness: Redis and heap; 503 takes the instance out of rotation. /health stays as its alias.
+  @Get(['', 'ready'])
   @HealthCheck()
-  async check(): Promise<HealthBody> {
+  async ready(): Promise<HealthBody> {
     try {
       return this.body(
         await this.health.check([

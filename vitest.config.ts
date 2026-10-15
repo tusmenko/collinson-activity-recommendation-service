@@ -48,7 +48,8 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['src/**'],
+      // Sources only; the GraphiQL example operations under src/ are assets, not code.
+      include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.spec.ts',
         'src/**/*.module.ts',

@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const QUERIES_DIR = fileURLToPath(new URL('../../schema/queries/', import.meta.url));
+// The GraphiQL example operations double as the contract fixtures: one copy, served and tested.
+const QUERIES_DIR = fileURLToPath(new URL('../../../src/api/graphql/examples/', import.meta.url));
 
 interface GraphqlErrorBody {
   readonly message: string;
@@ -17,7 +18,7 @@ export interface GraphqlResponse<Data> {
   readonly errors: readonly GraphqlErrorBody[];
 }
 
-// A contract fixture under test/schema/queries, for example 'default.graphql'.
+// An example operation under src/api/graphql/examples, for example 'default.graphql'.
 export function loadQuery(name: string): string {
   return readFileSync(`${QUERIES_DIR}${name}`, 'utf8');
 }

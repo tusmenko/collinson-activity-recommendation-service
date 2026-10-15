@@ -1,0 +1,19 @@
+# docker compose -f docker-compose.yml -f docker-compose.scale.yml up --build --scale api=2
+# The production split, locally: API replicas without queue processors on 4510 and 4511, and one worker from the
+# same image that runs them (design D-11). A profile cannot change the api service's environment, hence a file.
+services:
+  api:
+    environment:
+      QUEUE_PROCESSORS_ENABLED: 'false'
+    # One host port per replica.
+    ports: !override
+      - '${API_PORT:-4510}-${API_PORT_LAST:-4511}:4510'
+
+  worker:
+    extends:
+      file: docker-compose.yml
+      service: api
+    environment:
+      QUEUE_PROCESSORS_ENABLED: 'true'
+    # Serves HTTP for its healthcheck only; no host port.
+    ports: !reset []

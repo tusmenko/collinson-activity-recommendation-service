@@ -16,15 +16,15 @@ A GraphQL service that takes a city or town and scores the next seven days for s
 docker compose up --build
 ```
 
-In a second terminal, check health and ask for Biarritz with the default query (the selection of [test/schema/queries/default.graphql](test/schema/queries/default.graphql)):
+In a second terminal, check health and ask for Biarritz with the default query (the selection of [src/api/graphql/examples/default.graphql](src/api/graphql/examples/default.graphql)):
 
 ```sh
-curl http://localhost:4510/health
+curl http://localhost:4510/health/ready
 curl -s http://localhost:4510/graphql -H 'content-type: application/json' \
   -d '{"query":"query($city:String!){activityRankings(city:$city){location{id name region country latitude longitude timezone} rankings{activity status days{date score}} meta{fetchedAt stale partial sources{source status fetchedAt} alternatives{id name region country}}}}","variables":{"city":"Biarritz"}}'
 ```
 
-The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL runs at <http://localhost:4510/graphql> in a browser, with introspection on. The service speaks plain HTTP only; an `https://` URL fails before it reaches the container, so keep the `http://` prefix (browsers sometimes upgrade `localhost` to HTTPS on their own).
+`/health/live` answers while the process is up and checks nothing; `/health/ready` (also `/health`) checks Redis and the heap and returns 503 when one is down. The first request for a place fetches its forecast (a few hundred milliseconds); repeats within six hours are served from Redis. GraphiQL opens with three example tabs at <http://localhost:4510/graphql> in a browser, each with its variables: the default answer for Biarritz, the details for London (surfing and outdoor sightseeing), and Springfield narrowed to the US with each alternative ranked through `Location.rankings`. The operations are [src/api/graphql/examples](src/api/graphql/examples), the same files the tests run. Introspection is on. The service speaks plain HTTP only; an `https://` URL fails before it reaches the container, so keep the `http://` prefix (browsers sometimes upgrade `localhost` to HTTPS on their own).
 
 To run without calling Open-Meteo, start the `demo` profile. It adds `api-demo` on port 4511, wired through `UPSTREAM_BASE_URL` to a stub upstream that serves recorded fixtures (recorded 2026-10-15, dates shifted so the first day is today) for Biarritz, Chamonix, Dubai, Hintertux, London and Springfield:
 
@@ -39,7 +39,13 @@ curl -s http://localhost:4511/graphql -H 'content-type: application/json' \
   -d '{"query":"{activityRankings(city:\"London\",activities:[SURFING,OUTDOOR_SIGHTSEEING]){rankings{activity status days{date score details{factors{signal value unit effect note}}}} meta{reasons{activity reason}}}}"}'
 ```
 
-`details.signals` returns the day's raw weather signals as well; [test/schema/queries/details.graphql](test/schema/queries/details.graphql) has the full selection.
+`details.signals` returns the day's raw weather signals as well; GraphiQL's second tab has the full selection. The stub records one Springfield (Missouri), so on port 4511 the third tab returns `UPSTREAM_UNAVAILABLE` for the other alternatives instead of an answer; on 4510 it ranks them all.
+
+To run the production split locally, two API replicas without queue processors (ports 4510 and 4511, so not alongside `demo`) and one worker from the same image that runs them, add the scale file (a profile cannot change the `api` service's environment, so it is a second file):
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.scale.yml up --build --scale api=2
+```
 
 ## Develop and test
 
@@ -180,10 +186,10 @@ Nothing was cut. The plan's cut lines (Helm skeleton, load job, OpenTelemetry ex
 
 ## Production path
 
-- Image pushed to ECR from CI; `helm upgrade` to EKS with the chart in [deploy/helm/activity-ranking](deploy/helm/activity-ranking) (Deployment, Service, HPA, ConfigMap from `.env.example`, probes on `/health`). The chart is linted in CI and has not been deployed.
+- Image pushed to ECR from CI; `helm upgrade` to EKS with the chart in [deploy/helm/activity-ranking](deploy/helm/activity-ranking) (Deployment, Service, HPA, ConfigMap from `.env.example`, liveness on `/health/live`, readiness on `/health/ready`). The chart is linted in CI and has not been deployed.
 - Terraform for the VPC, EKS, ElastiCache (Redis OSS with persistence) and ECR.
 - Aurora PostgreSQL for location facts once enrichment makes them relational; the forecast store stays on ElastiCache.
-- Queue processors move to a worker Deployment from the same image; the API runs with `QUEUE_PROCESSORS_ENABLED=false`.
+- Queue processors move to a worker Deployment from the same image with `worker.enabled: true` ([worker-deployment.yaml](deploy/helm/activity-ranking/templates/worker-deployment.yaml), its own replicas and resources under `worker`); the API pods then run with `QUEUE_PROCESSORS_ENABLED=false` and the HPA scales them alone. `docker-compose.scale.yml` is the same split under Compose.
 - Metrics and logs over OTLP to Datadog, with a monitor on `ranking_anomalies_total`.
 - k6 replaces autocannon with the same thresholds (warm p95 under 300 ms, zero 5xx, cold under 3 s); a Pact consumer contract on the default query.
 

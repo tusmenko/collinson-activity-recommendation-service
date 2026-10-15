@@ -8,6 +8,8 @@ import { ClassifierRegistry } from '../../ranking/index';
 import { GraphqlErrorMapper } from '../errors/graphql-error.mapper';
 import { registerActivities } from '../models/enums.model';
 import { ComplexityPlugin } from './complexity.plugin';
+import { exampleTabs } from './examples.util';
+import { GraphiqlPlugin } from './graphiql.plugin';
 import { REQUEST_ID_HEADER, REQUEST_ID_PATTERN, SCHEMA_FILE } from './graphql.const';
 import type { GraphqlContext, HttpPair } from './graphql.types';
 
@@ -29,12 +31,16 @@ export class GraphqlConfigService implements GqlOptionsFactory<ApolloDriverConfi
       sortSchema: true,
       buildSchemaOptions: { addNewlineAtEnd: true },
       introspection: true,
-      graphiql: true,
+      // GraphiqlPlugin serves GraphiQL with the example tabs instead.
+      graphiql: false,
       includeStacktraceInErrorResponses: development,
       autoTransformHttpErrors: false,
       context: (pair: HttpPair) => this.requestContext(pair),
       formatError: (formatted, error) => this.errors.format(formatted, error),
-      plugins: [new ComplexityPlugin(this.config.get('QUERY_MAX_LOCATIONS'))],
+      plugins: [
+        new ComplexityPlugin(this.config.get('QUERY_MAX_LOCATIONS')),
+        new GraphiqlPlugin(exampleTabs()),
+      ],
     };
   }
 

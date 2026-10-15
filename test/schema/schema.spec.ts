@@ -1,8 +1,10 @@
 import { GRAPHQL_SDL_FILE_HEADER } from '@nestjs/graphql';
 import { Test } from '@nestjs/testing';
+import { parse, validate } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
 import { ErrorsModule } from '../../src/api/errors/errors.module';
+import { exampleTabs } from '../../src/api/graphql/examples.util';
 import { GraphqlConfigService } from '../../src/api/graphql/graphql-config.service';
 import { registerActivities } from '../../src/api/models/enums.model';
 import { ConfigModule } from '../../src/infra/config/config.module';
@@ -63,6 +65,17 @@ describe('S-SCHEMA generated schema', () => {
 
     expect(enumValues(schema, 'Activity')).toEqual([...BUILT_IN].sort());
     await moduleRef.close();
+  });
+
+  it('S-SCHEMA-1 every GraphiQL example operation validates against the generated schema', async () => {
+    const { schema } = await buildSchema(registryOf(BUILT_IN));
+
+    const tabs = exampleTabs();
+
+    expect(tabs).toHaveLength(3);
+    for (const tab of tabs) {
+      expect(validate(schema, parse(tab.query))).toEqual([]);
+    }
   });
 
   it('S-SCHEMA-2 registering a fake CYCLING classifier adds CYCLING to the enum', async () => {

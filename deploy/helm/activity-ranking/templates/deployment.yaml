@@ -11,10 +11,12 @@ spec:
   selector:
     matchLabels:
       {{- include "activity-ranking.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
   template:
     metadata:
       labels:
         {{- include "activity-ranking.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
       annotations:
         # A configuration change rolls the pods.
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
@@ -33,18 +35,26 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "activity-ranking.fullname" . }}
+          {{- if .Values.worker.enabled }}
+          # The worker Deployment runs the queue processors; these pods only serve GraphQL.
+          env:
+            - name: QUEUE_PROCESSORS_ENABLED
+              value: 'false'
+          {{- end }}
           ports:
             - name: http
               containerPort: 4510
+          # Readiness checks Redis and takes the pod out of the Service while it is down; liveness only asks whether
+          # the process answers, so a Redis outage never restarts it.
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: http
             initialDelaySeconds: 20
             periodSeconds: 10

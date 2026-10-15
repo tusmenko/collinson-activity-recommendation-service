@@ -9,6 +9,7 @@ import { ScoreEngine } from '../../ranking/engine/score-engine.service';
 import { GraphqlErrorMapper } from '../errors/graphql-error.mapper';
 import { ActivityEnum } from '../models/enums.model';
 import { ComplexityPlugin } from './complexity.plugin';
+import { GraphiqlPlugin } from './graphiql.plugin';
 import { GraphqlConfigService } from './graphql-config.service';
 import type { GraphqlContext } from './graphql.types';
 
@@ -49,7 +50,9 @@ describe('GraphqlConfigService', () => {
       autoSchemaFile: true,
       includeStacktraceInErrorResponses: false,
     });
-    expect(production.plugins).toEqual([expect.any(ComplexityPlugin)]);
+    expect(production.plugins).toEqual([expect.any(ComplexityPlugin), expect.any(GraphiqlPlugin)]);
+    // Nest's own GraphiQL is off; GraphiqlPlugin serves the page with the example tabs instead.
+    expect(production.graphiql).toBe(false);
   });
 
   it('U-API-9 keeps a well-formed client request id and echoes it', () => {

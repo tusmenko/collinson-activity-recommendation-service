@@ -1,2 +1,2 @@
-{{ include "activity-ranking.fullname" . }} serves GraphQL on port {{ .Values.service.port }} at /graphql and health at /health.
+{{ include "activity-ranking.fullname" . }} serves GraphQL on port {{ .Values.service.port }} at /graphql with readiness at /health/ready and liveness at /health/live.
 Try it: kubectl port-forward svc/{{ include "activity-ranking.fullname" . }} 8080:{{ .Values.service.port }}, then open http://localhost:8080/graphql.

@@ -8,6 +8,7 @@ spec:
   type: ClusterIP
   selector:
     {{- include "activity-ranking.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api
   ports:
     - name: http
       port: {{ .Values.service.port }}

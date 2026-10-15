@@ -31,3 +31,15 @@ autoscaling:
   minReplicas: 2
   maxReplicas: 6
   targetCPUUtilizationPercentage: 70
+
+# A separate Deployment from the same image for the queue processors; the API pods then run with
+# QUEUE_PROCESSORS_ENABLED=false. Off by default: one Deployment runs both.
+worker:
+  enabled: false
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      memory: 512Mi

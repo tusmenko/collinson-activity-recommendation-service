@@ -21,7 +21,7 @@ describe('U-INFRA-1 health check', () => {
   it('U-INFRA-1 reports status ok when Redis answers ping', async () => {
     const controller = await controllerWithPing(() => Promise.resolve('PONG'));
 
-    const result = await controller.check();
+    const result = await controller.ready();
 
     expect(result).toMatchObject({ status: 'ok', details: { redis: { status: 'up' } } });
     expect(Object.keys(result).sort()).toEqual(['details', 'status']);
@@ -30,7 +30,7 @@ describe('U-INFRA-1 health check', () => {
   it('U-INFRA-1 reports Redis down and status error when ping rejects', async () => {
     const controller = await controllerWithPing(() => Promise.reject(new Error('ECONNREFUSED')));
 
-    const failure: unknown = await controller.check().catch((error: unknown) => error);
+    const failure: unknown = await controller.ready().catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(ServiceUnavailableException);
     const body = (failure as ServiceUnavailableException).getResponse();
@@ -39,6 +39,12 @@ describe('U-INFRA-1 health check', () => {
       details: { redis: { status: 'down', message: 'ECONNREFUSED' } },
     });
     expect(Object.keys(body).sort()).toEqual(['details', 'status']);
+  });
+
+  it('U-INFRA-1 live stays ok while Redis is down, with no dependency checked', async () => {
+    const controller = await controllerWithPing(() => Promise.reject(new Error('ECONNREFUSED')));
+
+    expect(controller.live()).toEqual({ status: 'ok', details: {} });
   });
 
   it('U-INFRA-1 an error other than the 503 propagates unchanged', async () => {
@@ -50,7 +56,7 @@ describe('U-INFRA-1 health check', () => {
       {} as MemoryHealthIndicator,
     );
 
-    await expect(controller.check()).rejects.toBe(boom);
+    await expect(controller.ready()).rejects.toBe(boom);
   });
 
   it('U-INFRA-1 a 503 that is not a Terminus result propagates unchanged', async () => {
@@ -62,6 +68,6 @@ describe('U-INFRA-1 health check', () => {
       {} as MemoryHealthIndicator,
     );
 
-    await expect(controller.check()).rejects.toBe(plain);
+    await expect(controller.ready()).rejects.toBe(plain);
   });
 });

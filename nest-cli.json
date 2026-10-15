@@ -7,6 +7,6 @@
     "tsConfigPath": "tsconfig.build.json",
     "builder": "swc",
     "typeCheck": true,
-    "assets": ["**/*.rules.json"]
+    "assets": ["**/*.rules.json", "**/*.graphql"]
   }
 }

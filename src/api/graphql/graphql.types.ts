@@ -13,3 +13,15 @@ export interface HttpPair {
   readonly req: IncomingMessage;
   readonly res: ServerResponse;
 }
+
+// One GraphiQL example: an operation file under examples/ and the variables it opens with.
+export interface GraphiqlExample {
+  readonly file: string;
+  readonly variables: Readonly<Record<string, unknown>>;
+}
+
+// GraphiQL 3's tab definition (`defaultTabs`); variables are the editor's text.
+export interface GraphiqlTab {
+  readonly query: string;
+  readonly variables: string;
+}

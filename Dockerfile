@@ -17,5 +17,5 @@ COPY --from=build --chown=node:node /app/dist ./dist
 USER node
 EXPOSE 4510
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=3 \
-  CMD wget -qO- "http://127.0.0.1:${PORT:-4510}/health" >/dev/null || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-4510}/health/ready" >/dev/null || exit 1
 CMD ["node", "dist/main.js"]

@@ -58,6 +58,14 @@ function rankingOf(response: GraphqlResponse<RankingsData>, activity: string): R
   return response.data?.activityRankings.rankings.find((ranking) => ranking.activity === activity);
 }
 
+// The tabs GraphiQL opens with, from the JSON the page embeds.
+function tabsOf(html: string): { query: string; variables: string }[] {
+  const json = /<script type="application\/json" id="graphiql-tabs">([^<]*)<\/script>/.exec(
+    html,
+  )?.[1];
+  return JSON.parse(json ?? '[]') as { query: string; variables: string }[];
+}
+
 function codeOf(response: GraphqlResponse<unknown>): unknown {
   return response.errors[0]?.extensions?.code;
 }
@@ -289,6 +297,40 @@ describe('E-API api end to end over HTTP', () => {
       { activity: 'SKIING', status: 'NOT_APPLICABLE' },
     ]);
     expect(calls).toEqual([]);
+  });
+
+  it('E-API-14 GET /graphql from a browser serves GraphiQL with the three example tabs', async () => {
+    const response = await fetch(`${testApp.url}/graphql`, { headers: { accept: 'text/html' } });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(tabsOf(await response.text())).toEqual([
+      { query: DEFAULT_QUERY, variables: '{\n  "city": "Biarritz"\n}' },
+      {
+        query: DETAILS_QUERY,
+        variables:
+          '{\n  "city": "London",\n  "activities": [\n    "SURFING",\n    "OUTDOOR_SIGHTSEEING"\n  ]\n}',
+      },
+      {
+        query: loadQuery('alternatives.graphql'),
+        variables: '{\n  "city": "Springfield",\n  "country": "US"\n}',
+      },
+    ]);
+  });
+
+  // The alternatives tab is validated by S-SCHEMA-1 only: the stub records one Springfield forecast, so ranking the
+  // other alternatives fails here and, the fields being non-null, nulls the answer; against Open-Meteo it answers.
+  it('E-API-14 the default and details tabs answer without errors with their variables', async () => {
+    const page = await (
+      await fetch(`${testApp.url}/graphql`, { headers: { accept: 'text/html' } })
+    ).text();
+
+    for (const tab of tabsOf(page).slice(0, 2)) {
+      const response = await query(tab.query, JSON.parse(tab.variables) as Record<string, unknown>);
+
+      expect(response.errors).toEqual([]);
+      expect(response.data?.activityRankings.rankings.length).toBeGreaterThan(0);
+    }
   });
 });
 
