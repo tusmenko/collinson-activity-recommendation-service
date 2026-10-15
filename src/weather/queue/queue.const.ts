@@ -7,6 +7,9 @@ export const INGEST_CONCURRENCY = 16;
 // readiness reports Redis down.
 export const QUEUE_READY_TIMEOUT_MS = 5_000;
 export const QUEUE_NOT_READY = `queue events not ready after ${String(QUEUE_READY_TIMEOUT_MS)} ms; starting without them`;
+// Shutdown waits this long per queue connection; a connection never ready, or slower, is dropped.
+export const QUEUE_CLOSE_TIMEOUT_MS = 5_000;
+export const QUEUE_CLOSE_FORCED = `queue connections not closed within ${String(QUEUE_CLOSE_TIMEOUT_MS)} ms or never ready; dropped`;
 export const INGEST_BACKOFF_MS = 250;
 // Each awaited job adds listeners on the Queue and on QueueEvents; Node's default of 10 warns at
 // the eleventh concurrent waiter.
