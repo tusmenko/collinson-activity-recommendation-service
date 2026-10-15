@@ -9,6 +9,7 @@ describe('U-INFRA-2 environment schema', () => {
     const env = loadEnv({});
 
     expect(env).toMatchObject({
+      NODE_ENV: 'production',
       PORT: 3000,
       REDIS_URL: 'redis://redis:6379',
       WINDOW_DAYS: 7,

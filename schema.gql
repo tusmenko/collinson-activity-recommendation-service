@@ -1,0 +1,201 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""A ranked activity; one value per registered classifier."""
+enum Activity {
+  INDOOR_SIGHTSEEING
+  OUTDOOR_SIGHTSEEING
+  SKIING
+  SURFING
+}
+
+"""One activity: its status and a score per day, in date order."""
+type ActivityRanking {
+  activity: Activity!
+  days: [DayScore!]!
+  status: ActivityStatus!
+}
+
+"""Why an activity is not applicable or unavailable."""
+type ActivityReason {
+  activity: Activity!
+  reason: String!
+}
+
+"""
+Whether the activity can be scored at this location from the data served.
+"""
+enum ActivityStatus {
+  APPLICABLE
+  NOT_APPLICABLE
+  UNAVAILABLE
+}
+
+"""A calendar date, YYYY-MM-DD, local to the location."""
+scalar Date
+
+"""An ISO 8601 timestamp in UTC."""
+scalar DateTime
+
+"""Why a day scored as it did."""
+type DayDetails {
+  factors: [Factor!]!
+  signals: DaySignals!
+}
+
+"""A dated score; ordering is the consumer's."""
+type DayScore {
+  date: Date!
+
+  """The factors and signals behind the score."""
+  details: DayDetails
+
+  """0 to 100; null when the activity is not applicable or unavailable."""
+  score: Int
+}
+
+"""
+One local day of provider-neutral weather signals; null means no value.
+"""
+type DaySignals {
+  """percent"""
+  cloudCover: Float
+  date: Date!
+
+  """mm"""
+  precipitation: Float
+
+  """percent"""
+  precipitationProbability: Float
+
+  """cm, daily maximum"""
+  snowDepth: Float
+
+  """cm per day"""
+  snowfall: Float
+
+  """hours"""
+  sunshineHours: Float
+
+  """m"""
+  swellHeight: Float
+
+  """°C"""
+  tempMax: Float
+
+  """°C"""
+  tempMin: Float
+  uvIndex: Float
+
+  """m"""
+  visibility: Float
+
+  """m"""
+  waveHeight: Float
+
+  """s"""
+  wavePeriod: Float
+
+  """WMO weather code"""
+  weatherCode: Int
+
+  """km/h"""
+  windGusts: Float
+
+  """km/h"""
+  windMax: Float
+}
+
+"""A factor's effect on the score."""
+enum Effect {
+  NEGATIVE
+  NEUTRAL
+  POSITIVE
+}
+
+"""One signal that moved the score, with its value and effect."""
+type Factor {
+  effect: Effect!
+  note: String
+  signal: String!
+  unit: String
+  value: Float
+}
+
+"""SKIPPED: the request did not need the source."""
+enum FetchStatus {
+  FAILED
+  OK
+  SKIPPED
+}
+
+"""A geocoded place."""
+type Location {
+  country: String!
+
+  """m"""
+  elevation: Float
+  id: ID!
+  latitude: Float!
+  longitude: Float!
+  name: String!
+
+  """
+  Rankings for this place, for example an alternative; counts toward the location limit.
+  """
+  rankings(activities: [Activity!]): RankingsResult!
+
+  """First-level administrative area."""
+  region: String
+
+  """IANA time zone; dates are local to it."""
+  timezone: String!
+}
+
+"""Data age, degradation and the other places the name matched."""
+type Meta {
+  alternatives: [Location!]!
+
+  """When the oldest served source was fetched."""
+  fetchedAt: DateTime!
+
+  """A source failed; sources says which."""
+  partial: Boolean!
+
+  """Why each NOT_APPLICABLE or UNAVAILABLE activity has no scores."""
+  reasons: [ActivityReason!]!
+  sources: [SourceStatus!]!
+
+  """
+  The refetch failed and stored data older than the freshness threshold was served.
+  """
+  stale: Boolean!
+}
+
+type Query {
+  """
+  Rank activities for a place over the next days; omit activities for all of them.
+  """
+  activityRankings(activities: [Activity!], city: String!, country: String): RankingsResult!
+}
+
+"""Activity rankings for one location over the forecast window."""
+type RankingsResult {
+  location: Location!
+  meta: Meta!
+  rankings: [ActivityRanking!]!
+}
+
+"""An upstream weather source."""
+enum Source {
+  FORECAST
+  MARINE
+}
+
+"""How one upstream source was served for this answer."""
+type SourceStatus {
+  fetchedAt: DateTime
+  source: Source!
+  status: FetchStatus!
+}

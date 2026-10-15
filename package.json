@@ -11,7 +11,7 @@
   "scripts": {
     "build": "nest build",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start:dev": "NODE_ENV=development nest start --watch",
     "start:prod": "node dist/main.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -51,6 +51,7 @@
     "@nestjs/throttler": "6.7.1",
     "bullmq": "6.3.14",
     "graphql": "16.14.2",
+    "graphql-query-complexity": "2.0.0",
     "ioredis": "6.0.0",
     "pino": "10.4.0",
     "pino-http": "11.0.0",

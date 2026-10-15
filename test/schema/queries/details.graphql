@@ -1,0 +1,63 @@
+# The default answer plus the explanation: factors and signals per day, reasons per activity.
+query ActivityRankingsWithDetails($city: String!, $country: String, $activities: [Activity!]) {
+  activityRankings(city: $city, country: $country, activities: $activities) {
+    location {
+      id
+      name
+      region
+      country
+      timezone
+      elevation
+    }
+    rankings {
+      activity
+      status
+      days {
+        date
+        score
+        details {
+          factors {
+            signal
+            value
+            unit
+            effect
+            note
+          }
+          signals {
+            date
+            tempMax
+            tempMin
+            precipitation
+            precipitationProbability
+            snowfall
+            snowDepth
+            windMax
+            windGusts
+            cloudCover
+            uvIndex
+            sunshineHours
+            visibility
+            weatherCode
+            waveHeight
+            wavePeriod
+            swellHeight
+          }
+        }
+      }
+    }
+    meta {
+      fetchedAt
+      stale
+      partial
+      sources {
+        source
+        status
+        fetchedAt
+      }
+      reasons {
+        activity
+        reason
+      }
+    }
+  }
+}

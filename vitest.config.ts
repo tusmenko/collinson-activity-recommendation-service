@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 import type { TestProjectInlineConfiguration } from 'vitest/config';
@@ -7,6 +9,10 @@ const swcPlugin = swc.vite({
   jsc: { transform: { legacyDecorator: true, decoratorMetadata: true } },
 });
 
+// graphql 16 has a `module` field but no `exports`: Vite would pick index.mjs for source files while Node
+// loads index.js for Nest and Apollo, and two copies break every `instanceof GraphQLScalarType` / `GraphQLError`.
+const GRAPHQL_CJS = createRequire(import.meta.url).resolve('graphql');
+
 function project(
   name: string,
   include: string,
@@ -14,6 +20,7 @@ function project(
 ): TestProjectInlineConfiguration {
   return {
     plugins: [swcPlugin],
+    resolve: { alias: [{ find: /^graphql$/, replacement: GRAPHQL_CJS }] },
     test: {
       name,
       include: [include],
