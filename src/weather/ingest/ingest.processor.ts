@@ -102,6 +102,8 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
   private async guardFairUse(): Promise<void> {
     const today = this.clock.now().toISOString().slice(0, 10);
     const limit = this.config.get('OUTBOUND_PER_DAY');
+    // Counted before the fetch and once per attempt, so a fetch that never reached the provider still
+    // counts: an overcount, which is the safe direction for a fair-use cap.
     if ((await this.repository.incrementDailyCounter(today)) > limit) {
       throw new FairUseExceededError(limit);
     }
