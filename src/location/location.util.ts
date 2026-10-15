@@ -1,21 +1,25 @@
 import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types';
 
-export function normaliseQuery(city: string, country: string | undefined): string {
-  return `${city.trim().toLowerCase()}|${country?.trim().toLowerCase() ?? ''}`;
+// Accents, case and runs of spaces do not change the key: Open-Meteo matches names ignoring them, so
+// 'Las Américas' and 'las  americas' are one search. The region part is appended only when given.
+export function normaliseQuery(city: string, country: string | undefined, region?: string): string {
+  const base = `${keyPart(city)}|${keyPart(country ?? '')}`;
+  return region === undefined ? base : `${base}|${keyPart(region)}`;
 }
 
+function keyPart(value: string): string {
+  return value.normalize('NFD').replace(/\p{M}/gu, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+// Exactly two letters reads as an ISO 3166-1 alpha-2 code; anything longer is a country name.
+export function countryCodeOf(country: string | undefined): string | undefined {
+  const trimmed = country?.trim() ?? '';
+  return /^[A-Za-z]{2}$/.test(trimmed) ? trimmed.toUpperCase() : undefined;
+}
+
+// A country name; a two-letter code goes to the provider instead (countryCodeOf).
 export function inCountry(result: GeocodingResult, country: string): boolean {
-  const wanted = country.trim().toLowerCase();
-  return result.country.toLowerCase() === wanted || result.countryCode?.toLowerCase() === wanted;
-}
-
-// A-10: the first exact-name hit (case-insensitive, accents significant) beats a fuzzy first hit.
-export function matchFirst(results: readonly GeocodingResult[], city: string): GeocodingResult[] {
-  const wanted = city.trim().toLowerCase();
-  const exact = results.find((result) => result.name.toLowerCase() === wanted);
-  return exact === undefined
-    ? [...results]
-    : [exact, ...results.filter((result) => result !== exact)];
+  return result.country.toLowerCase() === country.trim().toLowerCase();
 }
 
 export function split(facts: readonly LocationFacts[]): ResolvedLocation | null {

@@ -44,9 +44,44 @@ describe('SurfingClassifier', () => {
     expect(output.status).toBe('APPLICABLE');
   });
 
+  it('U-SURF-4 wave periods under 6 s on every day give NO_CONDITIONS with the window maximum', async () => {
+    const biarritz = input('biarritz');
+    const days = biarritz.days.map((day, index) => ({ ...day, wavePeriod: index === 2 ? 4 : 3 }));
+
+    const output = await classifier.score({ ...biarritz, days });
+
+    expect(output).toMatchObject({
+      status: 'NO_CONDITIONS',
+      reason: 'no swell: wave period under 6 s on every day (max 4 s)',
+    });
+    expect(output.days.every((day) => day.score === null)).toBe(true);
+  });
+
+  it('U-SURF-4 one day reaching 6 s opens the window', async () => {
+    const biarritz = input('biarritz');
+    const days = biarritz.days.map((day, index) => ({ ...day, wavePeriod: index === 0 ? 6 : 3 }));
+
+    const output = await classifier.score({ ...biarritz, days });
+
+    expect(output.status).toBe('APPLICABLE');
+  });
+
+  it('U-SURF-4 wave heights with no wave period on any day give NO_CONDITIONS', async () => {
+    const biarritz = input('biarritz');
+    const days = biarritz.days.map((day) => ({ ...day, wavePeriod: null }));
+
+    const output = await classifier.score({ ...biarritz, days });
+
+    expect(output).toMatchObject({
+      status: 'NO_CONDITIONS',
+      reason: 'no swell: wave period unavailable on every day',
+    });
+  });
+
   it('U-SURF-2 declares the sources it needs and its version', () => {
     expect(classifier.id).toBe('SURFING');
-    expect(classifier.version).toBe('1.0.0');
+    expect(classifier.version).toBe('1.1.0');
+    expect(rules.version).toBe('1.1.0');
     expect(classifier.requires).toEqual(['FORECAST', 'MARINE']);
   });
   it('U-RANK-14 a minimum elevation in its rules is honoured before the marine check', async () => {

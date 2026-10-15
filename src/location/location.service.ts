@@ -5,8 +5,13 @@ import { FactsRepositoryPort } from './facts/facts.port';
 import { GeocodingPort } from './geocoding/geocoding.port';
 import { GEOCODING_RESULT_COUNT } from './location.const';
 import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
-import type { GeocodingResult, LocationFacts, ResolvedLocation } from './location.types';
-import { inCountry, matchFirst, normaliseQuery, split } from './location.util';
+import type {
+  GeocodingNarrowing,
+  GeocodingResult,
+  LocationFacts,
+  ResolvedLocation,
+} from './location.types';
+import { countryCodeOf, inCountry, normaliseQuery, split } from './location.util';
 
 @Injectable()
 export class LocationService {
@@ -16,21 +21,23 @@ export class LocationService {
     private readonly clock: ClockPort,
   ) {}
 
-  async resolve(city: string, country?: string): Promise<ResolvedLocation> {
-    const query = normaliseQuery(city, country);
+  async resolve(city: string, country?: string, region?: string): Promise<ResolvedLocation> {
+    const query = normaliseQuery(city, country, region);
     const cached = await this.fromCache(query);
     if (cached !== null) {
       return cached;
     }
-    const outcome = await this.geocoding.search(city.trim());
+    const narrowing = this.narrowing(country, region);
+    const outcome = await this.geocoding.search(city.trim(), narrowing);
     if (outcome.kind === 'failed') {
       throw new GeocodingUnavailableError(outcome.reason);
     }
+    // A country code was filtered by the provider; a country name is filtered here.
     const candidates =
-      country === undefined
+      country === undefined || narrowing.countryCode !== undefined
         ? outcome.results
         : outcome.results.filter((result) => inCountry(result, country));
-    const ordered = matchFirst(candidates, city).slice(0, GEOCODING_RESULT_COUNT);
+    const ordered = candidates.slice(0, GEOCODING_RESULT_COUNT);
     const resolved = split(await this.store(ordered));
     if (resolved === null) {
       throw new LocationNotFoundError(city);
@@ -40,6 +47,14 @@ export class LocationService {
       [resolved.location, ...resolved.alternatives].map((f) => f.id),
     );
     return resolved;
+  }
+
+  private narrowing(country?: string, region?: string): GeocodingNarrowing {
+    const countryCode = countryCodeOf(country);
+    return {
+      ...(region === undefined ? {} : { region: region.trim() }),
+      ...(countryCode === undefined ? {} : { countryCode }),
+    };
   }
 
   // A hit whose facts have gone missing is treated as a miss rather than served partially.

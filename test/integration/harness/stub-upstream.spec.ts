@@ -71,6 +71,14 @@ describe('harness stub upstream', () => {
     expect(body.results[0]).toMatchObject({ name: 'London', country_code: 'GB' });
   });
 
+  it('harness geocoding with countryCode keeps only that country, as Open-Meteo filters server-side', async () => {
+    const response = await fetch(`${stub.url}/v1/search?name=London&countryCode=CA`);
+
+    const body = (await response.json()) as { results: { country_code: string }[] };
+
+    expect(body.results.map((result) => result.country_code)).toEqual(['CA']);
+  });
+
   it('harness forecast serves the nearest fixture within half a degree', async () => {
     const response = await fetch(`${stub.url}/v1/forecast?latitude=51.6&longitude=-0.4`);
 

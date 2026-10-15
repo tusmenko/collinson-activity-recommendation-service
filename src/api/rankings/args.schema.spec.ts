@@ -2,7 +2,7 @@ import type { ArgumentMetadata } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
-import { ActivitiesSchema, CitySchema, CountrySchema } from './args.schema';
+import { ActivitiesSchema, CitySchema, CountrySchema, RegionSchema } from './args.schema';
 import { ZodArgPipe } from './zod-args.pipe';
 
 const CITY: ArgumentMetadata = { type: 'custom', data: 'city' };
@@ -68,6 +68,19 @@ describe('U-API argument validation', () => {
     expect(country.transform(undefined, metadata)).toBeUndefined();
     expect(country.transform(' FR ', metadata)).toBe('FR');
     expect(codeOf(() => country.transform('F', metadata))).toBe('BAD_USER_INPUT');
+  });
+
+  it('U-API-15 the region is optional and follows the city rules', () => {
+    const region = new ZodArgPipe(RegionSchema);
+    const metadata: ArgumentMetadata = { type: 'custom', data: 'region' };
+
+    expect(region.transform(null, metadata)).toBeUndefined();
+    expect(region.transform(undefined, metadata)).toBeUndefined();
+    expect(region.transform(' Illinois ', metadata)).toBe('Illinois');
+    expect(region.transform('Île-de-France', metadata)).toBe('Île-de-France');
+    expect(codeOf(() => region.transform('  ', metadata))).toBe('BAD_USER_INPUT');
+    expect(codeOf(() => region.transform('a'.repeat(81), metadata))).toBe('BAD_USER_INPUT');
+    expect(codeOf(() => region.transform('Illinois;drop', metadata))).toBe('BAD_USER_INPUT');
   });
 
   it('U-API-1 an empty activities list gives BAD_USER_INPUT; an omitted one means all', () => {

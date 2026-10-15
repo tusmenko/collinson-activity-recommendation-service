@@ -201,6 +201,11 @@ type Query {
     activities: [Activity!]
     city: String!
     country: String
+
+    """
+    A state, province or other first-level area that narrows an ambiguous city, matched exactly by the geocoder (for example "Illinois" for Springfield).
+    """
+    region: String
   ): RankingsResult!
 }
 

@@ -80,11 +80,24 @@ describe('golden set: surfing', () => {
     expect(scores(surfing).every((score) => score !== null && score >= 60)).toBe(true);
   });
 
-  it('U-SURF-3 Dubai is APPLICABLE and every day scores at most 30', async () => {
+  it('U-SURF-3 Dubai is NO_CONDITIONS and the reason names the wave period', async () => {
     const surfing = await ranking('dubai', 'SURFING');
 
-    expect(surfing.status).toBe('APPLICABLE');
-    expect(scores(surfing).every((score) => score !== null && score <= 30)).toBe(true);
+    expect(surfing).toMatchObject({
+      status: 'NO_CONDITIONS',
+      reason: 'no swell: wave period under 6 s on every day (max 4 s)',
+    });
+    expect(scores(surfing).every((score) => score === null)).toBe(true);
+  });
+
+  it('U-SURF-4 Helsinki Baltic chop (period at most 4 s) is NO_CONDITIONS', async () => {
+    const surfing = await ranking('helsinki', 'SURFING');
+
+    expect(surfing).toMatchObject({
+      status: 'NO_CONDITIONS',
+      reason: 'no swell: wave period under 6 s on every day (max 4 s)',
+    });
+    expect(scores(surfing).every((score) => score === null)).toBe(true);
   });
 });
 

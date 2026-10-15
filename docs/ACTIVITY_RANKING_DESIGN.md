@@ -65,7 +65,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 
 ```graphql
 type Query {
-  activityRankings(city: String!, country: String, activities: [Activity!]): RankingsResult!
+  activityRankings(city: String!, country: String, region: String, activities: [Activity!]): RankingsResult!
 }
 
 type RankingsResult {
@@ -161,6 +161,17 @@ scalar Date
 scalar DateTime
 ```
 
+Arguments of `Query.activityRankings`:
+
+| Argument | Rules | Effect |
+| --- | --- | --- |
+| `city` | required; trimmed; 1 to 80 characters; letters in any script, digits, spaces, hyphens, dots, apostrophes | sent to Open-Meteo geocoding as `name`; the first hit is the match ([A-10](arch/registers.md#a-10)), up to four more are `meta.alternatives` |
+| `country` | optional; trimmed; 2 to 56 characters; same characters | exactly two letters: an ISO 3166-1 alpha-2 code, sent upper-case as `countryCode`, which Open-Meteo filters before its count limit; anything longer: a country name, matched case-insensitively against the hits here |
+| `region` | optional; same rules as `city` | a first-level area (state, province); sent as `name=<city>, <region>`, which Open-Meteo matches exactly against a country or admin1 |
+| `activities` | optional; a non-empty list of `Activity` | ranks only those; omitted means all |
+
+The geocode cache key is the normalised city, country and region (`geocode:v1:{city}|{country}[|{region}]`, [D-4](#d-4)): each part NFD-decomposed with combining marks stripped, inner whitespace collapsed, trimmed and lower-cased, because Open-Meteo matches names ignoring case and accents (`Las Américas` and `las  americas` are one entry). The geocoding request still sends the original trimmed strings.
+
 Rules:
 
 - The default answer is the brief's answer: a location, and per activity a status and `WINDOW_DAYS` `{date, score}` pairs in date order. `score` is 0 to 100, null when the activity is not applicable or unavailable. No rank field; ordering is the consumer's.
@@ -206,7 +217,7 @@ interface Classifier {
 }
 ```
 
-The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below), a fact of the place, and `NO_CONDITIONS` when the place qualifies but snow depth stays under 5 cm (or is unknown) on every day of the window, a fact of this week; any classifier may answer `NO_CONDITIONS`, and like the other non-applicable statuses it carries a reason and null scores; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)); a day is the weighted mean of its factors, then capped by a heavy poor factor (`poorCap`), else lifted by a heavy good factor (`goodBoost`), then held at the rule set's `floor`.
+The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls), `UNAVAILABLE` when the marine source failed, and `NO_CONDITIONS` when no day of the window has a wave period of 6 s or more (the surf gate: chop, not swell); skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below), a fact of the place, and `NO_CONDITIONS` when the place qualifies but snow depth stays under 5 cm (or is unknown) on every day of the window, a fact of this week; any classifier may answer `NO_CONDITIONS`, and like the other non-applicable statuses it carries a reason and null scores; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)); a day is the weighted mean of its factors, then capped by a heavy poor factor (`poorCap`), else lifted by a heavy good factor (`goodBoost`), then held at the rule set's `floor`.
 
 ### D-6.1 Provisional thresholds
 
@@ -221,8 +232,8 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 | Skiing | wind gusts, km/h | < 40 | > 60 | — | Lifts close around 60 to 80 |
 | Skiing | visibility, m | > 5000 | < 1000 | — | Whiteout risk; weak signal |
 | Surfing | marine data | — | — | absent (nulls) or source failed (unavailable) | Inland locations |
-| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | — | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4). No wave-size gate: a lagoon that returns waves is scored, low ([H-3](arch/registers.md#h-3)) |
-| Surfing | wave period, s | ≥ 9 | < 6 | — | Swell versus chop; the cleanest separator |
+| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | — | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4). No wave-size gate; the period gate below decides ([H-3](arch/registers.md#h-3)) |
+| Surfing | wave period, s | ≥ 9 | < 6 | NC: < 6 every day | Swell versus chop; the cleanest separator. The gate yields `NO_CONDITIONS`: calibrated live 2026-10-15, wind chop (Helsinki, Tallinn, Stockholm, Toronto, Dubai) never exceeds 5.8 s, real surf (Sydney 6.1 to 8.1 s; Biarritz, Lisbon, Hossegor, Cape Town 9.2 to 14.4 s) never drops under 6.1 s; Lake Michigan storm days (Chicago, up to 7.5 s) qualify |
 | Surfing | wind, km/h | < 20 | > 30 | — | Speed as proxy for blown-out surf; no direction signal |
 | Outdoor sightseeing | precipitation, mm | < 1 | > 5 | — | Drizzle tolerable; 83 mm is not |
 | Outdoor sightseeing | precipitation probability, % | < 30 | > 60 | — | |

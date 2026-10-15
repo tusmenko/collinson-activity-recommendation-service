@@ -22,6 +22,7 @@ const PLACES = {
   hintertux: { geocoding: 'hintertux', forecast: 'forecast/hintertux', marine: null },
   biarritz: { geocoding: 'biarritz', forecast: 'forecast/biarritz', marine: 'marine/biarritz' },
   dubai: { geocoding: 'dubai', forecast: 'forecast/dubai', marine: 'marine/dubai' },
+  helsinki: { geocoding: 'helsinki', forecast: 'forecast/helsinki', marine: 'marine/helsinki' },
   london: { geocoding: 'london', forecast: 'forecast/london', marine: 'marine/london' },
   springfield: {
     geocoding: 'springfield',

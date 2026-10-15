@@ -1,6 +1,7 @@
-# An ambiguous name narrowed by country; each alternative is ranked in the same request through Location.rankings.
-query AlternativeRankings($city: String!, $country: String) {
-  activityRankings(city: $city, country: $country) {
+# An ambiguous name narrowed by country (or by region, such as "Illinois"); each alternative is ranked in the same
+# request through Location.rankings.
+query AlternativeRankings($city: String!, $country: String, $region: String) {
+  activityRankings(city: $city, country: $country, region: $region) {
     location {
       id
       name

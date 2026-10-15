@@ -7,6 +7,7 @@ import { FactsRepositoryPort } from './facts/facts.port';
 import { toGeocodingResults } from './geocoding/open-meteo-geocoding.util';
 import { GeocodingUnavailableError, LocationNotFoundError } from './location.errors';
 import { LocationService } from './location.service';
+import type { GeocodingPort } from './geocoding/geocoding.port';
 import type {
   GeocodingOutcome,
   GeocodingResult,
@@ -56,8 +57,17 @@ class InMemoryFactsRepository extends FactsRepositoryPort {
 }
 
 function setup(outcome?: GeocodingOutcome) {
-  const search = vi.fn((name: string): Promise<GeocodingOutcome> =>
-    Promise.resolve(outcome ?? { kind: 'ok', results: fixtureResults(name) }),
+  // Without a fixed outcome it answers from the fixtures and filters by country code, as Open-Meteo does.
+  const search = vi.fn<GeocodingPort['search']>((name, narrowing) =>
+    Promise.resolve(
+      outcome ?? {
+        kind: 'ok',
+        results: fixtureResults(name).filter(
+          (result) =>
+            narrowing?.countryCode === undefined || result.countryCode === narrowing.countryCode,
+        ),
+      },
+    ),
   );
   const facts = new InMemoryFactsRepository();
   const service = new LocationService({ search }, facts, new FixedClock());
@@ -87,14 +97,14 @@ describe('LocationService.resolve', () => {
     expect(facts.locations.size).toBe(5);
   });
 
-  it('U-LOC-2 prefers the exact name: victoria gives Victoria, Canada with Vitória among the alternatives', async () => {
+  it('U-LOC-2 keeps the upstream order: victoria gives Vitória, Brazil with Victoria, Canada next', async () => {
     const { service } = setup();
 
     const resolved = await service.resolve('victoria');
 
-    expect(resolved.location).toMatchObject({ name: 'Victoria', country: 'Canada' });
+    expect(resolved.location).toMatchObject({ name: 'Vitória', country: 'Brazil' });
     expect(resolved.alternatives.map((place) => [place.name, place.country])).toEqual([
-      ['Vitória', 'Brazil'],
+      ['Victoria', 'Canada'],
       ['Victoria', 'HK'],
       ['Las Tunas', 'Cuba'],
       ['Victoria', 'United States'],
@@ -165,18 +175,56 @@ describe('LocationService.resolve', () => {
     expect(facts.geocodes.get('london|canada')).toEqual([resolved.location.id]);
   });
 
-  it('U-LOC-6 the country filter matches the country code case-insensitively', async () => {
-    const { service } = setup();
+  it('U-LOC-14 a two-letter country goes to the provider as an upper-case countryCode', async () => {
+    const { service, search } = setup();
 
     const resolved = await service.resolve('London', ' ca ');
 
+    expect(search).toHaveBeenCalledWith('London', { countryCode: 'CA' });
     expect(resolved.location.admin1).toBe('Ontario');
+  });
+
+  it('U-LOC-14 with a country code the provider answer is not filtered again', async () => {
+    const { service } = setup({ kind: 'ok', results: fixtureResults('London') });
+
+    const resolved = await service.resolve('London', 'CA');
+
+    expect(resolved.location.countryCode).toBe('GB');
+    expect(resolved.alternatives).toHaveLength(4);
+  });
+
+  it('U-LOC-14 a country name is not sent upstream and filters the results here', async () => {
+    const { service, search } = setup();
+
+    await service.resolve('London', 'Canada');
+
+    expect(search).toHaveBeenCalledWith('London', {});
   });
 
   it('U-LOC-6 a country filter that removes every result throws LocationNotFoundError', async () => {
     const { service } = setup();
 
     await expect(service.resolve('London', 'Japan')).rejects.toBeInstanceOf(LocationNotFoundError);
+  });
+
+  it('U-LOC-13 a region narrows the provider search and is part of the cache key', async () => {
+    const { service, search, facts } = setup();
+
+    await service.resolve('Springfield', undefined, ' Illinois ');
+
+    expect(search).toHaveBeenCalledWith('Springfield', { region: 'Illinois' });
+    expect([...facts.geocodes.keys()]).toEqual(['springfield||illinois']);
+  });
+
+  it('U-LOC-15 spellings that differ in accents and spaces share one cache entry; the provider gets the original', async () => {
+    const { service, search } = setup({ kind: 'ok', results: fixtureResults('London') });
+
+    const first = await service.resolve(' Las Américas ');
+    const second = await service.resolve('las  americas');
+
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search).toHaveBeenCalledWith('Las Américas', {});
+    expect(second).toEqual(first);
   });
 
   it('U-LOC-7 a failed geocoding call throws GeocodingUnavailableError with the reason', async () => {

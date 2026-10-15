@@ -44,7 +44,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [FR-2](arch/02-requirements.md#fr-2) seven days | U-RANK-1 exactly `WINDOW_DAYS` dated scores; I-STORE-3 window change refetches missing dates | unit, integration | 2, 3 |
 | [FR-3](arch/02-requirements.md#fr-3) four activities | U-RANK-2 registry exposes the four; S-SCHEMA-1 enum snapshot | unit, schema | 3, 4 |
 | [FR-4](arch/02-requirements.md#fr-4) score per day per activity | U-RANK-3 scores within 0 to 100 in date order | unit | 3 |
-| [DF-1](arch/02-requirements.md#df-1) ambiguity | U-LOC-2 exact-name preference (Victoria versus Vitória); U-LOC-3 Springfield gives Missouri plus four alternatives; E-API-2 alternatives in `meta`; E-API-15 a failure ranking one alternative nulls only its `rankings` and gives one error with the path, the primary answer intact | unit, end-to-end | 1, 4 |
+| [DF-1](arch/02-requirements.md#df-1) ambiguity | U-LOC-2 upstream order kept (Victoria gives Vitória first, Victoria, Canada next); U-LOC-3 Springfield gives Missouri plus four alternatives; E-API-2 alternatives in `meta`; E-API-15 a failure ranking one alternative nulls only its `rankings` and gives one error with the path, the primary answer intact | unit, end-to-end | 1, 4 |
 | [DF-2](arch/02-requirements.md#df-2) unknown name | U-LOC-4 no results gives `NOT_FOUND`; E-API-3 error code and no forecast call | unit, end-to-end | 1, 4 |
 | [DF-3](arch/02-requirements.md#df-3) not applicable | U-SURF-1 marine nulls give `NOT_APPLICABLE` with reason; U-SKI-1 snow depth under 5 cm every day gives `NO_CONDITIONS`; U-SKI-4 a place below 800 m (London, 25 m) or of unknown elevation gives `NOT_APPLICABLE` naming the elevation, even with snow; U-SKI-5 Chamonix at 1060 m with the January window stays `APPLICABLE` | unit | 3 |
 | [DF-4](arch/02-requirements.md#df-4) factors on selection | E-API-4 default query has no `details`; E-API-5 details query returns factors and signals; E-API-14 GraphiQL opens with the three example operations and their variables, and each validates against the schema (S-SCHEMA-1); U-EVENT-1 event always carries factors | end-to-end, unit | 3, 4 |
@@ -77,6 +77,10 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [DF-3](arch/02-requirements.md#df-3) not applicable, status split | U-RANK-16 `NO_CONDITIONS` with null scores is no anomaly, a score under it is; S-SCHEMA-4 `ActivityStatus` adds `NO_CONDITIONS` and keeps every earlier value; E-API-16 Chamonix in October gives skiing `NO_CONDITIONS` with the snow reason in `meta.reasons`; U-API-11 `NO_CONDITIONS` is listed in `meta.reasons` | unit, schema, end-to-end | review |
 | [FR-4](arch/02-requirements.md#fr-4) score per day, indoor boost | U-RANK-17 a heavy good factor lifts the day to the `goodBoost` minimum, a light one or a higher mean does not, and a `poorCap` wins over the boost before the floor; U-INDOOR-1 Dubai indoor scores at least 60 on every day | unit | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
+| [DF-1](arch/02-requirements.md#df-1) ambiguity, region | U-API-15 `region` is optional and follows the city's charset and length rules; U-ADAPT-15 the client sends `name=<city>, <region>`; U-LOC-13 the service passes the region to the geocoder and keys the cache on it; E-API-17 `activityRankings(city: "Springfield", region: "Illinois")` resolves Illinois first | unit, end-to-end | review |
+| [DF-1](arch/02-requirements.md#df-1) ambiguity, country code | U-ADAPT-16 the client sends `countryCode`; U-LOC-14 exactly two letters go upstream as an upper-case code and the answer is not filtered again, a longer value is a name filtered here; E-API-15 asserts `countryCode=FR` reached the stub | unit, end-to-end | review |
+| [NFR-1](arch/02-requirements.md#nfr-1) timeliness, geocode key | U-LOC-15 `Las Américas` and `las  americas` give one cache key in every part (city, country, region) and one provider call, which carries the original spelling | unit | review |
+| [DF-3](arch/02-requirements.md#df-3) not applicable, surf swell gate | U-SURF-3 Dubai is `NO_CONDITIONS` and the reason names the wave period; U-SURF-4 Helsinki (Baltic chop) is `NO_CONDITIONS`; a window with no day reaching 6 s gives `NO_CONDITIONS` with the window maximum, one day at 6 s opens it, no wave period at all gives `NO_CONDITIONS`; U-SURF-1 marine nulls stay `NOT_APPLICABLE`; U-SURF-2 Biarritz stays `APPLICABLE` at 60 or more | unit | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 
 ## Golden set and fixtures
@@ -89,10 +93,12 @@ Recorded once from Open-Meteo (live on 2026-10-15, archive for past days), store
 | Chamonix, 2026-10-14 (live) | forecast | skiing NO_CONDITIONS (snow depth 0); outdoor sightseeing good on dry days |
 | Hintertux at 3250 m, 2026-10-14 (live, `elevation`) | forecast | skiing APPLICABLE (snow depth 39 cm) |
 | Biarritz, 2026-10-14 (live) | forecast, marine | surfing APPLICABLE and good (1.2 to 2.0 m, 9 to 14 s) |
-| Dubai, 2026-10-14 (live) | forecast, marine | surfing poor (period under 4 s); indoor over outdoor (tmax 34 to 38) |
+| Dubai, 2026-10-14 (live) | forecast, marine | surfing NO_CONDITIONS (period at most 4 s, under the 6 s swell gate); indoor over outdoor (tmax 34 to 38) |
+| Helsinki, 2026-10-15 (live) | geocoding, forecast, marine | surfing NO_CONDITIONS (Baltic chop, period 2.2 to 4 s) |
 | London, 2026-10-14 (live) | forecast, marine nulls | surfing NOT_APPLICABLE; indoor on rain days |
 | Springfield Missouri, 2026-10-14 (live) | forecast, marine nulls | indoor on day 1 (83 mm); outdoor good days 4 to 7 |
-| Geocoding: Springfield, Victoria, Newcastle, Xyzzyqq | geocoding | five matches; fuzzy first hit; no results |
+| Geocoding: Springfield, Victoria, Newcastle, Xyzzyqq | geocoding | five matches; population-weighted first hit (Vitória); no results |
+| Geocoding and forecast: `Springfield, Illinois`, 2026-10-15 (live) | geocoding, forecast | Illinois first (E-API-17) |
 
 Stub upstream behaviours, selected per request by a header or query flag: `ok`, `timeout` (exceeds `UPSTREAM_TIMEOUT_MS`), `http500`, `malformed` (field missing), `nulls` (marine inland), `slow` (under the timeout, for load mixes).
 
