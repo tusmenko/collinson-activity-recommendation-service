@@ -5,8 +5,8 @@ For the session that builds the service. The architecture phase is closed; nothi
 ## Read in this order
 
 1. [ACTIVITY_RANKING_ARCH_PROCESS.md](ACTIVITY_RANKING_ARCH_PROCESS.md): index and status.
-2. [adr/0001-pragmatic-option-nestjs-redis-bullmq.md](adr/0001-pragmatic-option-nestjs-redis-bullmq.md): the decision and its change log.
-3. [ACTIVITY_RANKING_DESIGN.md](ACTIVITY_RANKING_DESIGN.md): D-1 to D-11; D-2 is the environment contract, D-6.1 the thresholds.
+2. [The ADR log](adr/README.md): ADR-0001, the option chosen and its change log, and ADR-0002 to ADR-0009, one record per decision inside it.
+3. [ACTIVITY_RANKING_DESIGN.md](ACTIVITY_RANKING_DESIGN.md): D-1 to D-12; D-2 is the environment contract, D-6.1 the thresholds, D-12 the implementation decisions.
 4. [ACTIVITY_RANKING_TEST_PLAN.md](ACTIVITY_RANKING_TEST_PLAN.md): test ids per requirement, coverage gates, fixtures.
 5. [CODING_STANDARDS.md](CODING_STANDARDS.md): limits, layering, tools.
 6. [arch/06-plan.md](arch/06-plan.md): phases, working rules, validation matrix, cut lines.
@@ -43,9 +43,8 @@ For the session that builds the service. The architecture phase is closed; nothi
 
 ## Environment
 
-- Node 24, npm; Docker Desktop running (verified 2026-10-15, server 29.8); 31 GB free after cleanup, keep an eye on it.
-- Recorded upstream responses from the spikes are in `/tmp/s6/*.json` (five golden cities, forecast and marine) and `/tmp/om_probe.json` (snow depth at Hintertux, Chamonix, Sölden); copy them into `test/fixtures/open-meteo/v1/` in phase 1 instead of refetching. The archive day for Chamonix (2026-01-10 to 16) and the geocoding samples need one live fetch each.
-- Throwaway spike code in `/tmp/spikes/{s12,s34,s5}` shows working configurations for Vitest with decorators, the Zod pipe, and the BullMQ pattern; copy ideas, not files.
+- Node 24, pnpm 11 (see [DEVELOPMENT.md](DEVELOPMENT.md#toolchain)); Docker Desktop running.
+- The spike recordings and the throwaway spike code lived on the author's machine and are gone. The fixtures under `test/fixtures/open-meteo/v1/` were recorded once with the adapters' exact requests ([D-12](ACTIVITY_RANKING_DESIGN.md#on-5)); the spikes' findings are in [Step 4](arch/05-recommendation.md#spikes-before-sign-off).
 
 ## What to update as you go
 
@@ -57,4 +56,4 @@ For the session that builds the service. The architecture phase is closed; nothi
 
 ## Commits
 
-Conventional commits, scope is the module, body names the test ids or scenarios. Keep the attribution lines the session provides. Push after every green phase; make the repository public after the fresh-eyes pass on 2026-10-16.
+Conventional commits, scope is the module, body names the test ids or scenarios. Keep the attribution lines the session provides. Push after every green phase. The repository is public.

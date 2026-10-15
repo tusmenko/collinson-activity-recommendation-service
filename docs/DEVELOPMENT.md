@@ -4,7 +4,7 @@ Everything a developer needs beyond the README's run instructions: toolchain, te
 
 ## Toolchain
 
-Node.js 24 and pnpm 11 (`corepack enable` picks the version from `package.json`). TypeScript is type-checked by `tsc` and emitted by SWC, so relative imports carry no file extension.
+Node.js 24 and pnpm 11 (`corepack enable` picks the version from `package.json`). <a id="a-52"></a>pnpm is the package manager: `pnpm-lock.yaml` is committed, CI installs with `--frozen-lockfile`, and the Dockerfile enables pnpm through corepack; the implementation handoff and plan, which say npm, were written before this choice. TypeScript is type-checked by `tsc` and emitted by SWC, so relative imports carry no file extension.
 
 ```sh
 pnpm install

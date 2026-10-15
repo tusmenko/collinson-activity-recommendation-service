@@ -24,9 +24,9 @@ File postfixes follow the standards' layout table; this service adds `*.classifi
 | `@nestjs/graphql` with the Apollo driver, code-first (`@apollo/server` 5, `@as-integrations/express5`, graphql 16) | Schema from decorators written to `schema.gql`; `Activity` enum built from the registry at startup; `includeStacktraceInErrorResponses: false` outside development |
 | Zod with a ten-line `PipeTransform` | Zod schemas for arguments (the pipe throws `GraphQLError` with `BAD_USER_INPUT` and the issues), configuration and upstream payloads; types inferred from them. `nestjs-zod` rejected in spike S-2: peer range stops at Nest 11 and failures map to `BAD_REQUEST` |
 | `@nestjs/throttler` with Redis storage | Inbound per-client limiter |
-| `@nestjs/bullmq` (bullmq 6, ioredis 6 as its peer) | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3) |
+| `bullmq` 6 (ioredis 6 as its peer), wrapped by two injectable classes | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3); see [D-12](#d-12) for why `@nestjs/bullmq` is not used |
 | `@nestjs/terminus` | `/health/live` (the process answers; no dependency, so a Redis outage never restarts it) and `/health/ready` (Redis and memory indicators, 503 when one is down; `/health` is its alias) |
-| `@nestjs/config` | Environment configuration validated by Zod |
+| Own `ConfigModule` in `infra/config` | Environment configuration validated by Zod; `@nestjs/config` is not used, the Zod schema and a typed `get` are the whole module |
 | `pino`, `@opentelemetry/sdk-node` | JSON logs; ranking events; `ranking_anomalies_total{type}` counter; console or OTLP exporter |
 | `ioredis` | Behind `FactsRepository` and `ForecastRepository` interfaces |
 | `OpenMeteoClient` in `infra` | Typed endpoints `searchLocations`, `forecast`, `marine`; owns hosts, parameters, pinned payload schemas and timeouts; adapters translate payloads to domain types |
@@ -39,9 +39,9 @@ Every knob is an environment variable, listed in `.env.example` with its default
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([ON-9](OVERNIGHT_NOTES.md#on-9)) |
+| `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([D-12](#on-9)) |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
-| `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `weather.const.ts` or `location.const.ts` ([A-53](arch/registers.md#a-53)) |
+| `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `infra/open-meteo/open-meteo.const.ts` ([D-12](#a-53)) |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
 | `FETCH_DAYS` | `8` | Days fetched per ingest; `WINDOW_DAYS + 1` covers local midnight |
 | `FRESHNESS_TTL` | `6h` | Data older than this is refetched before it is served; served flagged stale only if the refetch fails |
@@ -57,7 +57,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | `QUEUE_PROCESSORS_ENABLED` | `true` | Run queue processors in this process |
 | `LOG_LEVEL` | `info` | pino level |
 | `OTEL_EXPORTER` | `console` | `console` or `otlp` |
-| `NODE_ENV` | `production` | `development` writes `schema.gql` on start and includes stack traces in error responses; `test`; `production` ([ON-8](OVERNIGHT_NOTES.md#on-8)) |
+| `NODE_ENV` | `production` | `development` writes `schema.gql` on start and includes stack traces in error responses; `test`; `production` ([D-12](#on-8)) |
 
 <a id="d-3"></a>
 ## D-3 GraphQL schema
@@ -220,8 +220,8 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 | Skiing | wind gusts, km/h | < 40 | > 60 | — | Lifts close around 60 to 80 |
 | Skiing | visibility, m | > 5000 | < 1000 | — | Whiteout risk; weak signal |
 | Surfing | marine data | — | — | absent (nulls) or source failed (unavailable) | Inland locations |
-| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | < 0.5 every day | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4) |
-| Surfing | wave period, s | ≥ 9 | < 6 | < 5 every day | Swell versus chop; the cleanest separator |
+| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | — | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4). No wave-size gate: a lagoon that returns waves is scored, low ([H-3](arch/registers.md#h-3)) |
+| Surfing | wave period, s | ≥ 9 | < 6 | — | Swell versus chop; the cleanest separator |
 | Surfing | wind, km/h | < 20 | > 30 | — | Speed as proxy for blown-out surf; no direction signal |
 | Outdoor sightseeing | precipitation, mm | < 1 | > 5 | — | Drizzle tolerable; 83 mm is not |
 | Outdoor sightseeing | precipitation probability, % | < 30 | > 60 | — | |
@@ -388,9 +388,32 @@ The full plan, with the traceability matrix from every requirement and scenario 
 | End-to-end | One query through `app.listen(0)` over `fetch` with stubbed adapters: warm, cold, stale, unknown name, marine failure | Redis container |
 | Performance | autocannon against the running service: p95 of warm reads, wall time of one cold read; `INBOUND_PER_MINUTE` raised for the run | Optional CI job |
 
-A fixture-backed stub upstream container serves recorded Open-Meteo payloads for end-to-end tests, the load job and the `demo` Compose profile. Hooks: lefthook with lint-staged (eslint, prettier) and `tsc --noEmit` on pre-commit, commitlint on commit-msg, unit and integration on pre-push. CI gates: lint, type check, unit, integration, schema, end-to-end, coverage threshold 80 percent on `ranking` and `weather`, compose health check; under 5 minutes; zero live calls to Open-Meteo. Load job with asserted thresholds on `main` and nightly. Every behaviour is written test-first; each phase is a pull request merged green.
+A fixture-backed stub upstream container serves recorded Open-Meteo payloads for end-to-end tests, the load job and the `demo` Compose profile. Hooks: lefthook with lint-staged (eslint, prettier) and `tsc --noEmit` on pre-commit, commitlint on commit-msg, unit and integration on pre-push. CI gates: lint, type check, unit, integration, schema, end-to-end, the per-module coverage thresholds from the [test plan](ACTIVITY_RANKING_TEST_PLAN.md), compose health check; under 5 minutes; zero live calls to Open-Meteo. Load job with asserted thresholds on `main` and nightly. Every behaviour is written test-first; each phase is a pull request merged green.
 
 <a id="d-11"></a>
 ## D-11 Delivery
 
 Multi-stage Dockerfile (build, runtime on Node LTS alpine, non-root). `docker-compose.yml`: `api` and `redis` (`appendonly yes`, volume). GitHub Actions on every push: install with a frozen lockfile, lint, type check, tests with a redis service container, image build, `helm lint`. `deploy/helm/activity-ranking`: a chart skeleton with a Deployment, Service, HPA, ConfigMap from `.env.example`, liveness on `/health/live` and readiness on `/health/ready`; values for image and Redis URL; not deployed. With `worker.enabled`, a worker Deployment from the same image runs the queue processors and the API pods run with `QUEUE_PROCESSORS_ENABLED=false`; `docker-compose.scale.yml` does the same locally. Production path, described in the README: image to ECR, `helm upgrade` to EKS, Terraform for VPC, EKS, ElastiCache and ECR, Aurora for facts once enrichment lands, OTLP to Datadog.
+
+<a id="d-12"></a>
+## D-12 Implementation decisions
+
+Choices made while building, below the level of an ADR. Rows that began in the overnight notes or the assumptions register keep their old anchor.
+
+| Decision | Reason | Where enforced or documented |
+| --- | --- | --- |
+| Plain Zod with a ten-line custom pipe; no `class-validator`, no `nestjs-zod` | Spike S-2: `nestjs-zod` stops at Nest 11 peers and maps failures to `BAD_REQUEST`; `class-validator` duplicates types and cannot validate upstream payloads | [D-1](#d-1); [Step 4 spikes](arch/05-recommendation.md#spikes-before-sign-off) |
+| GraphQL code-first on Apollo Server 5 (`@as-integrations/express5`, graphql 16); no `@defer` | Code-first builds the `Activity` enum from the registry; spike S-5: `@defer` works only on a graphql 17 alpha outside Apollo 5's peer range ([H-7](arch/registers.md#h-7)) | [D-1](#d-1), [D-3](#d-3) |
+| <a id="on-10"></a>`Location.rankings` nullable; `Query.activityRankings` stays non-null | Partial results: with the field non-null, one alternative without a forecast nulled the whole response; now it is one error on that field's path (E-API-15) | [D-3](#d-3), [ADR-0006](adr/0006-degradation-policy.md) |
+| ESM, emitted by SWC with extensionless relative imports; `tsc` type-checks only | The Nest CLI 12 scaffold (spike S-1); SWC adds `.js` on emit | [D-1](#d-1), [DEVELOPMENT.md](DEVELOPMENT.md#toolchain) |
+| Nested Nest module folders; types only in `*.types.ts` (inferred ones in `*.schema.ts`); helpers only in `*.util.ts`; all lint-enforced | One concern per file, and layering a tool can check | [File layout](CODING_STANDARDS.md#file-layout), [NestJS shape](CODING_STANDARDS.md#nestjs-shape); eslint, dependency-cruiser |
+| Provider client in `infra/open-meteo` with typed endpoints `searchLocations`, `forecast`, `marine` | Hosts, parameters, pinned schemas and timeouts in one place; adapters only translate | [D-1](#d-1), [D-5](#d-5), [ADR-0005](adr/0005-provider-neutral-signals-behind-ports.md) |
+| <a id="a-53"></a>One optional `UPSTREAM_BASE_URL` replaces the whole provider; unset, each adapter uses its real host, a constant in code | The stub upstream stands in for all of Open-Meteo at once, so one variable per endpoint configured nothing anyone would set separately; owner's review, 2026-10-15 | [D-2](#d-2), `.env.example` |
+| <a id="on-8"></a>`NODE_ENV` (`development`, `test`, `production`; default `production`) | `schema.gql` is written on start only in development, because the image runs as a non-root user in a root-owned directory; stack traces appear in error responses only there; the schema snapshot test builds the schema in-process | [D-2](#d-2) |
+| Inbound throttler on a 40-line Redis storage in `infra/throttling` | The published Nest throttler Redis storage stops at Nest 11 | [D-1](#d-1) |
+| `Date` and `DateTime` as two small custom scalars | The smallest working choice; the committed `schema.gql` matches the generated one byte for byte | [D-3](#d-3), `schema.gql` |
+| <a id="on-9"></a>Port 4510 (`demo` profile 4511); `API_PORT` and `API_DEMO_PORT` move the Compose host ports | On 2026-10-15 Cursor held `127.0.0.1:3000` and `[::1]:3000` on the owner's machine, so every request to the healthy container got an empty reply | [D-2](#d-2), [DEVELOPMENT.md](DEVELOPMENT.md#port-pitfall), [ADR-0009](adr/0009-delivery-compose-helm-actions.md) |
+| <a id="on-6"></a>`OUTBOUND_LIMIT_WINDOW_MS` test knob (default 60000); processor concurrency 16; a fair-use breach is not retried (`UnrecoverableError`); a payload that fails validation stays under `forecast:raw` and the day keys are left untouched | I-QUEUE-2 shrinks the window; concurrency lets forecast and marine overlap while the limiter caps calls; retrying a breach only spends more | [D-5](#d-5), `.env.example` |
+| <a id="on-5"></a>Fixtures recorded live once (2026-10-15 01:11) with the adapters' exact requests: eight days, hourly `snow_depth` | The spike recordings lacked `snow_depth` and the eighth day; recording again cost 21 calls | [Fixtures README](../test/fixtures/open-meteo/v1/README.md), [ADR-0007](adr/0007-offline-test-pyramid.md) |
+| <a id="on-7"></a>Scoring engine: deal-breaker cap and the skiing snow-depth poor band of 15 cm or less | The golden set failed on the weighted mean alone ([H-1](arch/registers.md#h-1)); side effect: cold days (tmax under 8 °C) cap outdoor sightseeing at 30 | [D-6.1](#d-61-provisional-thresholds), [ADR-0004](adr/0004-scores-on-read-registered-classifiers.md) |
+| Plain `bullmq` providers instead of `@nestjs/bullmq` | Two injectable classes own `Queue`, `QueueEvents` and `Worker` directly, with listener limits, error handling and the `QUEUE_PROCESSORS_ENABLED` switch; one dependency fewer. The phase 2 commit recorded the swap without a reason | `weather/queue`, `weather/ingest`; [D-5](#d-5) |

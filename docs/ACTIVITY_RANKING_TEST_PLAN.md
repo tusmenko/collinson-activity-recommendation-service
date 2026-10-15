@@ -68,7 +68,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 
 ## Golden set and fixtures
 
-Recorded once from Open-Meteo (live on 2026-10-14, archive for past days), stored under `test/fixtures/<provider>/<schemaVersion>/`, and served by the stub upstream.
+Recorded once from Open-Meteo (live on 2026-10-15, archive for past days), stored under `test/fixtures/<provider>/<schemaVersion>/`, and served by the stub upstream.
 
 | Fixture | Source | Expected outcome in U-RANK golden tests |
 | --- | --- | --- |

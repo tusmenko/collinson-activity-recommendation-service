@@ -4,7 +4,7 @@ Part of the [architecture process](../ACTIVITY_RANKING_ARCH_PROCESS.md). Scenari
 
 ## 2a — Utility Tree
 
-Ratings are importance to stakeholders × difficulty to achieve. Top-level nodes are the SEI quality attributes; refinements under them use the project's own terms. Rated by the candidate as proxy for the hiring manager and the product manager; confirmed or adjusted at Gate 2. Twenty-two leaves, two above the usual ceiling; the testability node accounts for the excess and is kept whole on purpose.
+Ratings are importance to stakeholders × difficulty to achieve. Top-level nodes are the SEI quality attributes; refinements under them use the project's own terms. Rated by the candidate as proxy for the lead reviewer and the product manager; confirmed or adjusted at Gate 2. Twenty-two leaves, two above the usual ceiling; the testability node accounts for the excess and is kept whole on purpose.
 
 ```text
 Utility

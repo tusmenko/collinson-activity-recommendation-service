@@ -3,10 +3,11 @@
 | Field | Value |
 | --- | --- |
 | Status | accepted |
-| Date | 2026-10-14 |
-| Deciders | Yevhenii (decision authority); Shane Patrick as proxy product manager at review |
+| Date | 2026-10-15 (drafted 2026-10-14) |
+| Deciders | Yevhenii (decision authority). The lead reviewer stands in for the absent product manager and can overturn any logged assumption at review. |
 | Supersedes | — |
 | Superseded by | — |
+| Elaborated by | [ADR-0002](0002-redis-only-store.md) to [ADR-0009](0009-delivery-compose-helm-actions.md) |
 | Source | [Step 4](../arch/05-recommendation.md); options in [Step 3](../arch/04-options.md); mechanisms in the [design document](../ACTIVITY_RANKING_DESIGN.md) |
 
 **Decision.** Build Option C: one NestJS image, GraphQL code-first, Redis with AOF as the only store behind repository interfaces, refresh on read executed as single-flight BullMQ jobs awaited under a bound, scores computed on read by registered classifiers, Zod at every boundary, Vitest, pino with OpenTelemetry, Docker Compose to run and a Helm chart skeleton to show the Kubernetes path. Mechanisms: [D-1](../ACTIVITY_RANKING_DESIGN.md#d-1) to [D-11](../ACTIVITY_RANKING_DESIGN.md#d-11).

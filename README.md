@@ -30,7 +30,7 @@ One query: `activityRankings(city: String!, country: String, activities: [Activi
 
 - Statuses: `APPLICABLE` (scored), `NOT_APPLICABLE` (the place cannot host the activity, for example skiing below 800 m or surfing inland; `meta.reasons` says why), `UNAVAILABLE` (the marine source failed; `meta.partial` is true).
 - `days.details` returns the factors behind a score (signal, value, unit, effect and the threshold note) and the raw signals; it is computed on every request and serialised only when selected.
-- Errors are typed: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`.
+- Errors are typed: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`. Anything else is `INTERNAL_SERVER_ERROR`, with the detail logged and not returned.
 
 The schema is committed as [schema.gql](schema.gql).
 
@@ -49,7 +49,7 @@ Every variable and its default is in [.env.example](.env.example); the service r
 
 ## Assumptions
 
-Where a product manager would normally decide, the assumption taken is listed here; the [register](docs/arch/registers.md) has the full set with rationale and status.
+Where a product manager would normally decide, the assumption taken is listed here; the register's [product assumptions](docs/arch/registers.md#product-assumptions) have the full set with rationale and status.
 
 - "Next 7 days" is today plus six days, in the place's own timezone.
 - Scores are rule-based from weather and geo data alone, 0 to 100 per activity per day, with documented thresholds calibrated on five known cities; no machine learning, no points-of-interest data. Ordering is left to the consumer; there is no rank field.
@@ -78,7 +78,17 @@ Image to ECR from CI; the Helm chart in [deploy/helm/activity-ranking](deploy/he
 
 ## How this was built
 
-Architecture first, through the gated process in [docs/ACTIVITY_RANKING_ARCH_PROCESS.md](docs/ACTIVITY_RANKING_ARCH_PROCESS.md), ending in [ADR-0001](docs/adr/0001-pragmatic-option-nestjs-redis-bullmq.md) and the [test plan](docs/ACTIVITY_RANKING_TEST_PLAN.md); then six test-first phases as pull requests #1 to #6, and an owner review pass. The decisions taken along the way are in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
+Architecture first, through the gated process in [docs/ACTIVITY_RANKING_ARCH_PROCESS.md](docs/ACTIVITY_RANKING_ARCH_PROCESS.md), ending in the [ADR log](docs/adr/README.md) and the [test plan](docs/ACTIVITY_RANKING_TEST_PLAN.md); then six test-first phases as pull requests #1 to #6, four small follow-ups (#7 to #10: wrap-up notes, the 4510 port, two README fixes), and an owner review pass (#11). The review pass branched after #10 and was squashed onto `main`, so #7 to #10 show in the pull request list but not as separate commits on `main`. The implementation decisions taken along the way are in [D-12](docs/ACTIVITY_RANKING_DESIGN.md#d-12) of the design document; open questions and the progress log are in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
+
+### AI use
+
+The brief asks for AI to be used, and it was, in three Claude Code sessions, each with a different degree of autonomy:
+
+1. **Architecture session**, steered step by step. A self-written solution-architect agent walks a simplified SEI process: stakeholders, requirements and quality attribute scenarios, architecturally significant requirements, options and trade-offs, recommendation, ADR, implementation plan. Every gate in `docs/arch/` is its output; every decision at a gate was mine.
+2. **Autonomous implementation session**, run unattended overnight. It built phases 0 to 5 from the handoff and the test plan, test-first, one pull request per phase merged on green CI, and logged the questions it could not answer in [docs/OVERNIGHT_NOTES.md](docs/OVERNIGHT_NOTES.md).
+3. **Review and refactoring sessions**, with me steering: the owner review pass (#11), then a pre-submission review that audited the code against the design and the docs against the code, and the fixes that followed.
+
+Claude Fable orchestrated and reviewed; Claude Opus did most of the editing. The conventions the sessions followed are in [CLAUDE.md](CLAUDE.md).
 
 ## Attribution
 

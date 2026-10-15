@@ -73,7 +73,7 @@ Detailed design lives in the [design document](../ACTIVITY_RANKING_DESIGN.md), l
 
 ## Spikes before sign-off
 
-The decision authority runs these before choosing a path. Each spike is throwaway code with an acceptance check, a time box and a named fallback, so a failure swaps one component rather than the whole option.
+These run before the path is chosen. Each spike is throwaway code with an acceptance check, a time box and a named fallback, so a failure swaps one component rather than the whole option.
 
 | Spike | Verifies | Build | Passes when | Box | If it fails | Result |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -88,6 +88,6 @@ The decision authority runs these before choosing a path. Each spike is throwawa
 
 ## Closed artifacts
 
-Registers are closed in [registers.md](registers.md): every open assumption is deferred to the README assumptions list with Shane Patrick as the reviewer who can overturn it; every open question has the same owner and the review as its deadline; risks carry their accepted status for Option C in [04-options.md](04-options.md#risk-register); hypotheses carry a scheduled phase, a probe result, or a post-exercise deferral.
+Registers are closed in [registers.md](registers.md): every open assumption is deferred to the README assumptions list with the lead reviewer as the person who can overturn it; every open question has the same owner and the review as its deadline; risks carry their accepted status for Option C in [04-options.md](04-options.md#risk-register); hypotheses carry a scheduled phase, a probe result, or a post-exercise deferral.
 
-> **Review Gate 4 — Architecture Sign-off** — signed off 2026-10-15 by the candidate as decision authority after spikes S-1 to S-6 and the refresh-flow revision. ADR-0001 accepted.
+> **Review Gate 4 — Architecture Sign-off** — closed 2026-10-15 after spikes S-1 to S-6 and the refresh-flow revision. ADR-0001 accepted.
