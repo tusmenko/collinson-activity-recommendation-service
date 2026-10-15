@@ -4,12 +4,14 @@ import type { TestingModule } from '@nestjs/testing';
 import { Redis } from 'ioredis';
 
 import {
+  AnomalyCounter,
   AppLogger,
   ClockPort,
   ConfigService,
   InfraModule,
   QueueConnection,
 } from '../../src/infra/index';
+import type { OtelAnomalyCounter } from '../../src/infra/telemetry/otel-anomaly-counter.service';
 import {
   ForecastRepositoryPort,
   ForecastSourcePort,
@@ -41,6 +43,8 @@ export interface IngestHarness {
   readonly forecast: FakeWeatherSource;
   readonly marine: FakeWeatherSource;
   readonly clock: ManualClock;
+  // The module's own counter; counts accumulate across tests of one harness.
+  readonly anomalies: OtelAnomalyCounter;
   // Prefixed client: keys read and written here match the service's view of the store.
   readonly redis: Redis;
   readonly logs: Record<string, unknown>[];
@@ -89,6 +93,7 @@ export async function createIngestHarness(overrides: EnvOverrides = {}): Promise
     forecast,
     marine,
     clock,
+    anomalies: moduleRef.get<AnomalyCounter, OtelAnomalyCounter>(AnomalyCounter),
     redis,
     logs: captured.lines,
     async seedWindow(location, source, fetchedAt) {

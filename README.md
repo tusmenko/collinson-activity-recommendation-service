@@ -28,7 +28,7 @@ The first request for a place fetches its forecast from Open-Meteo (a few hundre
 
 One query: `activityRankings(city: String!, country: String, activities: [Activity!])`. The answer holds the resolved location (with up to four alternatives for an ambiguous name), one entry per activity with a status and a score from 0 to 100 for each of the seven days, and `meta` with the data's fetched-at time and freshness flags.
 
-- Statuses: `APPLICABLE` (scored), `NOT_APPLICABLE` (the place cannot host the activity, for example skiing below 800 m or surfing inland; `meta.reasons` says why), `UNAVAILABLE` (the marine source failed; `meta.partial` is true).
+- Statuses: `APPLICABLE` (scored), `NOT_APPLICABLE` (the place cannot host the activity, for example skiing below 800 m or surfing inland; `meta.reasons` says why), `NO_CONDITIONS` (the place can host it but no day this week suits it, for example skiing in Chamonix in October with no snow on the ground; `meta.reasons` says why), `UNAVAILABLE` (the marine source failed; `meta.partial` is true).
 - `days.details` returns the factors behind a score (signal, value, unit, effect and the threshold note) and the raw signals; it is computed on every request and serialised only when selected.
 - Errors are typed: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`. Anything else is `INTERNAL_SERVER_ERROR`, with the detail logged and not returned.
 
@@ -36,9 +36,9 @@ The schema is committed as [schema.gql](schema.gql).
 
 ## How it works
 
-- **Store.** Redis holds one key per location, source and date with a 24 h TTL; a key whose remaining TTL shows it is older than 6 h is refreshed before it is served. Location facts (coordinates, timezone, whether marine data exists) have no TTL. Redis runs with append-only persistence on a volume.
+- **Store.** Redis holds one key per location, source and date with a 24 h TTL; a key whose remaining TTL shows it is older than 6 h is refreshed before it is served. Location facts (coordinates, timezone, whether marine data exists) have no TTL. Redis runs with append-only persistence on a volume. With Redis away the service still starts (readiness reports it) and still stops on SIGTERM: boot and shutdown wait at most 5 s per connection.
 - **Refresh on read.** A missing or stale source enqueues one BullMQ job per location and source; concurrent readers wait on the same job (at most 4.5 s), so one expiry costs one upstream call. Stored data is served flagged `stale` only when the refetch failed; with nothing stored and the forecast failing, the answer is `UPSTREAM_UNAVAILABLE`. Outbound calls are limited to 500 a minute and 9,000 a day, under Open-Meteo's fair use.
-- **Scoring.** Each activity is a classifier with its thresholds in a JSON file next to it, every threshold with a note. A factor scores 100 in its good band, 0 in its poor band, 50 between; the day is the weighted mean, capped at 30 when a heavy factor is poor; indoor sightseeing never drops below 40. Scores are computed on read, so a rule change needs no re-ingest. Adding an activity is one folder and one list entry.
+- **Scoring.** Each activity is a classifier with its thresholds in a JSON file next to it, every threshold with a note. A factor scores 100 in its good band, 0 in its poor band, 50 between; the day is the weighted mean, capped at 30 when a heavy factor is poor; indoor sightseeing never drops below 40 and reaches at least 60 when one heavy signal (heat, cold or heavy rain) pushes people indoors. Scores are computed on read, so a rule change needs no re-ingest. Adding an activity is one folder and one list entry.
 - **Traceability.** Every ranking writes one structured log event with the data's fetched-at time, the classifier and rule-set versions, scores and factors; invariant violations increment `ranking_anomalies_total{type}`.
 
 The [design document](docs/ACTIVITY_RANKING_DESIGN.md) has the schema, the store model, the sequences, the degradation rules and the thresholds; [docs/ACTIVITY_RANKING_LAYERS.md](docs/ACTIVITY_RANKING_LAYERS.md) has the layer and flow diagrams.
@@ -53,17 +53,18 @@ Where a product manager would normally decide, the assumption taken is listed he
 
 - "Next 7 days" is today plus six days, in the place's own timezone.
 - Scores are rule-based from weather and geo data alone, 0 to 100 per activity per day, with documented thresholds calibrated on five known cities; no machine learning, no points-of-interest data. Ordering is left to the consumer; there is no rank field.
-- Skiing uses the place's own forecast: not applicable below 800 m elevation or without snow depth in the window; no search for a nearby resort. Surfing is not applicable where the marine API has no data; lakes and lagoons that return waves are scored, low. Indoor sightseeing is always at least acceptable and scores higher when outdoor conditions are poor.
+- Skiing uses the place's own forecast: not applicable below 800 m elevation, and no conditions when the window has no snow depth of 5 cm on any day; no search for a nearby resort. Surfing is not applicable where the marine API has no data; lakes and lagoons that return waves are scored, low. Indoor sightseeing is always at least acceptable and scores higher when outdoor conditions are poor.
 - An ambiguous name resolves to Open-Meteo's first result, preferring an exact name match; alternatives are returned and `country` filters. An unknown name is a typed `NOT_FOUND` error.
 - Data older than six hours is refreshed before it is served, matching the slowest Open-Meteo model refresh. On upstream failure, stored data is served flagged stale; with nothing stored, a typed error with a retry hint. A marine-only failure degrades surfing only.
 - A failure while ranking one alternative nulls only that alternative's `rankings` and is reported in `errors`; the primary answer survives.
 - Metric units, English place names, no authentication, one process with one Redis for the exercise; horizontal scale is the production path.
+- Per-client rate limiting keys on the client IP and assumes the service is exposed directly; behind a proxy or ingress, set `TRUST_PROXY` (the Helm chart sets it to `1`).
 
 Open product questions, each with the assumption in force: what makes a day good for each activity (the thresholds; the main one to revisit), and whether indoor sightseeing should ever score low on a perfect outdoor day.
 
 ## What was cut and why
 
-Nothing from the plan was cut.
+- The `enrich` queue registration was removed in the review pass: nothing enqueued to it and it held an idle Redis connection. The `ingest` queue shows the pattern an enrichment queue would follow.
 
 ## Production path
 

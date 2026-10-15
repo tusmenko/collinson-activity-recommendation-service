@@ -1,3 +1,4 @@
+import { GEOCODING_RESULT_COUNT } from '../../location/index';
 import type { GraphiqlExample } from './graphql.types';
 
 // Written in development only; the committed copy is checked by the schema snapshot test (S-SCHEMA-1).
@@ -16,6 +17,11 @@ export const LOCATION_FIELDS: ReadonlySet<string> = new Set([
   'Query.activityRankings',
   'Location.rankings',
 ]);
+
+// The one list of locations in the schema: every match after the first, so a rankings selection under it
+// ranks up to this many places.
+export const ALTERNATIVES_FIELD = 'Meta.alternatives';
+export const MAX_ALTERNATIVES = GEOCODING_RESULT_COUNT - 1;
 
 // The tabs GraphiQL opens with, in order; the same files are the e2e and schema contract fixtures.
 export const GRAPHIQL_EXAMPLES: readonly GraphiqlExample[] = [

@@ -9,7 +9,7 @@ const classifier = new SkiingClassifier(new ScoreEngine());
 const rules = parseRuleSet('SKIING', classifier.ruleFile);
 
 describe('SkiingClassifier', () => {
-  it('U-SKI-1 a window with no snow depth value at all is NOT_APPLICABLE and says so', async () => {
+  it('U-SKI-1 a window with no snow depth value at all is NO_CONDITIONS and says so', async () => {
     const { location, days } = rankingInput('hintertux');
     const withoutDepth = (days.FORECAST ?? []).map((day) => ({ ...day, snowDepth: null }));
 
@@ -20,7 +20,7 @@ describe('SkiingClassifier', () => {
     });
 
     expect(output).toMatchObject({
-      status: 'NOT_APPLICABLE',
+      status: 'NO_CONDITIONS',
       reason: 'snow depth unavailable on every day',
     });
     expect(output.days.every((day) => day.score === null)).toBe(true);

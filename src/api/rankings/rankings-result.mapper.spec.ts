@@ -9,6 +9,7 @@ import { RankingsResultMapper } from './rankings-result.mapper';
 import type { LocationRanking } from './rankings.types';
 
 const ENSURED: EnsureResult = {
+  dates: [],
   fetchedAt: '2026-10-15T05:00:00.000Z',
   stale: true,
   partial: true,
@@ -64,12 +65,16 @@ describe('RankingsResultMapper', () => {
     const rankings = [
       ranking({}),
       ranking({ activity: 'SURFING', status: 'NOT_APPLICABLE', reason: 'no marine data' }),
+      ranking({ activity: 'SKIING', status: 'NO_CONDITIONS', reason: 'no snow' }),
       ranking({ activity: 'INDOOR_SIGHTSEEING', status: 'UNAVAILABLE', reason: null }),
     ];
 
     const result = mapper.toResult(ranked(rankings), [], FIXED_NOW);
 
-    expect(result.meta.unranked).toEqual([{ activity: 'SURFING', reason: 'no marine data' }]);
+    expect(result.meta.unranked).toEqual([
+      { activity: 'SURFING', reason: 'no marine data' },
+      { activity: 'SKIING', reason: 'no snow' },
+    ]);
   });
 
   it('U-API-11 with no source served, fetchedAt falls back to now', () => {

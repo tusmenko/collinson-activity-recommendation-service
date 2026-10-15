@@ -1,6 +1,11 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "floor": 40,
+  "goodBoost": {
+    "min": 60,
+    "minWeight": 2,
+    "note": "One compelling signal is enough to make the day worth it indoors"
+  },
   "factors": [
     {
       "signal": "precipitation",

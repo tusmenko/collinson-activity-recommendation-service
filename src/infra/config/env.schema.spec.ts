@@ -55,3 +55,20 @@ describe('U-INFRA-2 environment schema', () => {
     expect(() => loadEnv({ FRESHNESS_TTL: '6' })).toThrow(/FRESHNESS_TTL/);
   });
 });
+
+describe('U-INFRA-6 TRUST_PROXY', () => {
+  it('U-INFRA-6 is unset, meaning off, when absent or empty', () => {
+    expect(loadEnv({}).TRUST_PROXY).toBeUndefined();
+    expect(loadEnv({ TRUST_PROXY: '' }).TRUST_PROXY).toBeUndefined();
+  });
+
+  it.each([
+    ['1', 1],
+    ['2', 2],
+    ['true', true],
+    ['false', false],
+    ['loopback', 'loopback'],
+  ])('U-INFRA-6 parses %s for Express', (value, expected) => {
+    expect(loadEnv({ TRUST_PROXY: value }).TRUST_PROXY).toBe(expected);
+  });
+});

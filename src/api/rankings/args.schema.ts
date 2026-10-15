@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
-// Letters in any script with their combining marks, spaces, hyphens, apostrophes and dots (NFR-12).
-const PLACE_NAME = /^[\p{L}\p{M} .'-]+$/u;
-const PLACE_NAME_MESSAGE = 'only letters, spaces, hyphens, apostrophes and dots are allowed';
+// Letters in any script with their combining marks, digits, spaces, hyphens, dots and apostrophes, typographic
+// ones (U+2018, U+2019) included (NFR-12).
+const PLACE_NAME = /^[\p{L}\p{M}\p{Nd} .'‘’-]+$/u;
+const PLACE_NAME_MESSAGE =
+  'only letters, digits, spaces, hyphens, apostrophes and dots are allowed';
 
 // GraphQL passes an omitted optional argument as undefined and an explicit null as null; both mean "not given".
 function optional<Schema extends z.ZodType>(

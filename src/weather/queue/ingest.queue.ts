@@ -2,8 +2,23 @@ import { Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
 
-import { AppLogger, ConfigService, QueueConnection } from '../../infra/index';
-import { INGEST_BACKOFF_MS, INGEST_QUEUE, MAX_WAIT_LISTENERS, TIMED_OUT } from './queue.const';
+import {
+  AppLogger,
+  closeWithin,
+  ConfigService,
+  QueueConnection,
+  resolvesWithin,
+} from '../../infra/index';
+import {
+  INGEST_BACKOFF_MS,
+  INGEST_QUEUE,
+  MAX_WAIT_LISTENERS,
+  QUEUE_CLOSE_FORCED,
+  QUEUE_CLOSE_TIMEOUT_MS,
+  QUEUE_NOT_READY,
+  QUEUE_READY_TIMEOUT_MS,
+  TIMED_OUT,
+} from './queue.const';
 import type { IngestJobData, IngestJobResult } from './queue.types';
 
 // Single flight per (locationId, source): a duplicate add while the job exists is a no-op, and
@@ -16,7 +31,7 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
   constructor(
     queueConnection: QueueConnection,
     private readonly config: ConfigService,
-    logger: AppLogger,
+    private readonly logger: AppLogger,
   ) {
     const options = { connection: queueConnection.connection, prefix: queueConnection.prefix };
     this.queue = new Queue<IngestJobData>(INGEST_QUEUE, options);
@@ -31,8 +46,11 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
     this.events.on('error', onError);
   }
 
+  // Bounded: unbounded, a Redis that is away at boot kept the process from ever listening, health included.
   async onModuleInit(): Promise<void> {
-    await this.events.waitUntilReady();
+    if (!(await resolvesWithin(this.events.waitUntilReady(), QUEUE_READY_TIMEOUT_MS))) {
+      this.logger.warn(QUEUE_NOT_READY, 'IngestQueue');
+    }
   }
 
   async runOnce(data: IngestJobData, boundMs: number): Promise<IngestJobResult> {
@@ -56,8 +74,14 @@ export class IngestQueue implements OnModuleInit, OnModuleDestroy {
     await this.queue.obliterate({ force: true });
   }
 
+  // Bounded too: with Redis away, QueueEvents.close() never settles and SIGTERM would never exit.
   async onModuleDestroy(): Promise<void> {
-    await this.events.close();
-    await this.queue.close();
+    const outcomes = await Promise.all([
+      closeWithin(this.events, QUEUE_CLOSE_TIMEOUT_MS),
+      closeWithin(this.queue, QUEUE_CLOSE_TIMEOUT_MS),
+    ]);
+    if (outcomes.includes('forced')) {
+      this.logger.warn(QUEUE_CLOSE_FORCED, 'IngestQueue');
+    }
   }
 }

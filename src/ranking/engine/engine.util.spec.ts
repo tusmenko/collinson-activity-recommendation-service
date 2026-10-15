@@ -14,10 +14,16 @@ const WIND: FactorRule = {
   note: 'wind',
 };
 
+const GUSTS: FactorRule = { ...WIND, signal: 'windGusts', note: 'gusts' };
+
 const RULES: RuleSet = { version: '1.0.0', factors: [WIND] };
 
 function windy(windMax: number | null): DaySignals {
   return { ...noSignals('2026-10-15'), windMax };
+}
+
+function gusty(windGusts: number): DaySignals {
+  return { ...noSignals('2026-10-15'), windGusts };
 }
 
 describe('engine helpers', () => {
@@ -67,5 +73,31 @@ describe('engine helpers', () => {
 
     expect(bound(73, [weigh(windy(100), WIND)], floored)).toBe(40);
     expect(bound(90, [], floored)).toBe(90);
+  });
+
+  it('U-RANK-17 a heavy good factor lifts the day to the boost minimum; a light one or a high mean does not', () => {
+    const boosted: RuleSet = { ...RULES, goodBoost: { min: 60, minWeight: 2, note: 'boost' } };
+    const tooLight: RuleSet = { ...RULES, goodBoost: { min: 60, minWeight: 3, note: 'boost' } };
+    const good = [weigh(windy(10), WIND)];
+
+    expect(bound(25, good, boosted)).toBe(60);
+    expect(bound(85, good, boosted)).toBe(85);
+    expect(bound(25, good, tooLight)).toBe(25);
+    expect(bound(25, [weigh(windy(25), WIND)], boosted)).toBe(25);
+  });
+
+  it('U-RANK-17 order: the cap wins over the boost, then the floor lifts what is left', () => {
+    const all: RuleSet = {
+      ...RULES,
+      factors: [WIND, GUSTS],
+      floor: 40,
+      poorCap: { max: 30, minWeight: 2, note: 'cap' },
+      goodBoost: { min: 60, minWeight: 2, note: 'boost' },
+    };
+    const goodWindPoorGusts = [weigh(windy(10), WIND), weigh(gusty(90), GUSTS)];
+
+    expect(bound(50, goodWindPoorGusts, all)).toBe(40);
+    expect(bound(25, [weigh(windy(10), WIND)], all)).toBe(60);
+    expect(bound(10, [], all)).toBe(40);
   });
 });

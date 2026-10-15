@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { EnrichQueue } from './enrich.queue';
 import { IngestQueue } from './ingest.queue';
 
 @Module({
-  providers: [IngestQueue, EnrichQueue],
-  exports: [IngestQueue, EnrichQueue],
+  providers: [IngestQueue],
+  exports: [IngestQueue],
 })
 export class QueueModule {}

@@ -1,15 +1,13 @@
-import { UseFilters } from '@nestjs/common';
 import { Args, Context, Query, Resolver } from '@nestjs/graphql';
 
-import { GraphqlErrorFilter } from '../errors/graphql-error.filter';
 import { ActivityEnum } from '../models/enums.model';
 import { RankingsResultModel } from '../models/rankings-result.model';
 import { ActivitiesSchema, CitySchema, CountrySchema } from './args.schema';
+import { ACTIVITIES_ARG_DESCRIPTION } from './rankings.const';
 import { RankingsQueryService } from './rankings-query.service';
 import { ZodArgPipe } from './zod-args.pipe';
 
 @Resolver(() => RankingsResultModel)
-@UseFilters(GraphqlErrorFilter)
 export class ActivityRankingsResolver {
   constructor(private readonly rankings: RankingsQueryService) {}
 
@@ -22,7 +20,7 @@ export class ActivityRankingsResolver {
     country: string | undefined,
     @Args(
       'activities',
-      { type: () => [ActivityEnum], nullable: true },
+      { type: () => [ActivityEnum], nullable: true, description: ACTIVITIES_ARG_DESCRIPTION },
       new ZodArgPipe(ActivitiesSchema),
     )
     activities: string[] | undefined,

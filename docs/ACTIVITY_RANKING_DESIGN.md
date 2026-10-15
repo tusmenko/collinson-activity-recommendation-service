@@ -24,7 +24,7 @@ File postfixes follow the standards' layout table; this service adds `*.classifi
 | `@nestjs/graphql` with the Apollo driver, code-first (`@apollo/server` 5, `@as-integrations/express5`, graphql 16) | Schema from decorators written to `schema.gql`; `Activity` enum built from the registry at startup; `includeStacktraceInErrorResponses: false` outside development |
 | Zod with a ten-line `PipeTransform` | Zod schemas for arguments (the pipe throws `GraphQLError` with `BAD_USER_INPUT` and the issues), configuration and upstream payloads; types inferred from them. `nestjs-zod` rejected in spike S-2: peer range stops at Nest 11 and failures map to `BAD_REQUEST` |
 | `@nestjs/throttler` with Redis storage | Inbound per-client limiter |
-| `bullmq` 6 (ioredis 6 as its peer), wrapped by two injectable classes | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3); see [D-12](#d-12) for why `@nestjs/bullmq` is not used |
+| `bullmq` 6 (ioredis 6 as its peer), wrapped by two injectable classes | the `ingest` queue and its worker; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3); see [D-12](#d-12) for why `@nestjs/bullmq` is not used |
 | `@nestjs/terminus` | `/health/live` (the process answers; no dependency, so a Redis outage never restarts it) and `/health/ready` (Redis and memory indicators, 503 when one is down; `/health` is its alias) |
 | Own `ConfigModule` in `infra/config` | Environment configuration validated by Zod; `@nestjs/config` is not used, the Zod schema and a typed `get` are the whole module |
 | `pino`, `@opentelemetry/sdk-node` | JSON logs; ranking events; `ranking_anomalies_total{type}` counter; console or OTLP exporter |
@@ -40,6 +40,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([D-12](#on-9)) |
+| `TRUST_PROXY` | unset | Express `trust proxy` behind a proxy or ingress: a hop count (`1`), `true`, `false` or a named range (`loopback`); unset is off, and the per-client throttle keys on the socket address. The Helm chart sets `1` |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
 | `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `infra/open-meteo/open-meteo.const.ts` ([D-12](#a-53)) |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
@@ -151,7 +152,7 @@ type DaySignals {
 }
 
 enum Activity { SKIING SURFING OUTDOOR_SIGHTSEEING INDOOR_SIGHTSEEING }
-enum ActivityStatus { APPLICABLE NOT_APPLICABLE UNAVAILABLE }
+enum ActivityStatus { APPLICABLE NOT_APPLICABLE NO_CONDITIONS UNAVAILABLE }  # NO_CONDITIONS: the place can host it, no day in this window suits it
 enum Source { FORECAST MARINE }
 enum FetchStatus { OK FAILED SKIPPED }
 enum Effect { POSITIVE NEGATIVE NEUTRAL }
@@ -165,7 +166,7 @@ Rules:
 - The default answer is the brief's answer: a location, and per activity a status and `WINDOW_DAYS` `{date, score}` pairs in date order. `score` is 0 to 100, null when the activity is not applicable or unavailable. No rank field; ordering is the consumer's.
 - `DayScore.details` and `Meta.reasons` are resolved only when selected. Selection is the "details" flag; nothing is computed or serialised otherwise.
 - `Meta.stale`: the refetch failed and the stored data served is older than `FRESHNESS_TTL`; on the normal path it is always false. `Meta.partial`: a source failed; `sources` says which.
-- `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it. It is nullable: a failure ranking one place (for example its forecast fetch) is an error on that field's path, while `Query.activityRankings` and the other alternatives stand.
+- `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it, counting a selection under `Meta.alternatives` once per possible alternative (four), so the alternatives example counts five. It is nullable: a failure ranking one place (for example its forecast fetch) is an error on that field's path, while `Query.activityRankings` and the other alternatives stand.
 - Errors: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`.
 
 <a id="d-4"></a>
@@ -179,7 +180,7 @@ Rules:
 | `forecast:raw:{locationId}:{source}` | last raw upstream payload, for replay and drift checks | `RETENTION_TTL` | forecast cache |
 | `ingest:last-error:{locationId}` | step, error, at | 7 days | operations |
 | `fairuse:day:{date}` | counter | 2 days | operations |
-| `bull:ingest:*`, `bull:enrich:*` | BullMQ internals | managed | queues |
+| `bull:ingest:*` | BullMQ internals | managed | queues |
 
 Read, per required source: compute the window's dates in the location's timezone, one `MGET` over the date keys plus pipelined `PTTL`. Any key missing, or any `PTTL < RETENTION_TTL − FRESHNESS_TTL` (older than the freshness limit): enqueue that source's job and await it under `COLD_READ_BOUND_MS`, then serve fresh; cold and stale reads are one path. If the job fails or the bound expires and stored data exists, serve it flagged stale (degradation, [D-8](#d-8)); single-flight means every caller in the window waits on the same job, so the cost is one upstream round trip per expiry per location and source. Stale-while-revalidate was withdrawn at the Gate 4 review ([A-51](arch/registers.md#a-51)). Write: pipeline `SET … EX RETENTION_TTL` per day plus the raw payload. A window change is a set of missing keys; local midnight is one new date key, present because of the extra fetched day; expiry is native; a provider schema bump is a key-prefix change. A request-shaped key was rejected: it couples the cache to query shape and duplicates data across overlapping requests.
 
@@ -190,7 +191,7 @@ Facts live under keys without TTL and are the first storage class; they are the 
 
 Ingest is an extract-transform-load run per location and source, triggered by a request. One BullMQ job per `(locationId, source)`, job id `{locationId}__{source}` (BullMQ 6 rejects custom ids containing a single `:`; spike S-3): a duplicate add while a job is active is a no-op (single-flight); sources run in parallel as separate jobs; a per-source failure is a job outcome. Each job: fetch with `UPSTREAM_TIMEOUT_MS` (forecast: the daily variables plus hourly `snow_depth`, reduced to a daily maximum), validate the payload with the pinned Zod schema, normalise to `DaySignals`, write per-day keys and the raw payload. Queue options: limiter `OUTBOUND_PER_MINUTE` per minute, `attempts = UPSTREAM_RETRIES + 1` with exponential backoff, `removeOnComplete: true` so a later re-add runs again, `setMaxListeners` raised on `QueueEvents` because a cold read awaits several jobs; a daily `INCR` on `fairuse:day` guards `OUTBOUND_PER_DAY`. Policy per source: forecast mandatory, marine optional ([DF-6](arch/02-requirements.md#df-6)). The fetch, timeout and schema validation are `OpenMeteoClient`'s (`forecast`, `marine`); the source adapter only translates the validated payload to `DaySignals`. Every run emits an event with duration and outcome; the last failure is kept under `ingest:last-error`.
 
-Which sources a request needs is the union of `requires` over the requested classifiers ([DF-7](arch/02-requirements.md#df-7)). The `enrich` queue is registered with no processor in the exercise; an enrichment job would write facts and carry its own version (prompt version for an LLM job). Processors run in the API process behind `QUEUE_PROCESSORS_ENABLED` and move to a worker deployment unchanged.
+Which sources a request needs is the union of `requires` over the requested classifiers ([DF-7](arch/02-requirements.md#df-7)). An `enrich` queue is not registered: it was cut in the review pass because nothing enqueued to it (README, What was cut); an enrichment job would follow the `ingest` queue's pattern, write facts and carry its own version (prompt version for an LLM job). Processors run in the API process behind `QUEUE_PROCESSORS_ENABLED` and move to a worker deployment unchanged.
 
 <a id="d-6"></a>
 ## D-6 Classifier contract and registry
@@ -205,16 +206,16 @@ interface Classifier {
 }
 ```
 
-The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below) and otherwise when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
+The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below), a fact of the place, and `NO_CONDITIONS` when the place qualifies but snow depth stays under 5 cm (or is unknown) on every day of the window, a fact of this week; any classifier may answer `NO_CONDITIONS`, and like the other non-applicable statuses it carries a reason and null scores; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)); a day is the weighted mean of its factors, then capped by a heavy poor factor (`poorCap`), else lifted by a heavy good factor (`goodBoost`), then held at the rule set's `floor`.
 
 ### D-6.1 Provisional thresholds
 
 Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London, Dubai and Springfield on 2026-10-14) plus general knowledge. Every number is a proposal, kept in the per-activity JSON with the note shown here, and revisited against the golden set ([H-1](arch/registers.md#h-1)). Weak or model-capped signals (visibility, sunshine, cloud cover, UV) carry low weight.
 
-| Activity | Signal | Good | Poor | Not applicable | Note |
+| Activity | Signal | Good | Poor | Not applicable (NA) or no conditions (NC) | Note |
 | --- | --- | --- | --- | --- | --- |
-| Skiing | place elevation, m (geocoding) | — | — | < 800, or unknown | Checked before the snow gate. Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not ([A-8](arch/registers.md#a-8)) |
-| Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | < 5 every day | Snowpack is the applicability signal. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
+| Skiing | place elevation, m (geocoding) | — | — | NA: < 800, or unknown | Checked before the snow gate. Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not ([A-8](arch/registers.md#a-8)) |
+| Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | NC: < 5 every day | Snowpack is the window's conditions signal: the place can host skiing, this week has no snow. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
 | Skiing | snowfall, cm per day | ≥ 5 | 0 | — | Fresh snow is a bonus on top of the base, not the gate |
 | Skiing | tmax, °C | −10 to 3 | > 8 | — | Above about 8 the snow rots |
 | Skiing | wind gusts, km/h | < 40 | > 60 | — | Lifts close around 60 to 80 |
@@ -230,18 +231,18 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 | Outdoor sightseeing | cloud cover, % | < 60 | > 90 | — | Soft signal, low weight |
 | Outdoor sightseeing | UV index | ≤ 7 | ≥ 9 | — | Tie-breaker only |
 | Indoor sightseeing | rain | > 5 mm or > 60 % | < 1 mm and < 30 % | never | Rain pushes people indoors |
-| Indoor sightseeing | heat or cold, °C | tmax > 32 or < 8 | tmax 15 to 27 | never | |
+| Indoor sightseeing | heat or cold, °C | tmax > 32 or < 8 | tmax 15 to 27 | never | Weight 2, so heat or cold alone lifts the day to 60 (`goodBoost`) |
 | Indoor sightseeing | wind gusts, km/h | > 55 | < 40 | never | |
-| Indoor sightseeing | baseline | floor score about 40 | — | never | Always available; fair on nice days, never poor |
+| Indoor sightseeing | baseline | floor score about 40; any good factor of weight 2 or more lifts the day to at least 60 | — | never | Always available; fair on nice days, never poor; one compelling signal is enough to make the day worth it indoors |
 
-Adjustments made when the golden set was run in phase 3 (2026-10-15, [H-1](arch/registers.md#h-1)): a weighted mean alone let Dubai at 38 °C score 78 for outdoor sightseeing because the dry, calm, sunny factors diluted the heat, so every rule set except indoor sightseeing carries a deal-breaker cap (`poorCap`: any factor in its poor band with weight 2 or more caps the day at 30, note "one disqualifying signal outweighs the rest"); and the skiing snow-depth poor band became "15 cm or less" so a bare day inside an applicable window counts as poor rather than neutral. Weights are 3 for the primary signal of each activity, 2 for the secondary ones, 1 or less for the soft signals, and are listed in each `*.rules.json`.
+Adjustments made when the golden set was run in phase 3 (2026-10-15, [H-1](arch/registers.md#h-1)): a weighted mean alone let Dubai at 38 °C score 78 for outdoor sightseeing because the dry, calm, sunny factors diluted the heat, so every rule set except indoor sightseeing carries a deal-breaker cap (`poorCap`: any factor in its poor band with weight 2 or more caps the day at 30, note "one disqualifying signal outweighs the rest"); and the skiing snow-depth poor band became "15 cm or less" so a bare day inside an applicable window counts as poor rather than neutral. In the review pass (2026-10-15) Dubai at 38 °C still scored 40 for indoor sightseeing: the heat factor (weight 2) was outvoted by the dry, calm factors (weight 6) and the floor lifted 25 to 40, so indoor sightseeing (rules 1.1.0) carries a good-factor boost (`goodBoost`: any factor in its good band with weight 2 or more lifts the day to at least 60, note "one compelling signal is enough to make the day worth it indoors"). The engine applies the mean, then the cap, then the boost only when the cap did not apply (a boost never overrides a cap), then the floor. The boost moved these golden days: Dubai and Hintertux indoor 40 to 60 every day, Biarritz day 3 50 to 60, London 16 October 44 to 60, Springfield day 2 56 to 60; Chamonix is unchanged. Weights are 3 for the primary signal of each activity, 2 for the secondary ones, 1 or less for the soft signals, and are listed in each `*.rules.json`.
 
 Golden-set fixtures are real days from the Open-Meteo archive endpoint (same daily shape, back to 1940, about five days behind real time; `past_days` on the forecast endpoint covers the gap), recorded once so tests stay offline: Chamonix 10 January 2026 (12.5 cm snowfall, tmax −2 °C) exercises the skiing branch, and the live pair Hintertux at 3250 m (39 cm snow depth) against Chamonix town (0) exercises the applicability gate. Town coordinates sit on valley floors (Chamonix grid elevation 1041 m, Hintertux default cell 2802 m against a 3250 m summit), which is why [A-8](arch/registers.md#a-8) keeps skiing on the town's own forecast; Open-Meteo's `elevation` parameter shifts the forecast by lapse rate, so resort elevation is a candidate location fact on the [ASR-5](arch/03-asrs.md#asr-5) seam.
 
 <a id="d-7"></a>
 ## D-7 Traceability and anomaly detection
 
-Each ranking request emits one structured event: request id, location id, provider, fetched-at per source, and per activity the classifier id and version, rule-set version, status, scores and factors. Invariants run in-request: score within 0 to 100; exactly `WINDOW_DAYS` dated scores per applicable activity; non-applicable activities carry no score; `marineDataAvailable` is a stored fact, so a change on refresh emits its own event. A violation logs at warn and increments `ranking_anomalies_total{type}`. Exercise: events to stdout as JSON. Production path: Datadog log pipeline and a monitor on the counter; the golden-set evaluation reads the same events offline.
+Each ranking request emits one structured event: request id, location id, provider, fetched-at per source, and per activity the classifier id and version, rule-set version, status, scores and factors. Invariants run in-request: score within 0 to 100; exactly `WINDOW_DAYS` dated scores per applicable activity; non-applicable activities carry no score; `marineDataAvailable` is a stored fact, so a change on refresh emits its own event. A violation logs at warn and increments `ranking_anomalies_total{type}`; an ingest attempt whose payload fails the pinned schema increments it with type `upstream_drift` ([D-8](#d-8)). Exercise: events to stdout as JSON. Production path: Datadog log pipeline and a monitor on the counter; the golden-set evaluation reads the same events offline.
 
 <a id="d-8"></a>
 ## D-8 Degradation rules
@@ -255,6 +256,7 @@ Each ranking request emits one structured event: request id, location id, provid
 | Store missing marine only, upstream failing | Serve; surfing `UNAVAILABLE`; `partial: true`; `sources` shows `MARINE: FAILED` |
 | Payload fails schema validation | Treated as a failed source; anomaly event; raw payload kept |
 | Geocoding fails | `UPSTREAM_UNAVAILABLE` |
+| Redis unreachable at boot or shutdown | Boot waits at most 5 s for the queue's event stream, then listens with readiness down; shutdown gives each queue, worker and Redis connection at most 5 s to close and drops one that never became ready, so SIGTERM always exits |
 | No geocoding match | `NOT_FOUND` naming the input; no forecast call |
 
 <a id="d-9"></a>

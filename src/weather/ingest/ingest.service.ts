@@ -12,7 +12,8 @@ import { fromRead, marineAvailabilityOf, skipped } from './ingest.util';
 import { WindowService } from './window.service';
 
 // Refresh on read (design D-4, D-8): a fresh window is served as stored; a stale or missing one
-// waits for its single-flight job under COLD_READ_BOUND_MS, then whatever the store holds is served.
+// waits for its single-flight job under COLD_READ_BOUND_MS, then whatever the store holds is served,
+// a partial window included.
 @Injectable()
 export class IngestService {
   constructor(
@@ -42,6 +43,7 @@ export class IngestService {
       throw new ForecastUnavailableError();
     }
     return {
+      dates,
       fetchedAt: minIso(served.flatMap(({ status }) => status.fetchedAt ?? [])),
       stale: served.some((entry) => entry.stale),
       partial: sources.includes('MARINE') && days.MARINE === undefined,
@@ -74,7 +76,10 @@ export class IngestService {
       case 'stale':
         return fromRead(source, read, true);
       case 'missing':
-        return { status: { source, status: 'FAILED', fetchedAt: null }, days: null, stale: false };
+        // Some dates were never stored: what is stored is served flagged stale, ranking nulls the rest.
+        return read.days.length > 0
+          ? fromRead(source, read, true)
+          : { status: { source, status: 'FAILED', fetchedAt: null }, days: null, stale: false };
     }
   }
 }

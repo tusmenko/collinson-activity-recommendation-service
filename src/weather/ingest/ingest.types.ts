@@ -17,6 +17,8 @@ export interface SourceStatus {
 export type MarineAvailability = 'available' | 'absent';
 
 export interface EnsureResult {
+  // The window's local dates; a date missing from `days` was neither stored nor fetched.
+  readonly dates: readonly string[];
   // Oldest fetchedAt across the served sources.
   readonly fetchedAt: string | null;
   // A source was served from stored data after its refetch failed or the bound expired.

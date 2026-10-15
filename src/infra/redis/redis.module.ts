@@ -5,6 +5,8 @@ import { Redis } from 'ioredis';
 import { ConfigService } from '../config/config.service';
 import { AppLogger } from '../logging/app-logger.service';
 import { QueueConnection } from './queue-connection.service';
+import { REDIS_QUIT_FORCED, REDIS_QUIT_TIMEOUT_MS } from './redis.const';
+import { resolvesWithin } from './redis.util';
 
 @Global()
 @Module({
@@ -31,9 +33,21 @@ import { QueueConnection } from './queue-connection.service';
   exports: [Redis, QueueConnection],
 })
 export class RedisModule implements OnApplicationShutdown {
-  constructor(private readonly redis: Redis) {}
+  constructor(
+    private readonly redis: Redis,
+    private readonly logger: AppLogger,
+  ) {}
 
+  // Bounded so SIGTERM exits while Redis is away: QUIT only on a live connection and only for
+  // REDIS_QUIT_TIMEOUT_MS; otherwise the socket is dropped without waiting. Never throws.
   async onApplicationShutdown(): Promise<void> {
-    await this.redis.quit();
+    if (this.redis.status !== 'ready') {
+      this.redis.disconnect();
+      return;
+    }
+    if (!(await resolvesWithin(this.redis.quit(), REDIS_QUIT_TIMEOUT_MS))) {
+      this.logger.warn(REDIS_QUIT_FORCED, 'Redis');
+      this.redis.disconnect();
+    }
   }
 }

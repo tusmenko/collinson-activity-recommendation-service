@@ -11,8 +11,17 @@ import { loadFixture } from '../fixtures';
 type Template = 'forecast' | 'marine' | 'marineInland';
 type FailureReason = Extract<SourceFetchOutcome, { kind: 'failed' }>['reason'];
 
+// `days` answers with fewer days than asked, like a provider cutting its horizon short; `fetchedAt`
+// overrides the clock as the adapter's own fetch time.
+interface OkStep {
+  readonly kind: 'ok';
+  readonly template?: Template;
+  readonly days?: number;
+  readonly fetchedAt?: string;
+}
+
 export type FakeStep =
-  | { readonly kind: 'ok'; readonly template?: Template }
+  | OkStep
   // `raw` stands for a body that arrived but failed validation.
   | { readonly kind: 'fail'; readonly reason: FailureReason; readonly raw?: unknown }
   // Never answers until the test calls release(), like an upstream that stops responding.
@@ -78,7 +87,7 @@ export class FakeWeatherSource extends WeatherSourcePort {
     const step = this.steps.shift() ?? this.fallback;
     switch (step.kind) {
       case 'ok':
-        return Promise.resolve(this.ok(step.template ?? this.defaultTemplate(), days));
+        return Promise.resolve(this.ok(step, days));
       case 'fail':
         return Promise.resolve({
           kind: 'failed',
@@ -95,14 +104,15 @@ export class FakeWeatherSource extends WeatherSourcePort {
     }
   }
 
-  private ok(template: Template, days: number): SourceFetchOutcome {
+  private ok(step: OkStep, requested: number): SourceFetchOutcome {
     const now = this.clock.now();
+    const template = TEMPLATES[step.template ?? this.defaultTemplate()];
     return {
       kind: 'ok',
-      days: datesFrom(now, days).map((date) => ({ ...TEMPLATES[template], date })),
+      days: datesFrom(now, step.days ?? requested).map((date) => ({ ...template, date })),
       raw: { fake: this.source },
       providerSchemaVersion: 'fake-1',
-      fetchedAt: now.toISOString(),
+      fetchedAt: step.fetchedAt ?? now.toISOString(),
     };
   }
 

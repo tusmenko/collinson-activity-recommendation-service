@@ -122,6 +122,33 @@ describe('RankingService.rank', () => {
     expect(rankings[0]?.status).toBe('APPLICABLE');
   });
 
+  it('U-RANK-15 a window date no source served keeps its place with a null score and null signals', async () => {
+    const steady = fakeClassifier('CYCLING', (days) => ({
+      status: 'APPLICABLE',
+      days: scored(days, 50),
+    }));
+    const { service } = rankingHarness([steady]);
+    const input = rankingInput('biarritz');
+    const forecast = (input.days.FORECAST ?? []).filter((day) => day.date !== '2026-10-17');
+
+    const { rankings } = await service.rank({
+      ...input,
+      activities: ['OUTDOOR_SIGHTSEEING', 'CYCLING'],
+      days: { FORECAST: forecast },
+    });
+
+    for (const ranking of rankings) {
+      expect(ranking.days.map((day) => day.date)).toEqual(input.dates);
+      expect(ranking.days[2]).toMatchObject({
+        date: '2026-10-17',
+        score: null,
+        factors: [],
+        signals: { tempMax: null },
+      });
+      expect(ranking.days[3]?.score).not.toBeNull();
+    }
+  });
+
   it('U-RANK-1 the requested activities come back in the requested order only', async () => {
     const { service } = rankingHarness();
 
@@ -241,7 +268,7 @@ describe('RankingService events and invariants', () => {
       provider: 'open-meteo',
       fetchedAt: { FORECAST: '2026-10-15T06:00:00.000Z', MARINE: '2026-10-15T06:00:00.000Z' },
       ruleSetVersion:
-        'v1+SKIING@1.1.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.0.0',
+        'v1+SKIING@1.1.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.1.0',
       activities: [
         {
           classifierId: 'SURFING',

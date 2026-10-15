@@ -1,8 +1,20 @@
-import { Queue } from 'bullmq';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { Queue, QueueEvents } from 'bullmq';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { QueueConnection } from '../../../src/infra/index';
 import type { Source } from '../../../src/weather/index';
+import { IngestQueue } from '../../../src/weather/queue/ingest.queue';
+import {
+  QUEUE_CLOSE_FORCED,
+  QUEUE_CLOSE_TIMEOUT_MS,
+  QUEUE_NOT_READY,
+  QUEUE_READY_TIMEOUT_MS,
+} from '../../../src/weather/queue/queue.const';
+import { testConfig } from '../../setup/adapter-deps';
+import { captureLogger } from '../../setup/capture-logger';
 import { createIngestHarness } from '../../setup/ingest-harness';
+import { flushQueueKeys, TEST_REDIS_URL } from '../../setup/redis';
 import type { IngestHarness } from '../../setup/ingest-harness';
 
 const LONDON = {
@@ -127,6 +139,94 @@ describe('ingest queue failure paths', () => {
 
     expect(harness.logs).toContainEqual(
       expect.objectContaining({ level: 40, context: 'IngestQueue', msg: 'connection lost' }),
+    );
+  });
+});
+
+// Redis away at boot, as the event stream sees it: waitUntilReady never settles (or rejects). A queue on a
+// closed port cannot be closed afterwards (BullMQ's QueueEvents.close awaits the connection), so the
+// stream is held back on the test Redis instead and the queue closes cleanly.
+describe('ingest queue whose Redis is unreachable at boot', () => {
+  const bullPrefix = `test-bull-${randomUUID()}`;
+  const captured = captureLogger();
+  let queue: IngestQueue;
+
+  beforeEach(() => {
+    captured.lines.length = 0;
+    queue = new IngestQueue(
+      new QueueConnection(TEST_REDIS_URL, bullPrefix),
+      testConfig(),
+      captured.logger,
+    );
+  });
+
+  afterEach(async () => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    await queue.onModuleDestroy();
+  });
+
+  afterAll(async () => {
+    await flushQueueKeys(bullPrefix);
+  });
+
+  it('I-QUEUE-6 onModuleInit stops waiting after QUEUE_READY_TIMEOUT_MS and warns instead of blocking boot', async () => {
+    vi.spyOn(QueueEvents.prototype, 'waitUntilReady').mockReturnValue(new Promise(() => undefined));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    const init = queue.onModuleInit();
+    await vi.advanceTimersByTimeAsync(QUEUE_READY_TIMEOUT_MS);
+    await init;
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(captured.lines).toEqual([
+      expect.objectContaining({ level: 40, context: 'IngestQueue', msg: QUEUE_NOT_READY }),
+    ]);
+  });
+
+  it('I-QUEUE-6 a rejected wait warns the same way, and a ready stream clears the timer silently', async () => {
+    // Connected first, with real timers, so the client's own connect timers are not counted below.
+    await queue.onModuleInit();
+    vi.spyOn(QueueEvents.prototype, 'waitUntilReady').mockRejectedValueOnce(new Error('closed'));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    await queue.onModuleInit();
+    const afterRejection = captured.lines.length;
+    await queue.onModuleInit();
+
+    expect(afterRejection).toBe(1);
+    expect(captured.lines).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+// Redis gone at shutdown: BullMQ's QueueEvents.close() waits for a connection that never comes back.
+describe('ingest queue shutdown when a close never settles', () => {
+  const bullPrefix = `test-bull-${randomUUID()}`;
+  const captured = captureLogger();
+
+  afterAll(async () => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    await flushQueueKeys(bullPrefix);
+  });
+
+  it('I-QUEUE-7 onModuleDestroy resolves within QUEUE_CLOSE_TIMEOUT_MS, warns and forces the connection closed', async () => {
+    const queue = new IngestQueue(
+      new QueueConnection(TEST_REDIS_URL, bullPrefix),
+      testConfig(),
+      captured.logger,
+    );
+    await queue.onModuleInit();
+    vi.spyOn(QueueEvents.prototype, 'close').mockReturnValue(new Promise(() => undefined));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    const destroy = queue.onModuleDestroy();
+    await vi.advanceTimersByTimeAsync(QUEUE_CLOSE_TIMEOUT_MS);
+    await destroy;
+
+    expect(captured.lines).toContainEqual(
+      expect.objectContaining({ level: 40, context: 'IngestQueue', msg: QUEUE_CLOSE_FORCED }),
     );
   });
 });
