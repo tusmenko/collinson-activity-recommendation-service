@@ -66,6 +66,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [NFR-13](arch/02-requirements.md#nfr-13) traceability | U-EVENT-1 event carries provider, fetched-at, classifier id and version, rule-set version; U-EVENT-2 invariant violations log at warn and increment `ranking_anomalies_total{type}`; U-EVENT-3 `marineDataAvailable` change emits an event | unit | 3 |
 | [NFR-4](arch/02-requirements.md#nfr-4) availability, review C1 | I-INGEST-11 a partial stored window with a failed refetch serves the stored days, `stale: true`, the source `FAILED` | integration | review |
 | [FR-2](arch/02-requirements.md#fr-2) seven days, review C1 | U-RANK-15 a window date no source served keeps its place with a null score and null signals | unit | review |
+| [NFR-12](arch/02-requirements.md#nfr-12) security, review C2 | U-INFRA-6 `TRUST_PROXY` is off when unset or empty and parses a hop count, `true`, `false` or a named range | unit | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 

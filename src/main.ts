@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { pinoHttp } from 'pino-http';
 
 import { AppModule } from './app.module';
@@ -25,7 +26,7 @@ async function bootstrap(): Promise<void> {
   telemetry.start();
   // Logs stay buffered until pino is in place; on a bad environment the only output is the error
   // naming the key, and abortOnError: false turns it into a non-zero exit instead of an abort.
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     autoFlushLogs: false,
     abortOnError: false,
@@ -43,8 +44,14 @@ async function bootstrap(): Promise<void> {
       },
     }),
   );
+  const config = app.get(ConfigService);
+  const trustProxy = config.get('TRUST_PROXY');
+  // The throttle keys on req.ip; behind an ingress that is the proxy unless Express trusts it.
+  if (trustProxy !== undefined) {
+    app.set('trust proxy', trustProxy);
+  }
   closeOnSignal(app, telemetry);
-  await app.listen(app.get(ConfigService).get('PORT'));
+  await app.listen(config.get('PORT'));
 }
 
 bootstrap().catch((error: unknown) => {
