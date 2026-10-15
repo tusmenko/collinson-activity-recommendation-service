@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 
 import autocannon from 'autocannon';
 
-const API_URL = process.env.API_URL ?? 'http://localhost:3001/graphql';
+const API_URL = process.env.API_URL ?? 'http://localhost:4511/graphql';
 const QUERY = readFileSync(
   new URL('../test/schema/queries/default.graphql', import.meta.url),
   'utf8',

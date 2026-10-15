@@ -38,7 +38,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `PORT` | `3000` | HTTP port |
+| `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([ON-9](OVERNIGHT_NOTES.md#on-9)) |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
 | `UPSTREAM_GEOCODING_URL` | `https://geocoding-api.open-meteo.com` | Geocoding base URL; the stub upstream replaces it in tests and the `demo` profile |
 | `UPSTREAM_FORECAST_URL` | `https://api.open-meteo.com` | Forecast base URL; same |

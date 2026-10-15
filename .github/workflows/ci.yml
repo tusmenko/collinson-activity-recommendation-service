@@ -137,7 +137,7 @@ jobs:
       - name: Wait for /health (O-COMPOSE-1, 120 s budget)
         run: |
           for second in $(seq 1 120); do
-            if curl -fsS localhost:3000/health; then
+            if curl -fsS localhost:4510/health; then
               echo; echo "healthy after ${second} s"; exit 0
             fi
             sleep 1
@@ -177,7 +177,7 @@ jobs:
       - name: Wait for the demo service's /health
         run: |
           for second in $(seq 1 120); do
-            if curl -fsS localhost:3001/health; then
+            if curl -fsS localhost:4511/health; then
               echo; echo "healthy after ${second} s"; exit 0
             fi
             sleep 1

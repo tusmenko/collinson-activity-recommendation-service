@@ -1,7 +1,7 @@
 {{- /* Every key of .env.example with its default (design D-2); REDIS_URL from values; values.env overrides any key. */ -}}
 {{- $defaults := dict
   "NODE_ENV" "production"
-  "PORT" "3000"
+  "PORT" "4510"
   "UPSTREAM_GEOCODING_URL" "https://geocoding-api.open-meteo.com"
   "UPSTREAM_FORECAST_URL" "https://api.open-meteo.com"
   "UPSTREAM_MARINE_URL" "https://marine-api.open-meteo.com"
