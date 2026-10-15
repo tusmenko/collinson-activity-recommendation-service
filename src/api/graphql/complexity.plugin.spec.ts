@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import type { GraphQLRequestContextDidResolveOperation } from '@apollo/server';
 import { buildSchema, GraphQLError, parse } from 'graphql';
 import { describe, expect, it } from 'vitest';
@@ -55,5 +57,32 @@ describe('ComplexityPlugin', () => {
 
   it('U-API-7 only the named operation is counted, with no variables sent', async () => {
     await expect(resolve(1, { operationName: 'One' })).resolves.toBeUndefined();
+  });
+});
+
+describe('ComplexityPlugin on the shipped schema', () => {
+  // The committed schema and the GraphiQL example that ranks every alternative.
+  const appSchema = buildSchema(
+    readFileSync(new URL('../../../schema.gql', import.meta.url), 'utf8'),
+  );
+  const alternatives = parse(
+    readFileSync(new URL('examples/alternatives.graphql', import.meta.url), 'utf8'),
+  );
+
+  async function check(maxLocations: number): Promise<unknown> {
+    const listener = await new ComplexityPlugin(maxLocations).requestDidStart();
+    const context = {
+      request: { variables: { city: 'Springfield', country: 'US' } },
+      document: alternatives,
+      schema: appSchema,
+    };
+    return listener.didResolveOperation?.(
+      context as unknown as GraphQLRequestContextDidResolveOperation<GraphqlContext>,
+    );
+  }
+
+  it('U-API-13 Meta.alternatives counts the up to four alternatives each, so the example is five', async () => {
+    await expect(check(5)).resolves.toBeUndefined();
+    await expect(check(4)).rejects.toThrow('Query selects 5 locations; the limit is 4');
   });
 });

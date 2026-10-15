@@ -4,7 +4,7 @@ import { getComplexity } from 'graphql-query-complexity';
 import type { ComplexityEstimatorArgs } from 'graphql-query-complexity';
 
 import { ERROR_CODES } from '../api.const';
-import { LOCATION_FIELDS } from './graphql.const';
+import { ALTERNATIVES_FIELD, LOCATION_FIELDS, MAX_ALTERNATIVES } from './graphql.const';
 import type { GraphqlContext } from './graphql.types';
 
 // Rejects a query selecting more than QUERY_MAX_LOCATIONS locations before any resolver runs (NFR-9).
@@ -29,9 +29,15 @@ export class ComplexityPlugin implements ApolloServerPlugin<GraphqlContext> {
     });
   }
 
-  // Each field that ranks a location costs 1, everything else 0, so the complexity is the location count.
+  // Each field that ranks a location costs 1, everything else 0, so the complexity is the location count. A list
+  // runs its selection once per item: Meta.alternatives holds up to MAX_ALTERNATIVES places, so what is selected
+  // under it counts that many times.
   private locationEstimator({ type, field, childComplexity }: ComplexityEstimatorArgs): number {
-    return (LOCATION_FIELDS.has(`${type.name}.${field.name}`) ? 1 : 0) + childComplexity;
+    const key = `${type.name}.${field.name}`;
+    if (key === ALTERNATIVES_FIELD) {
+      return childComplexity * MAX_ALTERNATIVES;
+    }
+    return (LOCATION_FIELDS.has(key) ? 1 : 0) + childComplexity;
   }
 
   private tooComplex(locations: number): GraphQLError {

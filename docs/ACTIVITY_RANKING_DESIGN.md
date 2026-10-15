@@ -166,7 +166,7 @@ Rules:
 - The default answer is the brief's answer: a location, and per activity a status and `WINDOW_DAYS` `{date, score}` pairs in date order. `score` is 0 to 100, null when the activity is not applicable or unavailable. No rank field; ordering is the consumer's.
 - `DayScore.details` and `Meta.reasons` are resolved only when selected. Selection is the "details" flag; nothing is computed or serialised otherwise.
 - `Meta.stale`: the refetch failed and the stored data served is older than `FRESHNESS_TTL`; on the normal path it is always false. `Meta.partial`: a source failed; `sources` says which.
-- `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it. It is nullable: a failure ranking one place (for example its forecast fetch) is an error on that field's path, while `Query.activityRankings` and the other alternatives stand.
+- `Location.rankings` is the link into an alternative's rankings; `QUERY_MAX_LOCATIONS` bounds it, counting a selection under `Meta.alternatives` once per possible alternative (four), so the alternatives example counts five. It is nullable: a failure ranking one place (for example its forecast fetch) is an error on that field's path, while `Query.activityRankings` and the other alternatives stand.
 - Errors: `BAD_USER_INPUT`, `NOT_FOUND`, `UPSTREAM_UNAVAILABLE` with `retryAfterSeconds`, `RATE_LIMITED`, `QUERY_TOO_COMPLEX`.
 
 <a id="d-4"></a>
