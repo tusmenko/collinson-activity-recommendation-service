@@ -23,7 +23,7 @@ describe('U-API argument validation', () => {
     ['empty', ''],
     ['blank', '   '],
     ['81 characters', 'a'.repeat(81)],
-    ['digits and punctuation', 'Lond0n;drop'],
+    ['punctuation', 'Lond0n;drop'],
   ])('U-API-1 a %s city gives BAD_USER_INPUT', (_label, value) => {
     expect(codeOf(() => city.transform(value, CITY))).toBe('BAD_USER_INPUT');
   });
@@ -47,12 +47,18 @@ describe('U-API argument validation', () => {
     expect(city.transform('  Saint-Jean-de-Luz ', CITY)).toBe('Saint-Jean-de-Luz');
   });
 
-  it.each(['Vitória', "L'Aquila", 'St. Moritz', 'Zürich', '東京'])(
-    'U-API-2 %s is a valid city',
-    (value) => {
-      expect(city.transform(value, CITY)).toBe(value);
-    },
-  );
+  it.each([
+    'Vitória',
+    "L'Aquila",
+    'L’Aquila',
+    'L‘Aquila',
+    'Saint-Louis 2',
+    'St. Moritz',
+    'Zürich',
+    '東京',
+  ])('U-API-2 %s is a valid city', (value) => {
+    expect(city.transform(value, CITY)).toBe(value);
+  });
 
   it('U-API-2 an omitted or null country becomes undefined; a short one is rejected', () => {
     const country = new ZodArgPipe(CountrySchema);
