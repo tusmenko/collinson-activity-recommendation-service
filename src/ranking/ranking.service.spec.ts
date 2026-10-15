@@ -268,11 +268,11 @@ describe('RankingService events and invariants', () => {
       provider: 'open-meteo',
       fetchedAt: { FORECAST: '2026-10-15T06:00:00.000Z', MARINE: '2026-10-15T06:00:00.000Z' },
       ruleSetVersion:
-        'v1+SKIING@1.1.0+SURFING@1.0.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.1.0',
+        'v1+SKIING@1.1.0+SURFING@1.1.0+OUTDOOR_SIGHTSEEING@1.0.0+INDOOR_SIGHTSEEING@1.1.0',
       activities: [
         {
           classifierId: 'SURFING',
-          classifierVersion: '1.0.0',
+          classifierVersion: '1.1.0',
           status: 'APPLICABLE',
           reason: null,
         },

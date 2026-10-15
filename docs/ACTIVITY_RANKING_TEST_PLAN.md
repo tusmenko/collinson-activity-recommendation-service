@@ -80,6 +80,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [DF-1](arch/02-requirements.md#df-1) ambiguity, region | U-API-15 `region` is optional and follows the city's charset and length rules; U-ADAPT-15 the client sends `name=<city>, <region>`; U-LOC-13 the service passes the region to the geocoder and keys the cache on it; E-API-17 `activityRankings(city: "Springfield", region: "Illinois")` resolves Illinois first | unit, end-to-end | review |
 | [DF-1](arch/02-requirements.md#df-1) ambiguity, country code | U-ADAPT-16 the client sends `countryCode`; U-LOC-14 exactly two letters go upstream as an upper-case code and the answer is not filtered again, a longer value is a name filtered here; E-API-15 asserts `countryCode=FR` reached the stub | unit, end-to-end | review |
 | [NFR-1](arch/02-requirements.md#nfr-1) timeliness, geocode key | U-LOC-15 `Las Américas` and `las  americas` give one cache key in every part (city, country, region) and one provider call, which carries the original spelling | unit | review |
+| [DF-3](arch/02-requirements.md#df-3) not applicable, surf swell gate | U-SURF-3 Dubai is `NO_CONDITIONS` and the reason names the wave period; U-SURF-4 Helsinki (Baltic chop) is `NO_CONDITIONS`; a window with no day reaching 6 s gives `NO_CONDITIONS` with the window maximum, one day at 6 s opens it, no wave period at all gives `NO_CONDITIONS`; U-SURF-1 marine nulls stay `NOT_APPLICABLE`; U-SURF-2 Biarritz stays `APPLICABLE` at 60 or more | unit | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 
 ## Golden set and fixtures
@@ -92,10 +93,12 @@ Recorded once from Open-Meteo (live on 2026-10-15, archive for past days), store
 | Chamonix, 2026-10-14 (live) | forecast | skiing NO_CONDITIONS (snow depth 0); outdoor sightseeing good on dry days |
 | Hintertux at 3250 m, 2026-10-14 (live, `elevation`) | forecast | skiing APPLICABLE (snow depth 39 cm) |
 | Biarritz, 2026-10-14 (live) | forecast, marine | surfing APPLICABLE and good (1.2 to 2.0 m, 9 to 14 s) |
-| Dubai, 2026-10-14 (live) | forecast, marine | surfing poor (period under 4 s); indoor over outdoor (tmax 34 to 38) |
+| Dubai, 2026-10-14 (live) | forecast, marine | surfing NO_CONDITIONS (period at most 4 s, under the 6 s swell gate); indoor over outdoor (tmax 34 to 38) |
+| Helsinki, 2026-10-15 (live) | geocoding, forecast, marine | surfing NO_CONDITIONS (Baltic chop, period 2.2 to 4 s) |
 | London, 2026-10-14 (live) | forecast, marine nulls | surfing NOT_APPLICABLE; indoor on rain days |
 | Springfield Missouri, 2026-10-14 (live) | forecast, marine nulls | indoor on day 1 (83 mm); outdoor good days 4 to 7 |
-| Geocoding: Springfield, Victoria, Newcastle, Xyzzyqq | geocoding | five matches; fuzzy first hit; no results |
+| Geocoding: Springfield, Victoria, Newcastle, Xyzzyqq | geocoding | five matches; population-weighted first hit (Vitória); no results |
+| Geocoding and forecast: `Springfield, Illinois`, 2026-10-15 (live) | geocoding, forecast | Illinois first (E-API-17) |
 
 Stub upstream behaviours, selected per request by a header or query flag: `ok`, `timeout` (exceeds `UPSTREAM_TIMEOUT_MS`), `http500`, `malformed` (field missing), `nulls` (marine inland), `slow` (under the timeout, for load mixes).
 

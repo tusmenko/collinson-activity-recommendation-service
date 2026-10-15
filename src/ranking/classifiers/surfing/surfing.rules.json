@@ -1,9 +1,14 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "poorCap": {
     "max": 30,
     "minWeight": 2,
     "note": "One disqualifying signal outweighs the rest"
+  },
+  "gate": {
+    "signal": "wavePeriod",
+    "min": 6,
+    "note": "Swell versus chop: no day reaching 6 s means no surf in this window; Baltic and lagoon chop stays under 5.8 s, ocean swell above 6"
   },
   "factors": [
     {
