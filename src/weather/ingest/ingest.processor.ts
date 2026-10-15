@@ -4,13 +4,20 @@ import { UnrecoverableError, Worker } from 'bullmq';
 import type { Job } from 'bullmq';
 import type { Logger } from 'pino';
 
-import { AppLogger, ClockPort, ConfigService, QueueConnection } from '../../infra/index';
+import {
+  AnomalyCounter,
+  AppLogger,
+  ClockPort,
+  ConfigService,
+  QueueConnection,
+} from '../../infra/index';
 import { INGEST_CONCURRENCY, INGEST_QUEUE } from '../queue/queue.const';
 import type { IngestJobData } from '../queue/queue.types';
 import { ForecastSourcePort, MarineSourcePort } from '../sources/weather-source.port';
 import type { WeatherSourcePort } from '../sources/weather-source.port';
 import { ForecastRepositoryPort } from '../store/forecast.port';
 import type { Source, SourceFetchOutcome } from '../weather.types';
+import { UPSTREAM_DRIFT } from './ingest.const';
 import { FairUseExceededError, IngestFailedError } from './ingest.errors';
 import { outcomeOf } from './ingest.util';
 
@@ -21,7 +28,7 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger: Logger;
   private readonly sources: Readonly<Record<Source, WeatherSourcePort>>;
 
-  // eslint-disable-next-line max-params -- Nest constructor injection: the worker connection, the fetch and store collaborators, and the logger
+  // eslint-disable-next-line max-params -- Nest constructor injection: the worker connection, the fetch and store collaborators, the logger and the anomaly counter
   constructor(
     private readonly queueConnection: QueueConnection,
     private readonly config: ConfigService,
@@ -30,6 +37,7 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
     forecast: ForecastSourcePort,
     marine: MarineSourcePort,
     logger: AppLogger,
+    private readonly anomalies: AnomalyCounter,
   ) {
     this.logger = logger.pino.child({ component: 'IngestProcessor' });
     this.sources = { FORECAST: forecast, MARINE: marine };
@@ -71,6 +79,9 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
       await this.store(job.data, result);
     } catch (error) {
       outcome = outcomeOf(error);
+      if (outcome === 'malformed') {
+        this.anomalies.increment(UPSTREAM_DRIFT);
+      }
       // Retrying cannot help once the daily budget is spent, and would count against it again.
       throw error instanceof FairUseExceededError ? new UnrecoverableError(error.message) : error;
     } finally {

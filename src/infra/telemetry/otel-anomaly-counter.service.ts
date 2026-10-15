@@ -18,9 +18,9 @@ export class OtelAnomalyCounter extends AnomalyCounter {
   constructor(logger: AppLogger) {
     super();
     this.logger = logger.pino.child({ component: 'AnomalyCounter' });
-    this.counter = metrics
-      .getMeter(METER_NAME)
-      .createCounter(ANOMALY_METRIC, { description: 'Ranking invariant violations, by type' });
+    this.counter = metrics.getMeter(METER_NAME).createCounter(ANOMALY_METRIC, {
+      description: 'Ranking invariant violations and upstream payload drift, by type',
+    });
   }
 
   increment(type: string): void {

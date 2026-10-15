@@ -226,6 +226,22 @@ describe('IngestService refresh on read and degradation', () => {
     expect(result.partial).toBe(false);
   });
 
+  it('I-INGEST-13 a malformed payload counts an upstream_drift anomaly per attempt', async () => {
+    harness.marine.always({ kind: 'fail', reason: 'malformed', raw: { daily: 'drifted' } });
+    const before = harness.anomalies.count('upstream_drift');
+
+    await harness.service.ensure(LONDON, ['FORECAST', 'MARINE']);
+
+    expect(harness.anomalies.count('upstream_drift') - before).toBe(2);
+    expect(harness.logs).toContainEqual(
+      expect.objectContaining({
+        level: 40,
+        metric: 'ranking_anomalies_total',
+        type: 'upstream_drift',
+      }),
+    );
+  });
+
   it('I-INGEST-8 every run logs an ingest.run event with duration and outcome', async () => {
     harness.marine.always({ kind: 'fail', reason: 'malformed' });
 
