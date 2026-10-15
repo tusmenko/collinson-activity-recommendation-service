@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "poorCap": {
+    "max": 30,
+    "minWeight": 2,
+    "note": "One disqualifying signal outweighs the rest"
+  },
+  "factors": [
+    {
+      "signal": "waveHeight",
+      "unit": "m",
+      "weight": 3,
+      "good": [{ "gte": 1, "lte": 2.5 }],
+      "poor": [{ "lt": 0.5 }, { "gt": 4 }],
+      "note": "Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4)"
+    },
+    {
+      "signal": "wavePeriod",
+      "unit": "s",
+      "weight": 3,
+      "good": [{ "gte": 9 }],
+      "poor": [{ "lt": 6 }],
+      "note": "Swell versus chop; the cleanest separator"
+    },
+    {
+      "signal": "windMax",
+      "unit": "km/h",
+      "weight": 1,
+      "good": [{ "lt": 20 }],
+      "poor": [{ "gt": 30 }],
+      "note": "Speed as proxy for blown-out surf; no direction signal"
+    }
+  ]
+}

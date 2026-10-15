@@ -32,7 +32,7 @@ Every scenario from Step 1 maps to a test, an asserted measure and a gate. The m
 | [QAS-3](02-requirements.md#qas-3), [QAS-11](02-requirements.md#qas-11) upstream failure | 2 | integration | stored data served with `stale: true`; empty store gives `UPSTREAM_UNAVAILABLE` under 4.5 s; marine-only failure gives `partial: true` | CI | done, phase 2 |
 | [QAS-4](02-requirements.md#qas-4) stale read | 2 | integration | one refetch, fresh served, `stale: false` | CI | done, phase 2 |
 | [QAS-5](02-requirements.md#qas-5), [QAS-6](02-requirements.md#qas-6) names | 1, 4 | unit and end-to-end | Missouri first with four alternatives; `NOT_FOUND` with no forecast call | CI | open |
-| [QAS-7](02-requirements.md#qas-7) extensibility | 3, 4 | unit and schema snapshot | a fake activity registers, the enum regenerates, no other file changes | CI | open |
+| [QAS-7](02-requirements.md#qas-7) extensibility | 3, 4 | unit and schema snapshot | a fake activity registers, the enum regenerates, no other file changes | CI | unit part done, phase 3; schema part open until phase 4 |
 | [QAS-8](02-requirements.md#qas-8) operability | 0 | CI job | `docker compose up` on the built image answers `/health` within 120 s | CI | done, phase 0 |
 | [QAS-9](02-requirements.md#qas-9) testability | 0 | CI itself | every level runs; the job asserts its own duration under 5 min; zero live upstream calls | CI | done, phase 0 |
 | [QAS-10](02-requirements.md#qas-10) explainability | 4 | end-to-end | details absent by default, present when selected; every ranking event complete | CI | open |
