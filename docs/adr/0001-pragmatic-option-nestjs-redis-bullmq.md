@@ -3,8 +3,8 @@
 | Field | Value |
 | --- | --- |
 | Status | accepted |
-| Date | 2026-10-14 |
-| Deciders | Yevhenii (decision authority); Shane Patrick as proxy product manager at review |
+| Date | 2026-10-15 (drafted 2026-10-14) |
+| Deciders | Yevhenii (decision authority). The lead reviewer stands in for the absent product manager and can overturn any logged assumption at review. |
 | Supersedes | — |
 | Superseded by | — |
 | Elaborated by | [ADR-0002](0002-redis-only-store.md) to [ADR-0009](0009-delivery-compose-helm-actions.md) |

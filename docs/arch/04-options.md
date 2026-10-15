@@ -12,7 +12,7 @@ All three options share the seam fixed by [ASR-1](03-asrs.md#asr-1), [ASR-2](03-
 | Dependency injection, modules | [ASR-1](03-asrs.md#asr-1) registry, [ASR-2](03-asrs.md#asr-2) adapters, [ASR-5](03-asrs.md#asr-5) facts versus cache |
 | Zod with a ten-line `PipeTransform` | [NFR-12](02-requirements.md#nfr-12) argument validation with `BAD_USER_INPUT`; [NFR-11](02-requirements.md#nfr-11) payload validation; config validation; types inferred from the schemas. `nestjs-zod` dropped after S-2: peer conflict with Nest 12 and maps failures to `BAD_REQUEST` |
 | ThrottlerModule | [NFR-12](02-requirements.md#nfr-12) inbound limiter; in-memory storage in A, Redis storage in B and C |
-| BullMQ (`@nestjs/bullmq`) | [ASR-3](03-asrs.md#asr-3) ingest execution in B and C: durable jobs, job-id deduplication, queue limiter, retries, lifecycle events; `enrich` queue as the [ASR-5](03-asrs.md#asr-5) attachment point |
+| BullMQ (`@nestjs/bullmq` at this step; the build uses plain `bullmq` providers, [D-12](../ACTIVITY_RANKING_DESIGN.md#d-12)) | [ASR-3](03-asrs.md#asr-3) ingest execution in B and C: durable jobs, job-id deduplication, queue limiter, retries, lifecycle events; `enrich` queue as the [ASR-5](03-asrs.md#asr-5) attachment point |
 | Terminus | [NFR-5](02-requirements.md#nfr-5) health endpoint (`/health` with Redis and memory indicators, Kubernetes probe format) |
 | ConfigModule | [A-36](registers.md#a-36) environment configuration |
 | pino, OpenTelemetry SDK | [NFR-5](02-requirements.md#nfr-5) logs; [NFR-13](02-requirements.md#nfr-13) ranking events and anomaly counter |
@@ -161,4 +161,4 @@ One row per choice. "Serves" names the requirements the choice addresses. Prefer
 | <a id="r-11"></a>R-11 | Reviewers read Redis as "just a cache" against the brief's rule to persist the data. | M × M | README explains the store model, the two namespaces and AOF persistence; repository interfaces show where PostgreSQL lands. | accepted for C; README section planned |
 | <a id="r-12"></a>R-12 | The model `snow_depth` is zero on some glacier cells, so an open glacier resort is reported not applicable for skiing. | M × L | The reason text names the signal and value; resort elevation and snow facts are enrichment on the [ASR-5](03-asrs.md#asr-5) seam; the golden set carries Hintertux against Chamonix. | accepted for C; [A-50](registers.md#a-50) |
 
-> **Review Gate 3** — passed 2026-10-14. Options accepted as characterised: NestJS throughout; Redis with AOF as the only store; stale-while-revalidate; BullMQ ingest and enrich queues in B and C; Zod, Vitest; `@defer` as tier 2 behind [H-7](registers.md#h-7).
+> **Review Gate 3** — passed 2026-10-14. Options accepted as characterised: NestJS throughout; Redis with AOF as the only store; stale-while-revalidate (withdrawn at the Gate 4 review, [A-51](registers.md#a-51)); BullMQ ingest and enrich queues in B and C; Zod, Vitest; `@defer` as tier 2 behind [H-7](registers.md#h-7).

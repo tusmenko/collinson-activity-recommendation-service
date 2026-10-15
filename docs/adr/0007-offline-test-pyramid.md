@@ -8,7 +8,7 @@
 | Supersedes | — |
 | Design | [D-10](../ACTIVITY_RANKING_DESIGN.md#d-10); the [test plan](../ACTIVITY_RANKING_TEST_PLAN.md) |
 
-**Context.** Robust, testable code is a stated hiring-manager concern (Step 0). Tests that call Open-Meteo are slow, flaky and spend fair use. The whole pyramid must run in CI on every push in under five minutes.
+**Context.** Robust, testable code is a stated reviewer concern (Step 0). Tests that call Open-Meteo are slow, flaky and spend fair use. The whole pyramid must run in CI on every push in under five minutes.
 
 **Decision.** Unit, integration, schema and end-to-end tests all run offline. Adapters and the end-to-end suite use payloads recorded once from Open-Meteo and served by a stub upstream, which also simulates timeouts, 5xx, malformed and null responses. A network guard fails any test that opens a socket outside localhost. Coverage gates apply per module, with a floor for every file. A load job runs against the `demo` profile on `main` and nightly.
 

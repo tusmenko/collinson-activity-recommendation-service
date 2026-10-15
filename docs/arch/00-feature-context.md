@@ -16,7 +16,7 @@ Ordered as the brief orders them, with one business driver above all of them.
 2. **Reasoning is visible and followable.** This document, the assumptions register, the open questions log, and a readable commit history are the primary deliverable. Cuts and time-outs are recorded with a one-line reason rather than hidden.
 3. **The service works and is explained.** A GraphQL endpoint answers the ranking query for a named city; data is persisted and refreshed; a short README covers what was built, how to run it, and the assumptions.
 4. **Focused over exhaustive.** A small, well-reasoned submission beats a broad one. Anything not on the critical path is noted as a future step, not built.
-5. **Survives a live walkthrough.** Final interview is 1h–1h30 screen-share with an Engineering Manager and a Principal Engineer, with questions on design and architecture decisions and possibly a few lines of live coding. Every decision here should be defensible out loud.
+5. **Survives a live walkthrough.** The final stage is a live screen-share walkthrough with senior engineers, with questions on design and architecture decisions and possibly a few lines of live coding. Every decision here should be defensible out loud.
 
 Two further goals confirmed by the candidate at the stage 0 gate:
 
@@ -87,8 +87,8 @@ These are about the engagement itself, not the product. Product questions start 
 | #    | Question                                                                                                                                      | Resolution                                                                                                                             | Status              |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | <a id="s0-2"></a>S0-2 | How far to echo the JD stack?                                                                                                                 | Build what fits in a day; describe the rest as a production path. Stack utilisation is an explicit goal, not a nice-to-have.           | resolved 2026-10-14 |
-| <a id="s0-3"></a>S0-3 | What counts as "show how you worked"?                                                                                                         | This document, the assumptions and decisions trail, commit history, and the AI tooling files committed to the repo. No raw transcript. | resolved 2026-10-14 |
-| <a id="s0-4"></a>S0-4 | This document ships publicly. Keep the reviewers' personal names in the stakeholder map, or reduce them to roles before the repo goes public? | Keep the names. | resolved 2026-10-14 |
+| <a id="s0-3"></a>S0-3 | What counts as "show how you worked"?                                                                                                         | This document, the assumptions and decisions trail, commit history, the conventions file committed to the repo (`CLAUDE.md`), and an "AI use" section in the README. No raw transcript. | resolved 2026-10-14 |
+| <a id="s0-4"></a>S0-4 | This document ships publicly. Keep the reviewers' personal names in the stakeholder map, or reduce them to roles before the repo goes public? | Keep the names (2026-10-14). Revised at the pre-submission review on 2026-10-15: reduced to roles; real people should not find themselves assigned roles in a process they did not join. | revised 2026-10-15 |
 
 
 Assumption carried into the Assumptions Register at Step 1:
@@ -96,4 +96,4 @@ Assumption carried into the Assumptions Register at Step 1:
 - **A-0 (resolved 2026-10-14).** "LLM-ops practices" means the production practices for an LLM layer: prompt versioning, call observability, a gateway or provider abstraction, structured validated outputs, and durable execution (in the spirit of tools such as an LLM gateway, Pydantic AI, LangGraph, Temporal). An LLM inside the service remains a Step 3 option and is not added for show; if designed, it follows these practices. Development-time AI tooling committed to the repo is part of goal 1.
 
 
-> **Stage 0 gate** — passed 2026-10-14, revised: finish today, send tomorrow; stack utilisation and LLM-ops as explicit goals; no transcript; names kept.
+> **Stage 0 gate** — passed 2026-10-14, revised: finish today, send tomorrow; stack utilisation and LLM-ops as explicit goals; no transcript; names kept, reduced to roles on 2026-10-15 (S0-4).

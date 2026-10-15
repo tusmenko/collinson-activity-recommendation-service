@@ -43,7 +43,7 @@ Every scenario from Step 1 maps to a test, an asserted measure and a gate. The m
 - Pre-commit (lefthook, lint-staged): eslint, prettier, `tsc --noEmit`.
 - Commit-msg: commitlint, conventional commits.
 - Pre-push: unit and integration against the local Redis.
-- CI on every push: frozen install, lint, type check, unit, integration with a redis service, schema snapshot, end-to-end, coverage threshold of 80 percent on the `ranking` and `weather` modules, image build, compose health check, `helm lint`. Load job on `main` and nightly.
+- CI on every push: frozen install, lint, type check, unit, integration with a redis service, schema snapshot, end-to-end, the per-module coverage thresholds from the [test plan](../ACTIVITY_RANKING_TEST_PLAN.md), image build, compose health check, `helm lint`. Load job on `main` and nightly.
 - Branch protection on `main`: CI green required, no direct pushes; squash-merge per phase.
 
 ### Definition of done per phase
@@ -77,12 +77,12 @@ Never cut: phases 0 to 4 core behaviour, the golden-set tests, the README assump
 ## Dependencies
 
 - Docker running for Compose and for the redis service in local test runs; GitHub Actions provides the service container in CI.
-- Node 24 and npm; disk space for three `node_modules` trees.
+- Node 24 and pnpm; disk space for three `node_modules` trees.
 - Open-Meteo reachable once, to record the fixtures in phase 1; no test or CI step calls it afterwards.
-- A public GitHub repository to push to; the recruiter notified after the fresh-eyes pass.
+- A public GitHub repository to push to; the company notified after the fresh-eyes pass.
 
 ## Schedule
 
-Implementation on 2026-10-15; fresh-eyes read, clean-clone run, make public and send on 2026-10-16 morning. The recruiter's limit of 2026-10-21 holds; the earlier "send on the 15th" target slipped by one day to the architecture review and the spikes, which is recorded here rather than hidden.
+Implementation on 2026-10-15; fresh-eyes read, clean-clone run, make public and send on 2026-10-16 morning. The submission limit of 2026-10-21 holds; the earlier "send on the 15th" target slipped by one day to the architecture review and the spikes, which is recorded here rather than hidden.
 
-> **Step 5 complete** — 2026-10-15. Implementation starts from phase 0; the architecture phase is closed.
+> **Step 5 closed** — 2026-10-15. Implementation starts from phase 0; the architecture phase is closed.

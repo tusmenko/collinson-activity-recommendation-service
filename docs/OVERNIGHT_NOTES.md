@@ -1,6 +1,6 @@
 # Overnight implementation notes
 
-Written during the unattended implementation run on the night of 2026-10-15 to 2026-10-16. Two parts: questions that need the owner's answer, and the progress log. Technical decisions taken overnight are recorded in [D-12](ACTIVITY_RANKING_DESIGN.md#d-12) of the design document and in the [ADR log](adr/README.md).
+Written during the unattended implementation run on the night of 2026-10-14 to 2026-10-15. Two parts: questions that need the owner's answer, and the progress log. Technical decisions taken overnight are recorded in [D-12](ACTIVITY_RANKING_DESIGN.md#d-12) of the design document and in the [ADR log](adr/README.md).
 
 ## Open questions for the morning
 

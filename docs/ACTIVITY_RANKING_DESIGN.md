@@ -26,7 +26,7 @@ File postfixes follow the standards' layout table; this service adds `*.classifi
 | `@nestjs/throttler` with Redis storage | Inbound per-client limiter |
 | `bullmq` 6 (ioredis 6 as its peer), wrapped by two injectable classes | `ingest` and `enrich` queues; processors in-process behind `QUEUE_PROCESSORS_ENABLED`; `waitUntilFinished` with the cold-read bound (S-3); see [D-12](#d-12) for why `@nestjs/bullmq` is not used |
 | `@nestjs/terminus` | `/health/live` (the process answers; no dependency, so a Redis outage never restarts it) and `/health/ready` (Redis and memory indicators, 503 when one is down; `/health` is its alias) |
-| `@nestjs/config` | Environment configuration validated by Zod |
+| Own `ConfigModule` in `infra/config` | Environment configuration validated by Zod; `@nestjs/config` is not used, the Zod schema and a typed `get` are the whole module |
 | `pino`, `@opentelemetry/sdk-node` | JSON logs; ranking events; `ranking_anomalies_total{type}` counter; console or OTLP exporter |
 | `ioredis` | Behind `FactsRepository` and `ForecastRepository` interfaces |
 | `OpenMeteoClient` in `infra` | Typed endpoints `searchLocations`, `forecast`, `marine`; owns hosts, parameters, pinned payload schemas and timeouts; adapters translate payloads to domain types |
@@ -41,7 +41,7 @@ Every knob is an environment variable, listed in `.env.example` with its default
 | --- | --- | --- |
 | `PORT` | `4510` | HTTP port; a non-default number so a reviewer's dev server on 3000 never collides ([D-12](#on-9)) |
 | `REDIS_URL` | `redis://redis:6379` | Store and queues |
-| `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `weather.const.ts` or `location.const.ts` ([D-12](#a-53)) |
+| `UPSTREAM_BASE_URL` | unset | One base URL for the whole provider: set, it replaces all three Open-Meteo hosts (geocoding, forecast, marine), which is how tests and the `demo` profile reach the stub upstream; unset or empty, each adapter uses its real host, a constant in `infra/open-meteo/open-meteo.const.ts` ([D-12](#a-53)) |
 | `WINDOW_DAYS` | `7` | Days returned per activity ([FR-2](arch/02-requirements.md#fr-2)) |
 | `FETCH_DAYS` | `8` | Days fetched per ingest; `WINDOW_DAYS + 1` covers local midnight |
 | `FRESHNESS_TTL` | `6h` | Data older than this is refetched before it is served; served flagged stale only if the refetch fails |
@@ -220,8 +220,8 @@ Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London
 | Skiing | wind gusts, km/h | < 40 | > 60 | — | Lifts close around 60 to 80 |
 | Skiing | visibility, m | > 5000 | < 1000 | — | Whiteout risk; weak signal |
 | Surfing | marine data | — | — | absent (nulls) or source failed (unavailable) | Inland locations |
-| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | < 0.5 every day | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4) |
-| Surfing | wave period, s | ≥ 9 | < 6 | < 5 every day | Swell versus chop; the cleanest separator |
+| Surfing | wave height, m | 1.0 to 2.5 | < 0.5 or > 4 | — | Separates Biarritz (1.2 to 2.0) from Dubai (0.1 to 0.4). No wave-size gate: a lagoon that returns waves is scored, low ([H-3](arch/registers.md#h-3)) |
+| Surfing | wave period, s | ≥ 9 | < 6 | — | Swell versus chop; the cleanest separator |
 | Surfing | wind, km/h | < 20 | > 30 | — | Speed as proxy for blown-out surf; no direction signal |
 | Outdoor sightseeing | precipitation, mm | < 1 | > 5 | — | Drizzle tolerable; 83 mm is not |
 | Outdoor sightseeing | precipitation probability, % | < 30 | > 60 | — | |
@@ -388,7 +388,7 @@ The full plan, with the traceability matrix from every requirement and scenario 
 | End-to-end | One query through `app.listen(0)` over `fetch` with stubbed adapters: warm, cold, stale, unknown name, marine failure | Redis container |
 | Performance | autocannon against the running service: p95 of warm reads, wall time of one cold read; `INBOUND_PER_MINUTE` raised for the run | Optional CI job |
 
-A fixture-backed stub upstream container serves recorded Open-Meteo payloads for end-to-end tests, the load job and the `demo` Compose profile. Hooks: lefthook with lint-staged (eslint, prettier) and `tsc --noEmit` on pre-commit, commitlint on commit-msg, unit and integration on pre-push. CI gates: lint, type check, unit, integration, schema, end-to-end, coverage threshold 80 percent on `ranking` and `weather`, compose health check; under 5 minutes; zero live calls to Open-Meteo. Load job with asserted thresholds on `main` and nightly. Every behaviour is written test-first; each phase is a pull request merged green.
+A fixture-backed stub upstream container serves recorded Open-Meteo payloads for end-to-end tests, the load job and the `demo` Compose profile. Hooks: lefthook with lint-staged (eslint, prettier) and `tsc --noEmit` on pre-commit, commitlint on commit-msg, unit and integration on pre-push. CI gates: lint, type check, unit, integration, schema, end-to-end, the per-module coverage thresholds from the [test plan](ACTIVITY_RANKING_TEST_PLAN.md), compose health check; under 5 minutes; zero live calls to Open-Meteo. Load job with asserted thresholds on `main` and nightly. Every behaviour is written test-first; each phase is a pull request merged green.
 
 <a id="d-11"></a>
 ## D-11 Delivery
