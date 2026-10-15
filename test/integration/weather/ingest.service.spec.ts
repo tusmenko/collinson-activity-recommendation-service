@@ -121,6 +121,42 @@ describe('IngestService refresh on read and degradation', () => {
     expect(await harness.repository.readLastError(LONDON.id)).not.toBeNull();
   });
 
+  it('I-INGEST-11 a partial stored window and a failed refetch serve the present days flagged stale', async () => {
+    const dates = await harness.seedWindow(LONDON, 'FORECAST', SEEDED_AT);
+    const absent = dates[2] ?? '';
+    await harness.redis.del(dayKey(LONDON, 'FORECAST', absent));
+    harness.forecast.always({ kind: 'fail', reason: 'http' });
+
+    const result = await harness.service.ensure(LONDON, ['FORECAST']);
+
+    expect(result).toMatchObject({ stale: true, partial: false, fetchedAt: SEEDED_AT, dates });
+    expect(statusOf(result, 'FORECAST')).toEqual({
+      source: 'FORECAST',
+      status: 'FAILED',
+      fetchedAt: SEEDED_AT,
+    });
+    expect(result.days.FORECAST?.map((day) => day.date)).toEqual(
+      dates.filter((date) => date !== absent),
+    );
+  });
+
+  it('I-INGEST-12 a successful fetch with fewer days than requested logs a short-window warning', async () => {
+    harness.forecast.always({ kind: 'ok', days: 5 });
+
+    const result = await harness.service.ensure(LONDON, ['FORECAST']);
+
+    expect(result.days.FORECAST).toHaveLength(5);
+    expect(harness.logs).toContainEqual(
+      expect.objectContaining({
+        level: 40,
+        event: 'ingest.short_window',
+        source: 'FORECAST',
+        requested: 8,
+        received: 5,
+      }),
+    );
+  });
+
   it('I-INGEST-5 a marine failure serves the forecast with partial: true and persists it', async () => {
     harness.marine.always({ kind: 'fail', reason: 'http' });
 

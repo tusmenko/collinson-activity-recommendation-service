@@ -99,6 +99,7 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
   private async store(data: IngestJobData, result: SourceFetchOutcome): Promise<void> {
     const { locationId, source } = data;
     if (result.kind === 'ok') {
+      this.warnIfShort(data, result.days.length);
       const days = result.days.map((signals) => ({
         signals,
         fetchedAt: this.clock.now().toISOString(),
@@ -117,5 +118,17 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
       at: this.clock.now().toISOString(),
     });
     throw new IngestFailedError(result.reason, result.detail);
+  }
+
+  // Thrash risk: a window date the provider did not return stays missing, so every read of this
+  // location refetches it until the provider's horizon covers it again.
+  private warnIfShort({ locationId, source }: IngestJobData, received: number): void {
+    const requested = this.config.get('FETCH_DAYS');
+    if (received < requested) {
+      this.logger.warn(
+        { event: 'ingest.short_window', locationId, source, requested, received },
+        'ingest.short_window: fewer days than requested; missing dates refetch on every read',
+      );
+    }
   }
 }

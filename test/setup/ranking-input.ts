@@ -6,6 +6,7 @@ import type { RankingInput } from '../../src/ranking/index';
 import type { DaySignals } from '../../src/weather/index';
 import { toDaySignals as forecastDays } from '../../src/weather/sources/forecast/open-meteo-forecast.util';
 import { toDaySignals as marineDays } from '../../src/weather/sources/marine/open-meteo-marine.util';
+import { testConfig } from './adapter-deps';
 import { FIXED_NOW } from './fixed-clock';
 import { loadFixture } from './fixtures';
 
@@ -66,11 +67,14 @@ function facts(place: Place): LocationFacts {
 export function rankingInput(place: Place, overrides: Partial<RankingInput> = {}): RankingInput {
   const { forecast, marine } = PLACES[place];
   const fetchedAt = FIXED_NOW.toISOString();
+  const forecastSignals = normalised(forecast, ForecastPayloadSchema, forecastDays);
   return {
     location: facts(place),
     activities: [],
+    // The recorded body starts on the window's first day; it holds FETCH_DAYS, the window WINDOW_DAYS.
+    dates: forecastSignals.slice(0, testConfig().get('WINDOW_DAYS')).map((day) => day.date),
     days: {
-      FORECAST: normalised(forecast, ForecastPayloadSchema, forecastDays),
+      FORECAST: forecastSignals,
       ...(marine === null ? {} : { MARINE: normalised(marine, MarinePayloadSchema, marineDays) }),
     },
     sources: [

@@ -10,8 +10,8 @@ const classifier = new SurfingClassifier(new ScoreEngine());
 const rules = parseRuleSet('SURFING', classifier.ruleFile);
 
 function input(place: 'biarritz' | 'london') {
-  const { location, days } = rankingInput(place);
-  return { facts: location, days: mergeDays(days, 7), rules };
+  const { location, days, dates } = rankingInput(place);
+  return { facts: location, days: mergeDays(days, dates), rules };
 }
 
 describe('SurfingClassifier', () => {

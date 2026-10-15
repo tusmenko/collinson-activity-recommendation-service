@@ -4,7 +4,7 @@ import { rankingInput } from '../../test/setup/ranking-input';
 import type { DaySignals, Source } from '../weather/index';
 import type { ClassifierOutput } from './ranking.types';
 import { Classifier } from './registry/classifier.port';
-import { failedSource, mergeDays, noSignals } from './ranking.util';
+import { failedSource, mergeDays, noSignals, unservedDates } from './ranking.util';
 
 class Requiring extends Classifier {
   readonly id = 'REQUIRING';
@@ -32,13 +32,13 @@ describe('ranking helpers', () => {
     expect(Object.values(signals).every((value) => value === null)).toBe(true);
   });
 
-  it('U-RANK-11 mergeDays sorts by date, keeps WINDOW_DAYS and takes waves from MARINE', () => {
+  it('U-RANK-11 mergeDays follows the window dates and takes waves from MARINE', () => {
     const merged = mergeDays(
       {
         FORECAST: [day('2026-10-17', { tempMax: 3 }), day('2026-10-15', { tempMax: 1 })],
         MARINE: [day('2026-10-15', { waveHeight: 1.5, wavePeriod: 10, swellHeight: 1.2 })],
       },
-      1,
+      ['2026-10-15'],
     );
 
     expect(merged).toEqual([
@@ -47,16 +47,27 @@ describe('ranking helpers', () => {
   });
 
   it('U-RANK-11 a forecast day without a marine day keeps null waves', () => {
-    const merged = mergeDays({ FORECAST: [day('2026-10-15', { waveHeight: 9 })] }, 7);
+    const merged = mergeDays({ FORECAST: [day('2026-10-15', { waveHeight: 9 })] }, ['2026-10-15']);
 
     expect(merged[0]).toMatchObject({ waveHeight: null, wavePeriod: null, swellHeight: null });
   });
 
-  it('U-RANK-11 with no forecast the marine days are the base; with neither there are none', () => {
+  it('U-RANK-11 with no forecast the marine days are the base; with neither every date is null', () => {
     const marine = [day('2026-10-15', { waveHeight: 2 })];
 
-    expect(mergeDays({ FORECAST: [], MARINE: marine }, 7)).toEqual(marine);
-    expect(mergeDays({}, 7)).toEqual([]);
+    expect(mergeDays({ FORECAST: [], MARINE: marine }, ['2026-10-15'])).toEqual(marine);
+    expect(mergeDays({}, ['2026-10-15'])).toEqual([noSignals('2026-10-15')]);
+  });
+
+  it('U-RANK-15 a window date the base source did not serve is all-null and reported unserved', () => {
+    const days = { FORECAST: [day('2026-10-15', { tempMax: 1 })] };
+    const dates = ['2026-10-15', '2026-10-16'];
+
+    expect(mergeDays(days, dates)).toEqual([
+      day('2026-10-15', { tempMax: 1 }),
+      noSignals('2026-10-16'),
+    ]);
+    expect([...unservedDates(days, dates)]).toEqual(['2026-10-16']);
   });
 
   it('U-RANK-10 a required source that failed with nothing stored is reported', () => {

@@ -41,7 +41,6 @@ export function rankingHarness(extra: readonly Classifier[] = []): RankingHarnes
   const { logger } = captured;
   const lines = (): Record<string, unknown>[] => captured.lines;
   const counter = new OtelAnomalyCounter(logger);
-  const config = testConfig();
-  const audit = new RankingAuditService(counter, logger, config);
-  return { service: new RankingService(registry, rules, audit, config), counter, lines };
+  const audit = new RankingAuditService(counter, logger, testConfig());
+  return { service: new RankingService(registry, rules, audit), counter, lines };
 }

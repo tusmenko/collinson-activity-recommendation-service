@@ -64,6 +64,9 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [NFR-11](arch/02-requirements.md#nfr-11) provider neutrality | U-ADAPT-1 forecast payload validates against the pinned schema; U-ADAPT-2 a payload missing a field is reported as a failed source, not thrown; U-ADAPT-3 marine nulls normalise to absent signals; U-ADAPT-4 `snow_depth` hourly reduces to a daily maximum; U-ADAPT-5 a second fake adapter satisfies the interface | unit | 1 |
 | [NFR-12](arch/02-requirements.md#nfr-12) security | U-API-1 empty, overlong and non-letter city give `BAD_USER_INPUT`; E-API-10 throttle exceeded gives `RATE_LIMITED`; E-API-9 complexity | unit, end-to-end | 4 |
 | [NFR-13](arch/02-requirements.md#nfr-13) traceability | U-EVENT-1 event carries provider, fetched-at, classifier id and version, rule-set version; U-EVENT-2 invariant violations log at warn and increment `ranking_anomalies_total{type}`; U-EVENT-3 `marineDataAvailable` change emits an event | unit | 3 |
+| [NFR-4](arch/02-requirements.md#nfr-4) availability, review C1 | I-INGEST-11 a partial stored window with a failed refetch serves the stored days, `stale: true`, the source `FAILED` | integration | review |
+| [FR-2](arch/02-requirements.md#fr-2) seven days, review C1 | U-RANK-15 a window date no source served keeps its place with a null score and null signals | unit | review |
+| [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 
 ## Golden set and fixtures
