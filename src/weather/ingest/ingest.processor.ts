@@ -113,7 +113,7 @@ export class IngestProcessor implements OnModuleInit, OnModuleDestroy {
       this.warnIfShort(data, result.days.length);
       const days = result.days.map((signals) => ({
         signals,
-        fetchedAt: this.clock.now().toISOString(),
+        fetchedAt: result.fetchedAt,
         providerSchemaVersion: result.providerSchemaVersion,
       }));
       await this.repository.writeWindow(locationId, source, days, result.raw);
