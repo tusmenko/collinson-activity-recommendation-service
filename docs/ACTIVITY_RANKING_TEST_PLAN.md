@@ -46,7 +46,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [FR-4](arch/02-requirements.md#fr-4) score per day per activity | U-RANK-3 scores within 0 to 100 in date order | unit | 3 |
 | [DF-1](arch/02-requirements.md#df-1) ambiguity | U-LOC-2 exact-name preference (Victoria versus Vitória); U-LOC-3 Springfield gives Missouri plus four alternatives; E-API-2 alternatives in `meta`; E-API-15 a failure ranking one alternative nulls only its `rankings` and gives one error with the path, the primary answer intact | unit, end-to-end | 1, 4 |
 | [DF-2](arch/02-requirements.md#df-2) unknown name | U-LOC-4 no results gives `NOT_FOUND`; E-API-3 error code and no forecast call | unit, end-to-end | 1, 4 |
-| [DF-3](arch/02-requirements.md#df-3) not applicable | U-SURF-1 marine nulls give `NOT_APPLICABLE` with reason; U-SKI-1 snow depth under 5 cm every day gives `NOT_APPLICABLE`; U-SKI-4 a place below 800 m (London, 25 m) or of unknown elevation gives `NOT_APPLICABLE` naming the elevation, even with snow; U-SKI-5 Chamonix at 1060 m with the January window stays `APPLICABLE` | unit | 3 |
+| [DF-3](arch/02-requirements.md#df-3) not applicable | U-SURF-1 marine nulls give `NOT_APPLICABLE` with reason; U-SKI-1 snow depth under 5 cm every day gives `NO_CONDITIONS`; U-SKI-4 a place below 800 m (London, 25 m) or of unknown elevation gives `NOT_APPLICABLE` naming the elevation, even with snow; U-SKI-5 Chamonix at 1060 m with the January window stays `APPLICABLE` | unit | 3 |
 | [DF-4](arch/02-requirements.md#df-4) factors on selection | E-API-4 default query has no `details`; E-API-5 details query returns factors and signals; E-API-14 GraphiQL opens with the three example operations and their variables, and each validates against the schema (S-SCHEMA-1); U-EVENT-1 event always carries factors | end-to-end, unit | 3, 4 |
 | [DF-5](arch/02-requirements.md#df-5) data age | E-API-6 `meta.fetchedAt` and `stale` present | end-to-end | 4 |
 | [DF-6](arch/02-requirements.md#df-6) per-source failure | I-INGEST-5 marine fails: surfing `UNAVAILABLE`, `partial: true`, forecast persisted; I-INGEST-6 forecast fails with empty store: `UPSTREAM_UNAVAILABLE` under 4.5 s with location | integration | 2 |
@@ -74,6 +74,7 @@ Test case ids: U unit, I integration, S schema, E end-to-end, L load, O operabil
 | [FR-3](arch/02-requirements.md#fr-3) four activities, review C8 | S-SCHEMA-3 both `activities` arguments document that omitting means all and an empty list is rejected | schema | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C8 | U-API-14 the GraphQL error filter is registered app-wide through `APP_FILTER`, covering `Location.rankings`; U-API-6 an HTTP error goes to Nest's own handler | unit | review |
 | [NFR-2](arch/02-requirements.md#nfr-2) deployability, shutdown | U-INFRA-7 bounded waits: `resolvesWithin` clears its timer, `closeWithin` forces a close that never settles and skips the graceful close of a connection never ready; U-INFRA-8 the Redis client QUITs only when ready and is disconnected after `REDIS_QUIT_TIMEOUT_MS`; I-QUEUE-7 `IngestQueue.onModuleDestroy` resolves within `QUEUE_CLOSE_TIMEOUT_MS` when `QueueEvents.close()` never settles | unit, integration | review |
+| [DF-3](arch/02-requirements.md#df-3) not applicable, status split | U-RANK-16 `NO_CONDITIONS` with null scores is no anomaly, a score under it is; S-SCHEMA-4 `ActivityStatus` adds `NO_CONDITIONS` and keeps every earlier value; E-API-16 Chamonix in October gives skiing `NO_CONDITIONS` with the snow reason in `meta.reasons`; U-API-11 `NO_CONDITIONS` is listed in `meta.reasons` | unit, schema, end-to-end | review |
 | [NFR-5](arch/02-requirements.md#nfr-5) fault detection, review C1 | I-INGEST-12 a fetch returning fewer days than requested logs `ingest.short_window` at warn | integration | review |
 | [QAS-1](arch/02-requirements.md#qas-1) to [QAS-11](arch/02-requirements.md#qas-11) | mapped in the Step 5 validation matrix to the cases above | | |
 
@@ -84,7 +85,7 @@ Recorded once from Open-Meteo (live on 2026-10-15, archive for past days), store
 | Fixture | Source | Expected outcome in U-RANK golden tests |
 | --- | --- | --- |
 | Chamonix, 2026-01-10 to 16 (archive) | forecast | skiing APPLICABLE, 10 January good (12.5 cm snowfall, tmax −2) |
-| Chamonix, 2026-10-14 (live) | forecast | skiing NOT_APPLICABLE (snow depth 0); outdoor sightseeing good on dry days |
+| Chamonix, 2026-10-14 (live) | forecast | skiing NO_CONDITIONS (snow depth 0); outdoor sightseeing good on dry days |
 | Hintertux at 3250 m, 2026-10-14 (live, `elevation`) | forecast | skiing APPLICABLE (snow depth 39 cm) |
 | Biarritz, 2026-10-14 (live) | forecast, marine | surfing APPLICABLE and good (1.2 to 2.0 m, 9 to 14 s) |
 | Dubai, 2026-10-14 (live) | forecast, marine | surfing poor (period under 4 s); indoor over outdoor (tmax 34 to 38) |

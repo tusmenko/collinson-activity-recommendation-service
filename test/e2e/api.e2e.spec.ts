@@ -250,6 +250,13 @@ describe('E-API api end to end over HTTP', () => {
     });
   });
 
+  it('E-API-16 Chamonix in October gives skiing NO_CONDITIONS with the snow reason', async () => {
+    const response = await query(DETAILS_QUERY, { city: 'Chamonix', activities: ['SKIING'] });
+
+    expect(rankingOf(response, 'SKIING')?.status).toBe('NO_CONDITIONS');
+    expect(response.data?.activityRankings.meta.reasons?.[0]?.reason).toMatch(/^snow depth below/);
+  });
+
   it('E-API-13 an activities filter ranks only the requested activities', async () => {
     const response = await query(DETAILS_QUERY, { city: 'London', activities: ['SKIING'] });
 

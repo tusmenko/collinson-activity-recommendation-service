@@ -16,6 +16,7 @@ export function registerActivities(ids: readonly string[]): void {
 export const ActivityStatusEnum = {
   APPLICABLE: 'APPLICABLE',
   NOT_APPLICABLE: 'NOT_APPLICABLE',
+  NO_CONDITIONS: 'NO_CONDITIONS',
   UNAVAILABLE: 'UNAVAILABLE',
 } as const;
 
@@ -36,6 +37,15 @@ registerEnumType(ActivityEnum, {
 registerEnumType(ActivityStatusEnum, {
   name: 'ActivityStatus',
   description: 'Whether the activity can be scored at this location from the data served.',
+  valuesMap: {
+    APPLICABLE: { description: 'Scored for every day of the window.' },
+    NOT_APPLICABLE: { description: 'The place cannot host the activity; meta.reasons says why.' },
+    NO_CONDITIONS: {
+      description:
+        'The place can host the activity, but no day in this window has the conditions for it.',
+    },
+    UNAVAILABLE: { description: 'A source the activity needs failed with nothing stored.' },
+  },
 });
 registerEnumType(SourceEnum, { name: 'Source', description: 'An upstream weather source.' });
 registerEnumType(FetchStatusEnum, {

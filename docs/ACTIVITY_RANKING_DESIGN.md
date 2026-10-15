@@ -152,7 +152,7 @@ type DaySignals {
 }
 
 enum Activity { SKIING SURFING OUTDOOR_SIGHTSEEING INDOOR_SIGHTSEEING }
-enum ActivityStatus { APPLICABLE NOT_APPLICABLE UNAVAILABLE }
+enum ActivityStatus { APPLICABLE NOT_APPLICABLE NO_CONDITIONS UNAVAILABLE }  # NO_CONDITIONS: the place can host it, no day in this window suits it
 enum Source { FORECAST MARINE }
 enum FetchStatus { OK FAILED SKIPPED }
 enum Effect { POSITIVE NEGATIVE NEUTRAL }
@@ -206,16 +206,16 @@ interface Classifier {
 }
 ```
 
-The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below) and otherwise when no snow signal exists in the window; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
+The registry is a map from `Activity` to `Classifier`, constructed from the one classifier list in `RankingModule`, each classifier carrying its rule file, so that list entry is an activity's only registration and the registry is complete before anything reads it; the GraphQL `Activity` enum is built from its keys at startup. Thresholds are JSON per classifier, read through `RuleSetProvider`, whose static implementation exports `ruleSetVersion`; a configuration-service or database provider replaces it without touching classifiers ([A-46](arch/registers.md#a-46)). Applicability rules: surfing is `NOT_APPLICABLE` when marine data is absent (nulls) and `UNAVAILABLE` when the marine source failed; skiing is `NOT_APPLICABLE` when the place sits below 800 m (the geocoding elevation on `LocationFacts`; unknown elevation counts as below), a fact of the place, and `NO_CONDITIONS` when the place qualifies but snow depth stays under 5 cm (or is unknown) on every day of the window, a fact of this week; any classifier may answer `NO_CONDITIONS`, and like the other non-applicable statuses it carries a reason and null scores; sightseeing activities are always applicable. Scores and factors come from threshold rules, one file per activity with a note per threshold ([R-7](arch/04-options.md#r-7)).
 
 ### D-6.1 Provisional thresholds
 
 Proposals from spike S-6 (Open-Meteo daily ranges for Chamonix, Biarritz, London, Dubai and Springfield on 2026-10-14) plus general knowledge. Every number is a proposal, kept in the per-activity JSON with the note shown here, and revisited against the golden set ([H-1](arch/registers.md#h-1)). Weak or model-capped signals (visibility, sunshine, cloud cover, UV) carry low weight.
 
-| Activity | Signal | Good | Poor | Not applicable | Note |
+| Activity | Signal | Good | Poor | Not applicable (NA) or no conditions (NC) | Note |
 | --- | --- | --- | --- | --- | --- |
-| Skiing | place elevation, m (geocoding) | — | — | < 800, or unknown | Checked before the snow gate. Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not ([A-8](arch/registers.md#a-8)) |
-| Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | < 5 every day | Snowpack is the applicability signal. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
+| Skiing | place elevation, m (geocoding) | — | — | NA: < 800, or unknown | Checked before the snow gate. Owner decision 2026-10-15: ski terrain starts around 800 m; valley towns such as Chamonix at 1060 m qualify, London at 25 m does not ([A-8](arch/registers.md#a-8)) |
+| Skiing | snow depth, cm (daily max of hourly `snow_depth`) | ≥ 30 | 5 to 15 | NC: < 5 every day | Snowpack is the window's conditions signal: the place can host skiing, this week has no snow. Probe 2026-10-14: Hintertux at 3250 m shows 39 cm and is open; Chamonix town 0. Known false negative: Sölden at 3340 m shows 0 because the model carries no snow on that glacier cell ([A-50](arch/registers.md#a-50), [R-12](arch/04-options.md#r-12)) |
 | Skiing | snowfall, cm per day | ≥ 5 | 0 | — | Fresh snow is a bonus on top of the base, not the gate |
 | Skiing | tmax, °C | −10 to 3 | > 8 | — | Above about 8 the snow rots |
 | Skiing | wind gusts, km/h | < 40 | > 60 | — | Lifts close around 60 to 80 |

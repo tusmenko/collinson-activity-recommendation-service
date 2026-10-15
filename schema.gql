@@ -27,8 +27,18 @@ type ActivityReason {
 Whether the activity can be scored at this location from the data served.
 """
 enum ActivityStatus {
+  """Scored for every day of the window."""
   APPLICABLE
+
+  """The place cannot host the activity; meta.reasons says why."""
   NOT_APPLICABLE
+
+  """
+  The place can host the activity, but no day in this window has the conditions for it.
+  """
+  NO_CONDITIONS
+
+  """A source the activity needs failed with nothing stored."""
   UNAVAILABLE
 }
 
@@ -168,7 +178,9 @@ type Meta {
   """A source failed; sources says which."""
   partial: Boolean!
 
-  """Why each NOT_APPLICABLE or UNAVAILABLE activity has no scores."""
+  """
+  Why each NOT_APPLICABLE, NO_CONDITIONS or UNAVAILABLE activity has no scores.
+  """
   reasons: [ActivityReason!]!
   sources: [SourceStatus!]!
 
