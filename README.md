@@ -8,7 +8,7 @@ A GraphQL service that takes a city or town and scores the next seven days for s
 
 - Docker Desktop with Compose v2. Nothing else to run the service: no accounts, no API keys.
 - For local development: Node.js 24 and pnpm 11 (`corepack enable` picks the version from `package.json`).
-- Ports: 3000 for the service, 3001 for the `demo` profile; Redis listens on 6379 inside Compose only. Images and the Redis volume take under 1 GB.
+- Ports: 3000 for the service, 3001 for the `demo` profile; Redis listens on 6379 inside Compose only. If an editor or another server already holds 3000 (Docker still starts, but requests get an empty reply), pick another host port: `API_PORT=3100 docker compose up --build` (`API_DEMO_PORT` for the demo). Images and the Redis volume take under 1 GB.
 
 ## Run
 
