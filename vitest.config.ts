@@ -28,7 +28,8 @@ export default defineConfig({
   test: {
     projects: [
       project('unit', 'src/**/*.spec.ts'),
-      project('integration', 'test/integration/**/*.spec.ts'),
+      // One file at a time: the queue specs measure wall time and share one Redis.
+      project('integration', 'test/integration/**/*.spec.ts', { fileParallelism: false }),
       // Empty until phase 4; test:schema passes --passWithNoTests, a root-only option in Vitest 4.
       project('schema', 'test/schema/**/*.spec.ts'),
       project('e2e', 'test/e2e/**/*.spec.ts'),

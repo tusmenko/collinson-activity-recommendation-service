@@ -8,8 +8,6 @@
     "@apollo/server",
     "@as-integrations/express5",
     "graphql",
-    "@nestjs/bullmq",
-    "bullmq",
     "@nestjs/throttler",
     "autocannon",
     "@types/express"

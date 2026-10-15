@@ -38,6 +38,8 @@ const EnvSchema = z
     UPSTREAM_RETRIES: z.coerce.number().int().min(0).prefault('1'),
     COLD_READ_BOUND_MS: count.prefault('4500'),
     OUTBOUND_PER_MINUTE: count.prefault('500'),
+    // Test knob for the limiter window; production keeps the one-minute default.
+    OUTBOUND_LIMIT_WINDOW_MS: count.prefault('60000'),
     OUTBOUND_PER_DAY: count.prefault('9000'),
     INBOUND_PER_MINUTE: count.prefault('60'),
     QUERY_MAX_LOCATIONS: count.prefault('5'),
