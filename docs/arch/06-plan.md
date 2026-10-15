@@ -44,7 +44,7 @@ Every scenario from Step 1 maps to a test, an asserted measure and a gate. The m
 - Commit-msg: commitlint, conventional commits.
 - Pre-push: unit and integration against the local Redis.
 - CI on every push: frozen install, lint, type check, unit, integration with a redis service, schema snapshot, end-to-end, the per-module coverage thresholds from the [test plan](../ACTIVITY_RANKING_TEST_PLAN.md), image build, compose health check, `helm lint`. Load job on `main` and nightly.
-- Branch protection on `main`: CI green required, no direct pushes; squash-merge per phase.
+- Branch protection on `main`: every CI job required, no direct pushes; squash-merge per phase. Set from the repository settings by the owner; the unattended run could not change GitHub settings, so until then the green-CI rule is held by merge discipline rather than by GitHub.
 
 ### Definition of done per phase
 

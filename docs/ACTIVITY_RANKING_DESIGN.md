@@ -411,7 +411,7 @@ Multi-stage Dockerfile (build, runtime on Node LTS alpine, non-root). `docker-co
 <a id="d-12"></a>
 ## D-12 Implementation decisions
 
-Choices made while building, below the level of an ADR. Rows that began in the overnight notes or the assumptions register keep their old anchor.
+Choices made while building, below the level of an ADR. Rows carried over from the overnight run's notes or from the assumptions register keep their old anchor.
 
 | Decision | Reason | Where enforced or documented |
 | --- | --- | --- |
